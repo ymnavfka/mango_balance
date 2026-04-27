@@ -28,7 +28,10 @@ class AppDatabase extends _$AppDatabase {
 
   // READ (stream!)
   Stream<List<Transaction>> watchTransactions() {
-    return select(transactions).watch();
+    return (select(transactions)..orderBy([
+          (t) => OrderingTerm(expression: t.date, mode: OrderingMode.desc),
+        ]))
+        .watch();
   }
 
   // UPDATE
