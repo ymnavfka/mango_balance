@@ -24,17 +24,16 @@ class TransactionCubit extends Cubit<TransactionState> {
     emit(state.copyWith(transactions: updatedList));
   }
 
-    void deleteTransaction(int id) {
-        final updatedList =
-            state.transactions.where((tx) => tx.id != id).toList();
+  void deleteTransaction(int id) {
+    final updatedList = state.transactions.where((tx) => tx.id != id).toList();
 
-        emit(state.copyWith(transactions: updatedList));
-    }
+    emit(state.copyWith(transactions: updatedList));
+  }
 
-    void restoreTransaction(TransactionEntity transaction, int index) {
-        final updatedList = List<TransactionEntity>.from(state.transactions)
-            ..insert(index, transaction);
+  void restoreTransaction(TransactionEntity transaction, int index) {
+    final updatedList = List<TransactionEntity>.from(state.transactions)
+      ..insert(index, transaction);
 
-        emit(state.copyWith(transactions: updatedList));
-    }
+    emit(state.copyWith(transactions: updatedList));
+  }
 }

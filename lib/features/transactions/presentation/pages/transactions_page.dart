@@ -21,46 +21,49 @@ class TransactionsPage extends StatelessWidget {
               final tx = state.transactions[index];
 
               return Dismissible(
-                    key: ValueKey(tx.id),
-                    direction: DismissDirection.endToStart, // свайп справа налево
+                key: ValueKey(tx.id),
+                direction: DismissDirection.endToStart, // свайп справа налево
 
-                    onDismissed: (_) {
-                    final cubit = context.read<TransactionCubit>();
+                onDismissed: (_) {
+                  final cubit = context.read<TransactionCubit>();
 
-                    final removedTransaction = tx;
-                    final removedIndex = index;
+                  final removedTransaction = tx;
+                  final removedIndex = index;
 
-                    cubit.deleteTransaction(tx.id);
+                  cubit.deleteTransaction(tx.id);
 
-                    ScaffoldMessenger.of(context)
+                  ScaffoldMessenger.of(context)
                     ..clearSnackBars()
                     ..showSnackBar(
-                        SnackBar(
+                      SnackBar(
                         content: const Text('Transaction deleted'),
                         action: SnackBarAction(
-                            label: 'Undo',
-                            onPressed: () {
-                            cubit.restoreTransaction(removedTransaction, removedIndex);
-                            },
+                          label: 'Undo',
+                          onPressed: () {
+                            cubit.restoreTransaction(
+                              removedTransaction,
+                              removedIndex,
+                            );
+                          },
                         ),
-                        ),
+                      ),
                     );
-                    },
-                    background: Container(
-                        alignment: Alignment.centerRight,
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        color: Colors.red,
-                        child: const Icon(Icons.delete, color: Colors.white),
-                    ),
+                },
+                background: Container(
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  color: Colors.red,
+                  child: const Icon(Icons.delete, color: Colors.white),
+                ),
 
-                    child: ListTile(
-                        title: Text(
-                        '${tx.type == TransactionType.income ? "Income" : "Expense"} - ${tx.amount}',
-                        ),
-                        subtitle: Text(_formatDate(tx.date)),
-                        onTap: () => _showAddDialog(context, transaction: tx),
-                    ),
-                );
+                child: ListTile(
+                  title: Text(
+                    '${tx.type == TransactionType.income ? "Income" : "Expense"} - ${tx.amount}',
+                  ),
+                  subtitle: Text(_formatDate(tx.date)),
+                  onTap: () => _showAddDialog(context, transaction: tx),
+                ),
+              );
             },
           );
         },
@@ -72,85 +75,81 @@ class TransactionsPage extends StatelessWidget {
     );
   }
 
-    String _formatDate(DateTime date) {
+  String _formatDate(DateTime date) {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')} '
-            '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
-    }
+        '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+  }
 
-    void _showAddDialog(BuildContext context, {TransactionEntity? transaction}) {
+  void _showAddDialog(BuildContext context, {TransactionEntity? transaction}) {
     final cubit = context.read<TransactionCubit>();
 
     final amountController = TextEditingController(
-        text: transaction?.amount.toString() ?? '',
+      text: transaction?.amount.toString() ?? '',
     );
 
-    TransactionType selectedType =
-        transaction?.type ?? TransactionType.expense;
+    TransactionType selectedType = transaction?.type ?? TransactionType.expense;
 
     showDialog(
-        context: context,
-        builder: (context) {
+      context: context,
+      builder: (context) {
         return AlertDialog(
-            title: Text(transaction == null ? 'Add' : 'Edit'),
-            content: Column(
+          title: Text(transaction == null ? 'Add' : 'Edit'),
+          content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-                DropdownButton<TransactionType>(
+              DropdownButton<TransactionType>(
                 value: selectedType,
                 items: const [
-                    DropdownMenuItem(
+                  DropdownMenuItem(
                     value: TransactionType.income,
                     child: Text('Income'),
-                    ),
-                    DropdownMenuItem(
+                  ),
+                  DropdownMenuItem(
                     value: TransactionType.expense,
                     child: Text('Expense'),
-                    ),
+                  ),
                 ],
                 onChanged: (value) {
-                    if (value != null) {
+                  if (value != null) {
                     selectedType = value;
-                    }
+                  }
                 },
-                ),
-                TextField(
+              ),
+              TextField(
                 controller: amountController,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(labelText: 'Amount'),
-                ),
+              ),
             ],
-            ),
-            actions: [
+          ),
+          actions: [
             TextButton(
-                onPressed: () {
+              onPressed: () {
                 final amount = double.tryParse(amountController.text);
                 if (amount == null) return;
 
                 if (transaction == null) {
-                    cubit.addTransaction(
+                  cubit.addTransaction(
                     TransactionEntity(
-                        id: 0, // временно, cubit заменит
-                        type: selectedType,
-                        amount: amount,
-                        date: DateTime.now(),
+                      id: 0, // временно, cubit заменит
+                      type: selectedType,
+                      amount: amount,
+                      date: DateTime.now(),
                     ),
-                    );
+                  );
                 } else {
-                    cubit.updateTransaction(
-                    transaction.copyWith(
-                        type: selectedType,
-                        amount: amount,
-                    ),
-                    );
+                  cubit.updateTransaction(
+                    transaction.copyWith(type: selectedType, amount: amount),
+                  );
                 }
 
                 Navigator.pop(context);
-                },
-                child: Text(transaction == null ? 'Add' : 'Save'),
+              },
+              child: Text(transaction == null ? 'Add' : 'Save'),
             ),
-            ],
+          ],
         );
-        },
+      },
     );
-    }
+  }
 }

@@ -1,10 +1,6 @@
 import '../../../../core/enums/transaction_type.dart';
 
 class TransactionEntity {
-  final int id; // 👈 добавили
-  final TransactionType type;
-  final double amount;
-  final DateTime date;
 
   TransactionEntity({
     required this.id,
@@ -12,6 +8,10 @@ class TransactionEntity {
     required this.amount,
     required this.date,
   });
+  final int id;
+  final TransactionType type;
+  final double amount;
+  final DateTime date;
 
   TransactionEntity copyWith({
     int? id,
