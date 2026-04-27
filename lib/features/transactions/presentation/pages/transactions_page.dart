@@ -25,6 +25,7 @@ class TransactionsPage extends StatelessWidget {
                   '${tx.type == TransactionType.income ? "Income" : "Expense"} - ${tx.amount}',
                 ),
                 subtitle: Text(tx.date.toString()),
+                onTap: () => _showAddDialog(context, transaction: tx),
               );
             },
           );
@@ -37,66 +38,82 @@ class TransactionsPage extends StatelessWidget {
     );
   }
 
-  void _showAddDialog(BuildContext context) {
+    void _showAddDialog(BuildContext context, {TransactionEntity? transaction}) {
     final cubit = context.read<TransactionCubit>();
-    final amountController = TextEditingController();
-    TransactionType selectedType = TransactionType.expense;
+
+    final amountController = TextEditingController(
+        text: transaction?.amount.toString() ?? '',
+    );
+
+    TransactionType selectedType =
+        transaction?.type ?? TransactionType.expense;
 
     showDialog(
-      context: context,
-      builder: (context) {
+        context: context,
+        builder: (context) {
         return AlertDialog(
-          title: const Text('Add transaction'),
-          content: Column(
+            title: Text(transaction == null ? 'Add' : 'Edit'),
+            content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              DropdownButton<TransactionType>(
+                DropdownButton<TransactionType>(
                 value: selectedType,
                 items: const [
-                  DropdownMenuItem(
+                    DropdownMenuItem(
                     value: TransactionType.income,
                     child: Text('Income'),
-                  ),
-                  DropdownMenuItem(
+                    ),
+                    DropdownMenuItem(
                     value: TransactionType.expense,
                     child: Text('Expense'),
-                  ),
+                    ),
                 ],
                 onChanged: (value) {
-                  if (value != null) {
+                    if (value != null) {
                     selectedType = value;
-                  }
+                    }
                 },
-              ),
-              TextField(
+                ),
+                TextField(
                 controller: amountController,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(labelText: 'Amount'),
-              ),
+                ),
             ],
-          ),
-          actions: [
+            ),
+            actions: [
             TextButton(
-              onPressed: () {
+                onPressed: () {
                 final amount = double.tryParse(amountController.text);
                 if (amount == null) return;
 
-              cubit.addTransaction(
-                TransactionEntity(
-                  type: selectedType,
-                  amount: amount,
-                  date: DateTime.now(),
-                ),
-              );
-
+                if (transaction == null) {
+                    // ➕ создание
+                    cubit.addTransaction(
+                    TransactionEntity(
+                        id: 0, // временно, cubit заменит
+                        type: selectedType,
+                        amount: amount,
+                        date: DateTime.now(),
+                    ),
+                    );
+                } else {
+                    // ✏️ редактирование
+                    cubit.updateTransaction(
+                    transaction.copyWith(
+                        type: selectedType,
+                        amount: amount,
+                    ),
+                    );
+                }
 
                 Navigator.pop(context);
-              },
-              child: const Text('Add'),
+                },
+                child: Text(transaction == null ? 'Add' : 'Save'),
             ),
-          ],
+            ],
         );
-      },
+        },
     );
-  }
+    }
 }
