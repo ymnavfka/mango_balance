@@ -1,7 +1,6 @@
 import '../../../../core/enums/transaction_type.dart';
 
 class TransactionEntity {
-
   TransactionEntity({
     required this.id,
     required this.type,

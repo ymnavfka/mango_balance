@@ -12,9 +12,8 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
-  final AppDatabase database;
-
   const MyApp({super.key, required this.database});
+  final AppDatabase database;
 
   @override
   Widget build(BuildContext context) {

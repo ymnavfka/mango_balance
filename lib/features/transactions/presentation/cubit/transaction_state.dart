@@ -1,7 +1,6 @@
 import '../../domain/entities/transaction.dart';
 
 class TransactionState {
-
   TransactionState({required this.transactions});
 
   factory TransactionState.initial() {

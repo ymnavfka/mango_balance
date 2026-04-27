@@ -5,11 +5,10 @@ import 'transaction_state.dart';
 import '../../../../core/enums/transaction_type.dart';
 
 class TransactionCubit extends Cubit<TransactionState> {
-  final AppDatabase db;
-
   TransactionCubit(this.db) : super(TransactionState.initial()) {
     _init();
   }
+  final AppDatabase db;
 
   void _init() {
     db.watchTransactions().listen((data) {
@@ -64,5 +63,19 @@ class TransactionCubit extends Cubit<TransactionState> {
   // RESTORE
   Future<void> restoreTransaction(TransactionEntity tx, int index) async {
     await addTransaction(tx);
+  }
+
+  double calculateBalance(List<TransactionEntity> transactions) {
+    double total = 0;
+
+    for (final tx in transactions) {
+      if (tx.type == TransactionType.income) {
+        total += tx.amount;
+      } else {
+        total -= tx.amount;
+      }
+    }
+
+    return total;
   }
 }

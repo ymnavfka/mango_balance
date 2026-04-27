@@ -15,56 +15,75 @@ class TransactionsPage extends StatelessWidget {
       appBar: AppBar(title: const Text('Transactions')),
       body: BlocBuilder<TransactionCubit, TransactionState>(
         builder: (context, state) {
-          return ListView.builder(
-            itemCount: state.transactions.length,
-            itemBuilder: (context, index) {
-              final tx = state.transactions[index];
+          final cubit = context.read<TransactionCubit>();
+          final balance = cubit.calculateBalance(state.transactions);
 
-              return Dismissible(
-                key: ValueKey(tx.id),
-                direction: DismissDirection.endToStart, // свайп справа налево
+          return Column(
+            children: [
+              const SizedBox(height: 16),
 
-                onDismissed: (_) {
-                  final cubit = context.read<TransactionCubit>();
+              Text(
+                balance.toStringAsFixed(2),
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
 
-                  final removedTransaction = tx;
-                  final removedIndex = index;
+              const SizedBox(height: 16),
 
-                  cubit.deleteTransaction(tx.id);
+              Expanded(
+                child: ListView.builder(
+                  itemCount: state.transactions.length,
+                  itemBuilder: (context, index) {
+                    final tx = state.transactions[index];
 
-                  ScaffoldMessenger.of(context)
-                    ..clearSnackBars()
-                    ..showSnackBar(
-                      SnackBar(
-                        content: const Text('Transaction deleted'),
-                        action: SnackBarAction(
-                          label: 'Undo',
-                          onPressed: () {
-                            cubit.restoreTransaction(
-                              removedTransaction,
-                              removedIndex,
-                            );
-                          },
+                    return Dismissible(
+                      key: ValueKey(tx.id),
+                      direction: DismissDirection.endToStart,
+                      onDismissed: (_) {
+                        final cubit = context.read<TransactionCubit>();
+
+                        final removedTransaction = tx;
+                        final removedIndex = index;
+
+                        cubit.deleteTransaction(tx.id);
+
+                        ScaffoldMessenger.of(context)
+                          ..clearSnackBars()
+                          ..showSnackBar(
+                            SnackBar(
+                              content: const Text('Transaction deleted'),
+                              action: SnackBarAction(
+                                label: 'Undo',
+                                onPressed: () {
+                                  cubit.restoreTransaction(
+                                    removedTransaction,
+                                    removedIndex,
+                                  );
+                                },
+                              ),
+                            ),
+                          );
+                      },
+                      background: Container(
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        color: Colors.red,
+                        child: const Icon(Icons.delete, color: Colors.white),
+                      ),
+                      child: ListTile(
+                        title: Text(
+                          '${tx.type == TransactionType.income ? "Income" : "Expense"} - ${tx.amount}',
                         ),
+                        subtitle: Text(_formatDate(tx.date)),
+                        onTap: () => _showAddDialog(context, transaction: tx),
                       ),
                     );
-                },
-                background: Container(
-                  alignment: Alignment.centerRight,
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  color: Colors.red,
-                  child: const Icon(Icons.delete, color: Colors.white),
+                  },
                 ),
-
-                child: ListTile(
-                  title: Text(
-                    '${tx.type == TransactionType.income ? "Income" : "Expense"} - ${tx.amount}',
-                  ),
-                  subtitle: Text(_formatDate(tx.date)),
-                  onTap: () => _showAddDialog(context, transaction: tx),
-                ),
-              );
-            },
+              ),
+            ],
           );
         },
       ),
