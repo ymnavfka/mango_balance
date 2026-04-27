@@ -73,10 +73,26 @@ class TransactionsPage extends StatelessWidget {
                         child: const Icon(Icons.delete, color: Colors.white),
                       ),
                       child: ListTile(
-                        title: Text(
-                          '${tx.type == TransactionType.income ? "Income" : "Expense"} - ${tx.amount}',
+                        leading: Icon(
+                          tx.type == TransactionType.income
+                              ? Icons.arrow_downward
+                              : Icons.arrow_upward,
+                          color: tx.type == TransactionType.income
+                              ? Colors.green
+                              : Colors.red,
                         ),
-                        subtitle: Text(_formatDate(tx.date)),
+                        title: Text(
+                          '${tx.type == TransactionType.income ? '+' : '-'}${tx.amount.toStringAsFixed(2)}',
+                          style: TextStyle(
+                            color: tx.type == TransactionType.income
+                                ? Colors.green
+                                : Colors.red,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        subtitle: Text(
+                          '${tx.type == TransactionType.income ? "Income" : "Expense"} • ${_formatDate(tx.date)}',
+                        ),
                         onTap: () => _showAddDialog(context, transaction: tx),
                       ),
                     );
