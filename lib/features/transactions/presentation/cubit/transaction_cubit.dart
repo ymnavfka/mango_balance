@@ -23,4 +23,11 @@ class TransactionCubit extends Cubit<TransactionState> {
 
     emit(state.copyWith(transactions: updatedList));
   }
+
+    void deleteTransaction(int id) {
+        final updatedList =
+            state.transactions.where((tx) => tx.id != id).toList();
+
+        emit(state.copyWith(transactions: updatedList));
+    }
 }

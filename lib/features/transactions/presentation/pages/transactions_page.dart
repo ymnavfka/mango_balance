@@ -20,13 +20,33 @@ class TransactionsPage extends StatelessWidget {
             itemBuilder: (context, index) {
               final tx = state.transactions[index];
 
-              return ListTile(
-                title: Text(
-                  '${tx.type == TransactionType.income ? "Income" : "Expense"} - ${tx.amount}',
-                ),
-                subtitle: Text(_formatDate(tx.date)),
-                onTap: () => _showAddDialog(context, transaction: tx),
-              );
+              return Dismissible(
+                    key: ValueKey(tx.id),
+                    direction: DismissDirection.endToStart, // свайп справа налево
+
+                    onDismissed: (_) {
+                        context.read<TransactionCubit>().deleteTransaction(tx.id);
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Transaction deleted')),
+                        );
+                    },
+
+                    background: Container(
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        color: Colors.red,
+                        child: const Icon(Icons.delete, color: Colors.white),
+                    ),
+
+                    child: ListTile(
+                        title: Text(
+                        '${tx.type == TransactionType.income ? "Income" : "Expense"} - ${tx.amount}',
+                        ),
+                        subtitle: Text(_formatDate(tx.date)),
+                        onTap: () => _showAddDialog(context, transaction: tx),
+                    ),
+                );
             },
           );
         },
