@@ -25,13 +25,27 @@ class TransactionsPage extends StatelessWidget {
                     direction: DismissDirection.endToStart, // свайп справа налево
 
                     onDismissed: (_) {
-                        context.read<TransactionCubit>().deleteTransaction(tx.id);
+                    final cubit = context.read<TransactionCubit>();
 
-                        ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Transaction deleted')),
-                        );
+                    final removedTransaction = tx;
+                    final removedIndex = index;
+
+                    cubit.deleteTransaction(tx.id);
+
+                    ScaffoldMessenger.of(context)
+                    ..clearSnackBars()
+                    ..showSnackBar(
+                        SnackBar(
+                        content: const Text('Transaction deleted'),
+                        action: SnackBarAction(
+                            label: 'Undo',
+                            onPressed: () {
+                            cubit.restoreTransaction(removedTransaction, removedIndex);
+                            },
+                        ),
+                        ),
+                    );
                     },
-
                     background: Container(
                         alignment: Alignment.centerRight,
                         padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -113,7 +127,6 @@ class TransactionsPage extends StatelessWidget {
                 if (amount == null) return;
 
                 if (transaction == null) {
-                    // ➕ создание
                     cubit.addTransaction(
                     TransactionEntity(
                         id: 0, // временно, cubit заменит
@@ -123,7 +136,6 @@ class TransactionsPage extends StatelessWidget {
                     ),
                     );
                 } else {
-                    // ✏️ редактирование
                     cubit.updateTransaction(
                     transaction.copyWith(
                         type: selectedType,

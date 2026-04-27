@@ -30,4 +30,11 @@ class TransactionCubit extends Cubit<TransactionState> {
 
         emit(state.copyWith(transactions: updatedList));
     }
+
+    void restoreTransaction(TransactionEntity transaction, int index) {
+        final updatedList = List<TransactionEntity>.from(state.transactions)
+            ..insert(index, transaction);
+
+        emit(state.copyWith(transactions: updatedList));
+    }
 }
