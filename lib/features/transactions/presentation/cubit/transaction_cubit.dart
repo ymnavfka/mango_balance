@@ -5,7 +5,7 @@ import 'transaction_state.dart';
 class TransactionCubit extends Cubit<TransactionState> {
   TransactionCubit() : super(TransactionState.initial());
 
-  int _idCounter = 0; // 👈 простой генератор id
+  int _idCounter = 0;
 
   void addTransaction(TransactionEntity transaction) {
     final newTransaction = transaction.copyWith(id: _idCounter++);

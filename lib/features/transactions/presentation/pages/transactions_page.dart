@@ -24,7 +24,7 @@ class TransactionsPage extends StatelessWidget {
                 title: Text(
                   '${tx.type == TransactionType.income ? "Income" : "Expense"} - ${tx.amount}',
                 ),
-                subtitle: Text(tx.date.toString()),
+                subtitle: Text(_formatDate(tx.date)),
                 onTap: () => _showAddDialog(context, transaction: tx),
               );
             },
@@ -37,6 +37,11 @@ class TransactionsPage extends StatelessWidget {
       ),
     );
   }
+
+    String _formatDate(DateTime date) {
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')} '
+            '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+    }
 
     void _showAddDialog(BuildContext context, {TransactionEntity? transaction}) {
     final cubit = context.read<TransactionCubit>();
