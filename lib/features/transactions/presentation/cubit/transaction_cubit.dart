@@ -13,7 +13,9 @@ class TransactionCubit extends Cubit<TransactionState> {
   void _init() {
     db.watchTransactions().listen((data) {
       final list = data.map(_mapToEntity).toList();
-      emit(state.copyWith(transactions: list));
+      final sections = _buildSections(list);
+
+      emit(state.copyWith(transactions: list, sections: sections));
     });
   }
 
@@ -77,5 +79,48 @@ class TransactionCubit extends Cubit<TransactionState> {
     }
 
     return total;
+  }
+
+  List<TransactionSection> _buildSections(
+    List<TransactionEntity> transactions,
+  ) {
+    final now = DateTime.now();
+
+    final todayDate = DateTime(now.year, now.month, now.day);
+    final yesterdayDate = todayDate.subtract(const Duration(days: 1));
+
+    List<TransactionEntity> today = [];
+    List<TransactionEntity> yesterday = [];
+    List<TransactionEntity> earlier = [];
+
+    for (final tx in transactions) {
+      final txDate = DateTime(tx.date.year, tx.date.month, tx.date.day);
+
+      if (txDate == todayDate) {
+        today.add(tx);
+      } else if (txDate == yesterdayDate) {
+        yesterday.add(tx);
+      } else {
+        earlier.add(tx);
+      }
+    }
+
+    final sections = <TransactionSection>[];
+
+    if (today.isNotEmpty) {
+      sections.add(TransactionSection(title: 'Today', transactions: today));
+    }
+
+    if (yesterday.isNotEmpty) {
+      sections.add(
+        TransactionSection(title: 'Yesterday', transactions: yesterday),
+      );
+    }
+
+    if (earlier.isNotEmpty) {
+      sections.add(TransactionSection(title: 'Earlier', transactions: earlier));
+    }
+
+    return sections;
   }
 }

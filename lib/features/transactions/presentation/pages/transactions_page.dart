@@ -34,67 +34,94 @@ class TransactionsPage extends StatelessWidget {
 
               Expanded(
                 child: ListView.builder(
-                  itemCount: state.transactions.length,
-                  itemBuilder: (context, index) {
-                    final tx = state.transactions[index];
+                  itemCount: state.sections.length,
+                  itemBuilder: (context, sectionIndex) {
+                    final section = state.sections[sectionIndex];
 
-                    return Dismissible(
-                      key: ValueKey(tx.id),
-                      direction: DismissDirection.endToStart,
-                      onDismissed: (_) {
-                        final cubit = context.read<TransactionCubit>();
-
-                        final removedTransaction = tx;
-                        final removedIndex = index;
-
-                        cubit.deleteTransaction(tx.id);
-
-                        ScaffoldMessenger.of(context)
-                          ..clearSnackBars()
-                          ..showSnackBar(
-                            SnackBar(
-                              content: const Text('Transaction deleted'),
-                              action: SnackBarAction(
-                                label: 'Undo',
-                                onPressed: () {
-                                  cubit.restoreTransaction(
-                                    removedTransaction,
-                                    removedIndex,
-                                  );
-                                },
-                              ),
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // 🔹 заголовок секции
+                        Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Text(
+                            section.title,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
                             ),
-                          );
-                      },
-                      background: Container(
-                        alignment: Alignment.centerRight,
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        color: Colors.red,
-                        child: const Icon(Icons.delete, color: Colors.white),
-                      ),
-                      child: ListTile(
-                        leading: Icon(
-                          tx.type == TransactionType.income
-                              ? Icons.arrow_downward
-                              : Icons.arrow_upward,
-                          color: tx.type == TransactionType.income
-                              ? Colors.green
-                              : Colors.red,
-                        ),
-                        title: Text(
-                          '${tx.type == TransactionType.income ? '+' : '-'}${tx.amount.toStringAsFixed(2)}',
-                          style: TextStyle(
-                            color: tx.type == TransactionType.income
-                                ? Colors.green
-                                : Colors.red,
-                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                        subtitle: Text(
-                          '${tx.type == TransactionType.income ? "Income" : "Expense"} • ${_formatDate(tx.date)}',
-                        ),
-                        onTap: () => _showAddDialog(context, transaction: tx),
-                      ),
+
+                        // 🔹 транзакции
+                        ...section.transactions.map((tx) {
+                          return Dismissible(
+                            key: ValueKey(tx.id),
+                            direction: DismissDirection.endToStart,
+
+                            onDismissed: (_) {
+                              final cubit = context.read<TransactionCubit>();
+
+                              final removedTransaction = tx;
+
+                              cubit.deleteTransaction(tx.id);
+
+                              ScaffoldMessenger.of(context)
+                                ..clearSnackBars()
+                                ..showSnackBar(
+                                  SnackBar(
+                                    content: const Text('Transaction deleted'),
+                                    action: SnackBarAction(
+                                      label: 'Undo',
+                                      onPressed: () {
+                                        cubit.restoreTransaction(
+                                          removedTransaction,
+                                          0,
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                );
+                            },
+
+                            background: Container(
+                              alignment: Alignment.centerRight,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                              ),
+                              color: Colors.red,
+                              child: const Icon(
+                                Icons.delete,
+                                color: Colors.white,
+                              ),
+                            ),
+
+                            child: ListTile(
+                              leading: Icon(
+                                tx.type == TransactionType.income
+                                    ? Icons.arrow_downward
+                                    : Icons.arrow_upward,
+                                color: tx.type == TransactionType.income
+                                    ? Colors.green
+                                    : Colors.red,
+                              ),
+                              title: Text(
+                                '${tx.type == TransactionType.income ? '+' : '-'}'
+                                '${tx.amount.toStringAsFixed(2)}',
+                                style: TextStyle(
+                                  color: tx.type == TransactionType.income
+                                      ? Colors.green
+                                      : Colors.red,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              subtitle: Text(_formatDate(tx.date)),
+                              onTap: () =>
+                                  _showAddDialog(context, transaction: tx),
+                            ),
+                          );
+                        }),
+                      ],
                     );
                   },
                 ),
