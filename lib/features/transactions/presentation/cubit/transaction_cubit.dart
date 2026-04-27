@@ -1,39 +1,68 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/database/app_database.dart';
 import '../../domain/entities/transaction.dart';
 import 'transaction_state.dart';
+import '../../../../core/enums/transaction_type.dart';
 
 class TransactionCubit extends Cubit<TransactionState> {
-  TransactionCubit() : super(TransactionState.initial());
+  final AppDatabase db;
 
-  int _idCounter = 0;
-
-  void addTransaction(TransactionEntity transaction) {
-    final newTransaction = transaction.copyWith(id: _idCounter++);
-
-    final updatedList = List<TransactionEntity>.from(state.transactions)
-      ..add(newTransaction);
-
-    emit(state.copyWith(transactions: updatedList));
+  TransactionCubit(this.db) : super(TransactionState.initial()) {
+    _init();
   }
 
-  void updateTransaction(TransactionEntity updatedTransaction) {
-    final updatedList = state.transactions.map((tx) {
-      return tx.id == updatedTransaction.id ? updatedTransaction : tx;
-    }).toList();
-
-    emit(state.copyWith(transactions: updatedList));
+  void _init() {
+    db.watchTransactions().listen((data) {
+      final list = data.map(_mapToEntity).toList();
+      emit(state.copyWith(transactions: list));
+    });
   }
 
-  void deleteTransaction(int id) {
-    final updatedList = state.transactions.where((tx) => tx.id != id).toList();
-
-    emit(state.copyWith(transactions: updatedList));
+  TransactionEntity _mapToEntity(Transaction dbTx) {
+    return TransactionEntity(
+      id: dbTx.id,
+      type: dbTx.type == 'income'
+          ? TransactionType.income
+          : TransactionType.expense,
+      amount: dbTx.amount,
+      date: dbTx.date,
+    );
   }
 
-  void restoreTransaction(TransactionEntity transaction, int index) {
-    final updatedList = List<TransactionEntity>.from(state.transactions)
-      ..insert(index, transaction);
+  String _mapType(TransactionType type) {
+    return type == TransactionType.income ? 'income' : 'expense';
+  }
 
-    emit(state.copyWith(transactions: updatedList));
+  // CREATE
+  Future<void> addTransaction(TransactionEntity tx) async {
+    await db.insertTransaction(
+      TransactionsCompanion.insert(
+        type: _mapType(tx.type),
+        amount: tx.amount,
+        date: tx.date,
+      ),
+    );
+  }
+
+  // UPDATE
+  Future<void> updateTransaction(TransactionEntity tx) async {
+    await db.updateTransaction(
+      Transaction(
+        id: tx.id,
+        type: _mapType(tx.type),
+        amount: tx.amount,
+        date: tx.date,
+      ),
+    );
+  }
+
+  // DELETE
+  Future<void> deleteTransaction(int id) async {
+    await db.deleteTransaction(id);
+  }
+
+  // RESTORE
+  Future<void> restoreTransaction(TransactionEntity tx, int index) async {
+    await addTransaction(tx);
   }
 }
