@@ -50,6 +50,7 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
       lastDate: now,
     );
 
+    if (!mounted) return;
     if (pickedDate == null) return;
 
     final pickedTime = await showTimePicker(
@@ -57,6 +58,7 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
       initialTime: TimeOfDay.fromDateTime(_date),
     );
 
+    if (!mounted) return;
     if (pickedTime == null) return;
 
     final newDate = DateTime(
@@ -68,6 +70,8 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
     );
 
     if (newDate.isAfter(now)) {
+      if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Date cannot be in the future')),
       );
