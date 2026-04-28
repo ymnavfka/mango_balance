@@ -151,6 +151,8 @@ class TransactionsPage extends StatelessWidget {
 
     TransactionType selectedType = transaction?.type ?? TransactionType.expense;
 
+    DateTime selectedDate = transaction?.date ?? DateTime.now();
+
     showDialog(
       context: context,
       builder: (context) {
@@ -177,10 +179,62 @@ class TransactionsPage extends StatelessWidget {
                   }
                 },
               ),
+
               TextField(
                 controller: amountController,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(labelText: 'Amount'),
+              ),
+
+              const SizedBox(height: 12),
+
+              // выбор даты
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(child: Text(_formatDate(selectedDate))),
+                  TextButton(
+                    onPressed: () async {
+                      final now = DateTime.now();
+
+                      final pickedDate = await showDatePicker(
+                        context: context,
+                        initialDate: selectedDate,
+                        firstDate: DateTime(2000),
+                        lastDate: now,
+                      );
+
+                      if (pickedDate == null) return;
+
+                      final pickedTime = await showTimePicker(
+                        context: context,
+                        initialTime: TimeOfDay.fromDateTime(selectedDate),
+                      );
+
+                      if (pickedTime == null) return;
+
+                      final newDate = DateTime(
+                        pickedDate.year,
+                        pickedDate.month,
+                        pickedDate.day,
+                        pickedTime.hour,
+                        pickedTime.minute,
+                      );
+
+                      if (newDate.isAfter(now)) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Date cannot be in the future'),
+                          ),
+                        );
+                        return;
+                      }
+
+                      selectedDate = newDate;
+                    },
+                    child: const Text('Select date'),
+                  ),
+                ],
               ),
             ],
           ),
@@ -196,12 +250,16 @@ class TransactionsPage extends StatelessWidget {
                       id: 0, // временно, cubit заменит
                       type: selectedType,
                       amount: amount,
-                      date: DateTime.now(),
+                      date: selectedDate,
                     ),
                   );
                 } else {
                   cubit.updateTransaction(
-                    transaction.copyWith(type: selectedType, amount: amount),
+                    transaction.copyWith(
+                      type: selectedType,
+                      amount: amount,
+                      date: selectedDate,
+                    ),
                   );
                 }
 
