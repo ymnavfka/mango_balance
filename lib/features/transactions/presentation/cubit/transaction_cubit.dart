@@ -2,16 +2,28 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/entities/transaction.dart';
 import 'transaction_state.dart';
 import '../../../../core/enums/transaction_type.dart';
-import '../../domain/repositories/transaction_repository.dart';
+import '../../domain/usecases/add_transaction.dart';
+import '../../domain/usecases/update_transaction.dart';
+import '../../domain/usecases/delete_transaction.dart';
+import '../../domain/usecases/watch_transactions.dart';
 
 class TransactionCubit extends Cubit<TransactionState> {
-  TransactionCubit(this.repository) : super(TransactionState.initial()) {
+  TransactionCubit({
+    required this.addTransactionUseCase,
+    required this.updateTransactionUseCase,
+    required this.deleteTransactionUseCase,
+    required this.watchTransactionsUseCase,
+  }) : super(TransactionState.initial()) {
     _init();
   }
-  final TransactionRepository repository;
+
+  final AddTransaction addTransactionUseCase;
+  final UpdateTransaction updateTransactionUseCase;
+  final DeleteTransaction deleteTransactionUseCase;
+  final WatchTransactions watchTransactionsUseCase;
 
   void _init() {
-    repository.watchTransactions().listen((list) {
+    watchTransactionsUseCase().listen((list) {
       final sections = _buildSections(list);
 
       emit(state.copyWith(transactions: list, sections: sections));
@@ -20,17 +32,17 @@ class TransactionCubit extends Cubit<TransactionState> {
 
   // CREATE
   Future<void> addTransaction(TransactionEntity tx) async {
-    await repository.addTransaction(tx);
+    await addTransactionUseCase(tx);
   }
 
   // UPDATE
   Future<void> updateTransaction(TransactionEntity tx) async {
-    await repository.updateTransaction(tx);
+    await updateTransactionUseCase(tx);
   }
 
   // DELETE
   Future<void> deleteTransaction(int id) async {
-    await repository.deleteTransaction(id);
+    await deleteTransactionUseCase(id);
   }
 
   // RESTORE
