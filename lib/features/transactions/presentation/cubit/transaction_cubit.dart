@@ -1,65 +1,36 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/database/app_database.dart';
 import '../../domain/entities/transaction.dart';
 import 'transaction_state.dart';
 import '../../../../core/enums/transaction_type.dart';
+import '../../domain/repositories/transaction_repository.dart';
 
 class TransactionCubit extends Cubit<TransactionState> {
-  TransactionCubit(this.db) : super(TransactionState.initial()) {
+  TransactionCubit(this.repository) : super(TransactionState.initial()) {
     _init();
   }
-  final AppDatabase db;
+  final TransactionRepository repository;
 
   void _init() {
-    db.watchTransactions().listen((data) {
-      final list = data.map(_mapToEntity).toList();
+    repository.watchTransactions().listen((list) {
       final sections = _buildSections(list);
 
       emit(state.copyWith(transactions: list, sections: sections));
     });
   }
 
-  TransactionEntity _mapToEntity(Transaction dbTx) {
-    return TransactionEntity(
-      id: dbTx.id,
-      type: dbTx.type == 'income'
-          ? TransactionType.income
-          : TransactionType.expense,
-      amount: dbTx.amount,
-      date: dbTx.date,
-    );
-  }
-
-  String _mapType(TransactionType type) {
-    return type == TransactionType.income ? 'income' : 'expense';
-  }
-
   // CREATE
   Future<void> addTransaction(TransactionEntity tx) async {
-    await db.insertTransaction(
-      TransactionsCompanion.insert(
-        type: _mapType(tx.type),
-        amount: tx.amount,
-        date: tx.date,
-      ),
-    );
+    await repository.addTransaction(tx);
   }
 
   // UPDATE
   Future<void> updateTransaction(TransactionEntity tx) async {
-    await db.updateTransaction(
-      Transaction(
-        id: tx.id,
-        type: _mapType(tx.type),
-        amount: tx.amount,
-        date: tx.date,
-      ),
-    );
+    await repository.updateTransaction(tx);
   }
 
   // DELETE
   Future<void> deleteTransaction(int id) async {
-    await db.deleteTransaction(id);
+    await repository.deleteTransaction(id);
   }
 
   // RESTORE
