@@ -115,7 +115,6 @@ class TransactionsPage extends StatelessWidget {
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              subtitle: Text(_formatDate(tx.date)),
                               onTap: () {
                                 final cubit = context.read<TransactionCubit>();
 
@@ -154,10 +153,5 @@ class TransactionsPage extends StatelessWidget {
         child: const Icon(Icons.add),
       ),
     );
-  }
-
-  String _formatDate(DateTime date) {
-    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')} '
-        '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
   }
 }

@@ -84,43 +84,42 @@ class TransactionCubit extends Cubit<TransactionState> {
   List<TransactionSection> _buildSections(
     List<TransactionEntity> transactions,
   ) {
-    final now = DateTime.now();
-
-    final todayDate = DateTime(now.year, now.month, now.day);
-    final yesterdayDate = todayDate.subtract(const Duration(days: 1));
-
-    List<TransactionEntity> today = [];
-    List<TransactionEntity> yesterday = [];
-    List<TransactionEntity> earlier = [];
+    final Map<DateTime, List<TransactionEntity>> grouped = {};
 
     for (final tx in transactions) {
-      final txDate = DateTime(tx.date.year, tx.date.month, tx.date.day);
+      final dateKey = DateTime(tx.date.year, tx.date.month, tx.date.day);
 
-      if (txDate == todayDate) {
-        today.add(tx);
-      } else if (txDate == yesterdayDate) {
-        yesterday.add(tx);
-      } else {
-        earlier.add(tx);
-      }
+      grouped.putIfAbsent(dateKey, () => []);
+      grouped[dateKey]!.add(tx);
     }
 
-    final sections = <TransactionSection>[];
+    final sortedKeys = grouped.keys.toList()
+      ..sort((a, b) => b.compareTo(a)); // новые сверху
 
-    if (today.isNotEmpty) {
-      sections.add(TransactionSection(title: 'Today', transactions: today));
-    }
-
-    if (yesterday.isNotEmpty) {
-      sections.add(
-        TransactionSection(title: 'Yesterday', transactions: yesterday),
+    return sortedKeys.map((date) {
+      return TransactionSection(
+        title: _formatSectionDate(date),
+        transactions: grouped[date]!,
       );
-    }
+    }).toList();
+  }
 
-    if (earlier.isNotEmpty) {
-      sections.add(TransactionSection(title: 'Earlier', transactions: earlier));
-    }
+  String _formatSectionDate(DateTime date) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
 
-    return sections;
+    return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
 }
