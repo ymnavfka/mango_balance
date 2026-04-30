@@ -41,7 +41,7 @@ class TransactionsPage extends StatelessWidget {
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // 🔹 заголовок секции
+                        // заголовок секции
                         Padding(
                           padding: const EdgeInsets.all(12),
                           child: Text(
@@ -53,7 +53,7 @@ class TransactionsPage extends StatelessWidget {
                           ),
                         ),
 
-                        // 🔹 транзакции
+                        // транзакции
                         ...section.transactions.map((tx) {
                           return Dismissible(
                             key: ValueKey(tx.id),
@@ -107,7 +107,7 @@ class TransactionsPage extends StatelessWidget {
                               ),
                               title: Text(
                                 '${tx.type == TransactionType.income ? '+' : '-'}'
-                                '${tx.amount.toStringAsFixed(2)}',
+                                '${tx.amount.value.toStringAsFixed(2)}',
                                 style: TextStyle(
                                   color: tx.type == TransactionType.income
                                       ? Colors.green

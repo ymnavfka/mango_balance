@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import '../../../../core/enums/transaction_type.dart';
 import '../../domain/entities/transaction.dart';
 
+import '../../domain/value_objects/amount.dart';
+import '../../domain/value_objects/transaction_date.dart';
+
 class TransactionFormDialog extends StatefulWidget {
   const TransactionFormDialog({
     super.key,
@@ -27,11 +30,11 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
     super.initState();
 
     _amountController = TextEditingController(
-      text: widget.initial?.amount.toString() ?? '',
+      text: widget.initial?.amount.value.toString() ?? '',
     );
 
     _type = widget.initial?.type ?? TransactionType.expense;
-    _date = widget.initial?.date ?? DateTime.now();
+    _date = widget.initial?.date.value ?? DateTime.now();
   }
 
   @override
@@ -69,15 +72,6 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
       pickedTime.minute,
     );
 
-    if (newDate.isAfter(now)) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Date cannot be in the future')),
-      );
-      return;
-    }
-
     setState(() {
       _date = newDate;
     });
@@ -89,18 +83,23 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
   }
 
   void _submit() {
-    final amount = double.tryParse(_amountController.text);
-    if (amount == null) return;
+    final amount = double.tryParse(_amountController.text) ?? 0.0;
 
-    final tx = TransactionEntity(
-      id: widget.initial?.id ?? 0,
-      type: _type,
-      amount: amount,
-      date: _date,
-    );
-
-    widget.onSubmit(tx);
-    Navigator.pop(context);
+    try {
+      widget.onSubmit(
+        TransactionEntity(
+          id: widget.initial?.id ?? 0,
+          type: _type,
+          amount: Amount(amount),
+          date: TransactionDate(_date),
+        ),
+      );
+      Navigator.pop(context);
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
+    }
   }
 
   @override

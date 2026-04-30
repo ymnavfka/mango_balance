@@ -1,4 +1,6 @@
 import '../../../../core/enums/transaction_type.dart';
+import '../value_objects/amount.dart';
+import '../value_objects/transaction_date.dart';
 
 class TransactionEntity {
   TransactionEntity({
@@ -9,14 +11,14 @@ class TransactionEntity {
   });
   final int id;
   final TransactionType type;
-  final double amount;
-  final DateTime date;
+  final Amount amount;
+  final TransactionDate date;
 
   TransactionEntity copyWith({
     int? id,
     TransactionType? type,
-    double? amount,
-    DateTime? date,
+    Amount? amount,
+    TransactionDate? date,
   }) {
     return TransactionEntity(
       id: id ?? this.id,

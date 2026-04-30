@@ -2,6 +2,8 @@ import '../../../../core/database/app_database.dart';
 import '../../../../core/enums/transaction_type.dart';
 import '../../domain/entities/transaction.dart';
 import '../../domain/repositories/transaction_repository.dart';
+import '../../domain/value_objects/amount.dart';
+import '../../domain/value_objects/transaction_date.dart';
 
 class TransactionRepositoryImpl implements TransactionRepository {
   TransactionRepositoryImpl(this.db);
@@ -20,8 +22,8 @@ class TransactionRepositoryImpl implements TransactionRepository {
     await db.insertTransaction(
       TransactionsCompanion.insert(
         type: _mapType(tx.type),
-        amount: tx.amount,
-        date: tx.date,
+        amount: tx.amount.value,
+        date: tx.date.value,
       ),
     );
   }
@@ -32,8 +34,8 @@ class TransactionRepositoryImpl implements TransactionRepository {
       Transaction(
         id: tx.id,
         type: _mapType(tx.type),
-        amount: tx.amount,
-        date: tx.date,
+        amount: tx.amount.value,
+        date: tx.date.value,
       ),
     );
   }
@@ -49,8 +51,8 @@ class TransactionRepositoryImpl implements TransactionRepository {
       type: dbTx.type == 'income'
           ? TransactionType.income
           : TransactionType.expense,
-      amount: dbTx.amount,
-      date: dbTx.date,
+      amount: Amount(dbTx.amount),
+      date: TransactionDate(dbTx.date),
     );
   }
 

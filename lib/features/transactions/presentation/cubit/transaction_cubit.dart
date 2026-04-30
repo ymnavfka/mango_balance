@@ -55,9 +55,9 @@ class TransactionCubit extends Cubit<TransactionState> {
 
     for (final tx in transactions) {
       if (tx.type == TransactionType.income) {
-        total += tx.amount;
+        total += tx.amount.value;
       } else {
-        total -= tx.amount;
+        total -= tx.amount.value;
       }
     }
 
@@ -70,7 +70,8 @@ class TransactionCubit extends Cubit<TransactionState> {
     final Map<DateTime, List<TransactionEntity>> grouped = {};
 
     for (final tx in transactions) {
-      final dateKey = DateTime(tx.date.year, tx.date.month, tx.date.day);
+      final d = tx.date.value;
+      final dateKey = DateTime(d.year, d.month, d.day);
 
       grouped.putIfAbsent(dateKey, () => []);
       grouped[dateKey]!.add(tx);

@@ -7,7 +7,7 @@ class AddTransaction {
   final TransactionRepository repository;
 
   Future<void> call(TransactionEntity tx) async {
-    if (tx.amount <= 0) {
+    if (tx.amount.value <= 0) {
       throw Exception('Amount must be greater than zero');
     }
 
