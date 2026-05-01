@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-enum AppRoute { transactions, categories }
+enum AppRoute { transactions, categories, accounts }
 
 extension AppRouteX on AppRoute {
   String get routeName {
@@ -9,6 +9,8 @@ extension AppRouteX on AppRoute {
         return '/';
       case AppRoute.categories:
         return '/categories';
+      case AppRoute.accounts:
+        return '/accounts';
     }
   }
 
@@ -18,6 +20,8 @@ extension AppRouteX on AppRoute {
         return 'Transactions';
       case AppRoute.categories:
         return 'Categories';
+      case AppRoute.accounts:
+        return 'Accounts';
     }
   }
 
@@ -27,6 +31,8 @@ extension AppRouteX on AppRoute {
         return Icons.list;
       case AppRoute.categories:
         return Icons.category;
+      case AppRoute.accounts:
+        return Icons.account_balance_wallet;
     }
   }
 }

@@ -7,6 +7,7 @@ import '../../../features/accounts/domain/usecases/add_account.dart';
 import '../../../features/accounts/domain/usecases/delete_account.dart';
 import '../../../features/accounts/domain/usecases/update_account.dart';
 import '../../../features/accounts/domain/usecases/watch_accounts.dart';
+import '../../../features/accounts/presentation/cubit/account_cubit.dart';
 import '../../../features/categories/data/repositories/category_repository_impl.dart';
 import '../../../features/categories/domain/repositories/category_repository.dart';
 import '../../../features/categories/domain/usecases/add_category.dart';
@@ -64,6 +65,15 @@ Future<void> setupDependencies() async {
       updateTransactionUseCase: getIt(),
       deleteTransactionUseCase: getIt(),
       watchTransactionsUseCase: getIt(),
+    ),
+  );
+
+  getIt.registerFactory(
+    () => AccountCubit(
+      watchAccountsUseCase: getIt(),
+      addAccountUseCase: getIt(),
+      updateAccountUseCase: getIt(),
+      deleteAccountUseCase: getIt(),
     ),
   );
 
