@@ -8,23 +8,32 @@ class TransactionEntity {
     required this.type,
     required this.amount,
     required this.date,
+    required this.categoryId,
+    required this.categoryName,
   });
+
   final int id;
   final TransactionType type;
   final Amount amount;
   final TransactionDate date;
+  final int categoryId;
+  final String categoryName;
 
   TransactionEntity copyWith({
     int? id,
     TransactionType? type,
     Amount? amount,
     TransactionDate? date,
+    int? categoryId,
+    String? categoryName,
   }) {
     return TransactionEntity(
       id: id ?? this.id,
       type: type ?? this.type,
       amount: amount ?? this.amount,
       date: date ?? this.date,
+      categoryId: categoryId ?? this.categoryId,
+      categoryName: categoryName ?? this.categoryName,
     );
   }
 }

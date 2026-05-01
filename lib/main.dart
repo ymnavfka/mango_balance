@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'core/di/injector.dart';
+import 'features/categories/presentation/cubit/category_cubit.dart';
 import 'features/transactions/presentation/cubit/transaction_cubit.dart';
 import 'features/transactions/presentation/pages/transactions_page.dart';
 
@@ -20,8 +21,13 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: BlocProvider(
-        create: (_) => getIt<TransactionCubit>(),
+      home: MultiBlocProvider(
+        providers: [
+          BlocProvider<TransactionCubit>(
+            create: (_) => getIt<TransactionCubit>(),
+          ),
+          BlocProvider<CategoryCubit>(create: (_) => getIt<CategoryCubit>()),
+        ],
         child: const TransactionsPage(),
       ),
     );

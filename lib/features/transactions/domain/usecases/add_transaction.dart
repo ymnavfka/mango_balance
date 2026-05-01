@@ -11,6 +11,10 @@ class AddTransaction {
       throw Exception('Amount must be greater than zero');
     }
 
+    if (tx.categoryId <= 0) {
+      throw Exception('Category is required');
+    }
+
     await repository.addTransaction(tx);
   }
 }

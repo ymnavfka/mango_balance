@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/di/injector.dart';
 import '../../../../core/enums/transaction_type.dart';
+import '../../../categories/domain/entities/category.dart';
+import '../../../categories/domain/usecases/watch_categories.dart';
 import '../../domain/entities/transaction.dart';
-
 import '../../domain/value_objects/amount.dart';
 import '../../domain/value_objects/transaction_date.dart';
 
@@ -24,6 +26,8 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
   late TextEditingController _amountController;
   late TransactionType _type;
   late DateTime _date;
+  int? _categoryId;
+  String? _categoryName;
 
   @override
   void initState() {
@@ -35,6 +39,8 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
 
     _type = widget.initial?.type ?? TransactionType.expense;
     _date = widget.initial?.date.value ?? DateTime.now();
+    _categoryId = widget.initial?.categoryId;
+    _categoryName = widget.initial?.categoryName;
   }
 
   @override
@@ -85,6 +91,13 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
   void _submit() {
     final amount = double.tryParse(_amountController.text) ?? 0.0;
 
+    if (_categoryId == null || _categoryName == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please select a category')));
+      return;
+    }
+
     try {
       widget.onSubmit(
         TransactionEntity(
@@ -92,6 +105,8 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
           type: _type,
           amount: Amount(amount),
           date: TransactionDate(_date),
+          categoryId: _categoryId!,
+          categoryName: _categoryName!,
         ),
       );
       Navigator.pop(context);
@@ -104,48 +119,138 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final watchCategories = getIt<WatchCategories>();
+
     return AlertDialog(
-      title: Text(widget.initial == null ? 'Add' : 'Edit'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          DropdownButton<TransactionType>(
-            value: _type,
-            items: const [
-              DropdownMenuItem(
-                value: TransactionType.income,
-                child: Text('Income'),
-              ),
-              DropdownMenuItem(
-                value: TransactionType.expense,
-                child: Text('Expense'),
-              ),
-            ],
-            onChanged: (value) {
-              if (value != null) {
-                setState(() => _type = value);
-              }
-            },
-          ),
+      title: Text(
+        widget.initial == null ? 'Add transaction' : 'Edit transaction',
+      ),
+      content: StreamBuilder<List<CategoryEntity>>(
+        stream: watchCategories(),
+        builder: (context, snapshot) {
+          final categories = snapshot.data ?? [];
+          final filteredCategories = categories
+              .where((category) => category.type == _type)
+              .toList();
 
-          TextField(
-            controller: _amountController,
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(labelText: 'Amount'),
-          ),
+          final CategoryEntity? selectedCategory = filteredCategories.isNotEmpty
+              ? filteredCategories.firstWhere(
+                  (category) => category.id == _categoryId,
+                  orElse: () => filteredCategories.first,
+                )
+              : null;
 
-          const SizedBox(height: 12),
+          if ((_categoryId == null ||
+                  !filteredCategories.any(
+                    (category) => category.id == _categoryId,
+                  )) &&
+              selectedCategory != null) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!mounted) return;
+              setState(() {
+                _categoryId = selectedCategory.id;
+                _categoryName = selectedCategory.name;
+              });
+            });
+          }
 
-          Row(
-            children: [
-              Expanded(child: Text(_formatDate(_date))),
-              TextButton(
-                onPressed: _pickDateTime,
-                child: const Text('Select date'),
-              ),
-            ],
-          ),
-        ],
+          return SizedBox(
+            width: MediaQuery.of(context).size.width * 0.8,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                DropdownButton<TransactionType>(
+                  isExpanded: true,
+                  value: _type,
+                  items: const [
+                    DropdownMenuItem(
+                      value: TransactionType.income,
+                      child: Text('Income'),
+                    ),
+                    DropdownMenuItem(
+                      value: TransactionType.expense,
+                      child: Text('Expense'),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      final newCategories = categories
+                          .where((category) => category.type == value)
+                          .toList();
+                      setState(() {
+                        _type = value;
+                        if (newCategories.isNotEmpty) {
+                          _categoryId = newCategories.first.id;
+                          _categoryName = newCategories.first.name;
+                        } else {
+                          _categoryId = null;
+                          _categoryName = null;
+                        }
+                      });
+                    }
+                  },
+                ),
+                const SizedBox(height: 12),
+                if (snapshot.connectionState == ConnectionState.waiting)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    child: CircularProgressIndicator(),
+                  ),
+                if (snapshot.hasError)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    child: Text('Failed to load categories'),
+                  ),
+                if (snapshot.hasData)
+                  DropdownButton<int>(
+                    value: selectedCategory?.id,
+                    isExpanded: true,
+                    items: filteredCategories.map((category) {
+                      return DropdownMenuItem(
+                        value: category.id,
+                        child: Text(category.name),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      if (value == null) return;
+
+                      final selected = filteredCategories.firstWhere(
+                        (category) => category.id == value,
+                        orElse: () => filteredCategories.first,
+                      );
+
+                      setState(() {
+                        _categoryId = selected.id;
+                        _categoryName = selected.name;
+                      });
+                    },
+                  ),
+                if (filteredCategories.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    child: Text('No categories available for this type'),
+                  ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _amountController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: 'Amount'),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(child: Text(_formatDate(_date))),
+                    TextButton(
+                      onPressed: _pickDateTime,
+                      child: const Text('Select date'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
       ),
       actions: [
         TextButton(

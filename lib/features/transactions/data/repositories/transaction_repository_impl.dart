@@ -1,3 +1,5 @@
+import 'package:drift/drift.dart';
+
 import '../../../../core/database/app_database.dart';
 import '../../../../core/enums/transaction_type.dart';
 import '../../domain/entities/transaction.dart';
@@ -12,8 +14,25 @@ class TransactionRepositoryImpl implements TransactionRepository {
 
   @override
   Stream<List<TransactionEntity>> watchTransactions() {
-    return db.watchTransactions().map(
-      (list) => list.map(_mapToEntity).toList(),
+    final query =
+        db.select(db.transactions).join([
+          leftOuterJoin(
+            db.categories,
+            db.categories.id.equalsExp(db.transactions.categoryId),
+          ),
+        ])..orderBy([
+          OrderingTerm(
+            expression: db.transactions.date,
+            mode: OrderingMode.desc,
+          ),
+        ]);
+
+    return query.watch().map(
+      (rows) => rows.map((row) {
+        final transaction = row.readTable(db.transactions);
+        final category = row.readTable(db.categories);
+        return _mapToEntity(transaction, category);
+      }).toList(),
     );
   }
 
@@ -24,7 +43,7 @@ class TransactionRepositoryImpl implements TransactionRepository {
         type: _mapType(tx.type),
         amount: tx.amount.value,
         date: tx.date.value,
-      ),
+      ).copyWith(categoryId: Value(tx.categoryId)),
     );
   }
 
@@ -36,6 +55,7 @@ class TransactionRepositoryImpl implements TransactionRepository {
         type: _mapType(tx.type),
         amount: tx.amount.value,
         date: tx.date.value,
+        categoryId: tx.categoryId,
       ),
     );
   }
@@ -45,7 +65,7 @@ class TransactionRepositoryImpl implements TransactionRepository {
     await db.deleteTransaction(id);
   }
 
-  TransactionEntity _mapToEntity(Transaction dbTx) {
+  TransactionEntity _mapToEntity(Transaction dbTx, Category? category) {
     return TransactionEntity(
       id: dbTx.id,
       type: dbTx.type == 'income'
@@ -53,6 +73,8 @@ class TransactionRepositoryImpl implements TransactionRepository {
           : TransactionType.expense,
       amount: Amount(dbTx.amount),
       date: TransactionDate(dbTx.date),
+      categoryId: dbTx.categoryId,
+      categoryName: category?.name ?? 'Other',
     );
   }
 

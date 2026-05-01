@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/enums/transaction_type.dart';
+import '../../../categories/presentation/pages/categories_page.dart';
 import '../cubit/transaction_cubit.dart';
 import '../cubit/transaction_state.dart';
 import '../widgets/transaction_form_dialog.dart';
@@ -12,7 +13,19 @@ class TransactionsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Transactions')),
+      appBar: AppBar(
+        title: const Text('Transactions'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.category),
+            onPressed: () {
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const CategoriesPage()));
+            },
+          ),
+        ],
+      ),
       body: BlocBuilder<TransactionCubit, TransactionState>(
         builder: (context, state) {
           final cubit = context.read<TransactionCubit>();
@@ -115,6 +128,7 @@ class TransactionsPage extends StatelessWidget {
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
+                              subtitle: Text(tx.categoryName),
                               onTap: () {
                                 final cubit = context.read<TransactionCubit>();
 
