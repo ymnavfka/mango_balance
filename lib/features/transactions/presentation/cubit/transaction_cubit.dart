@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/entities/transaction.dart';
 import 'transaction_state.dart';
@@ -22,12 +24,21 @@ class TransactionCubit extends Cubit<TransactionState> {
   final DeleteTransaction deleteTransactionUseCase;
   final WatchTransactions watchTransactionsUseCase;
 
+  late final StreamSubscription<List<TransactionEntity>>
+  _transactionsSubscription;
+
   void _init() {
-    watchTransactionsUseCase().listen((list) {
+    _transactionsSubscription = watchTransactionsUseCase().listen((list) {
       final sections = _buildSections(list);
 
       emit(state.copyWith(transactions: list, sections: sections));
     });
+  }
+
+  @override
+  Future<void> close() async {
+    await _transactionsSubscription.cancel();
+    return super.close();
   }
 
   // CREATE

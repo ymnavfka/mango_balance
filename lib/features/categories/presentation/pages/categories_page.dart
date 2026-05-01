@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../shared/widgets/app_drawer.dart';
 import '../cubit/category_cubit.dart';
 import '../cubit/category_state.dart';
 import '../widgets/category_form_dialog.dart';
@@ -11,6 +12,7 @@ class CategoriesPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: const AppDrawer(currentRoute: AppRoute.categories),
       appBar: AppBar(title: const Text('Categories')),
       body: BlocBuilder<CategoryCubit, CategoryState>(
         builder: (context, state) {

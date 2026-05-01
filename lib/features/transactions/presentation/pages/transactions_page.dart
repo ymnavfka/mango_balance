@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/enums/transaction_type.dart';
-import '../../../categories/presentation/pages/categories_page.dart';
+import '../../../shared/widgets/app_drawer.dart';
 import '../cubit/transaction_cubit.dart';
 import '../cubit/transaction_state.dart';
 import '../widgets/transaction_form_dialog.dart';
@@ -13,15 +13,14 @@ class TransactionsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: const AppDrawer(currentRoute: AppRoute.transactions),
       appBar: AppBar(
         title: const Text('Transactions'),
         actions: [
           IconButton(
             icon: const Icon(Icons.category),
             onPressed: () {
-              Navigator.of(
-                context,
-              ).push(MaterialPageRoute(builder: (_) => const CategoriesPage()));
+              Navigator.of(context).pushReplacementNamed('/categories');
             },
           ),
         ],

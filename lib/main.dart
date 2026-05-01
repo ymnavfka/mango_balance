@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'core/di/injector.dart';
 import 'features/categories/presentation/cubit/category_cubit.dart';
+import 'features/categories/presentation/pages/categories_page.dart';
 import 'features/transactions/presentation/cubit/transaction_cubit.dart';
 import 'features/transactions/presentation/pages/transactions_page.dart';
 
@@ -19,16 +20,20 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: MultiBlocProvider(
-        providers: [
-          BlocProvider<TransactionCubit>(
-            create: (_) => getIt<TransactionCubit>(),
-          ),
-          BlocProvider<CategoryCubit>(create: (_) => getIt<CategoryCubit>()),
-        ],
-        child: const TransactionsPage(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<TransactionCubit>(
+          create: (_) => getIt<TransactionCubit>(),
+        ),
+        BlocProvider<CategoryCubit>(create: (_) => getIt<CategoryCubit>()),
+      ],
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        initialRoute: '/',
+        routes: {
+          '/': (_) => const TransactionsPage(),
+          '/categories': (_) => const CategoriesPage(),
+        },
       ),
     );
   }

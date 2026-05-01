@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/entities/category.dart';
 import '../../domain/usecases/add_category.dart';
@@ -21,10 +23,18 @@ class CategoryCubit extends Cubit<CategoryState> {
   final UpdateCategory updateCategoryUseCase;
   final DeleteCategory deleteCategoryUseCase;
 
+  late final StreamSubscription<List<CategoryEntity>> _categoriesSubscription;
+
   void _init() {
-    watchCategoriesUseCase().listen((categories) {
+    _categoriesSubscription = watchCategoriesUseCase().listen((categories) {
       emit(state.copyWith(categories: categories));
     });
+  }
+
+  @override
+  Future<void> close() async {
+    await _categoriesSubscription.cancel();
+    return super.close();
   }
 
   Future<void> addCategory(CategoryEntity category) async {
