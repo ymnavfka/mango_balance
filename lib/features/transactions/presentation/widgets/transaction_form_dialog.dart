@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/di/injector.dart';
 import '../../../../core/enums/transaction_type.dart';
+import '../../../accounts/domain/entities/account.dart';
+import '../../../accounts/domain/usecases/watch_accounts.dart';
 import '../../../categories/domain/entities/category.dart';
 import '../../../categories/domain/usecases/watch_categories.dart';
 import '../../domain/entities/transaction.dart';
@@ -28,6 +30,8 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
   late DateTime _date;
   int? _categoryId;
   String? _categoryName;
+  int? _accountId;
+  String? _accountName;
 
   @override
   void initState() {
@@ -41,6 +45,8 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
     _date = widget.initial?.date.value ?? DateTime.now();
     _categoryId = widget.initial?.categoryId;
     _categoryName = widget.initial?.categoryName;
+    _accountId = widget.initial?.accountId;
+    _accountName = widget.initial?.accountName;
   }
 
   @override
@@ -98,6 +104,13 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
       return;
     }
 
+    if (_accountId == null || _accountName == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please select an account')));
+      return;
+    }
+
     try {
       widget.onSubmit(
         TransactionEntity(
@@ -107,6 +120,8 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
           date: TransactionDate(_date),
           categoryId: _categoryId!,
           categoryName: _categoryName!,
+          accountId: _accountId!,
+          accountName: _accountName!,
         ),
       );
       Navigator.pop(context);
@@ -154,101 +169,167 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
             });
           }
 
-          return SizedBox(
-            width: MediaQuery.of(context).size.width * 0.8,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                DropdownButton<TransactionType>(
-                  isExpanded: true,
-                  value: _type,
-                  items: const [
-                    DropdownMenuItem(
-                      value: TransactionType.income,
-                      child: Text('Income'),
-                    ),
-                    DropdownMenuItem(
-                      value: TransactionType.expense,
-                      child: Text('Expense'),
-                    ),
-                  ],
-                  onChanged: (value) {
-                    if (value != null) {
-                      final newCategories = categories
-                          .where((category) => category.type == value)
-                          .toList();
-                      setState(() {
-                        _type = value;
-                        if (newCategories.isNotEmpty) {
-                          _categoryId = newCategories.first.id;
-                          _categoryName = newCategories.first.name;
-                        } else {
-                          _categoryId = null;
-                          _categoryName = null;
-                        }
-                      });
-                    }
-                  },
-                ),
-                const SizedBox(height: 12),
-                if (snapshot.connectionState == ConnectionState.waiting)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                    child: CircularProgressIndicator(),
-                  ),
-                if (snapshot.hasError)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                    child: Text('Failed to load categories'),
-                  ),
-                if (snapshot.hasData)
-                  DropdownButton<int>(
-                    value: selectedCategory?.id,
-                    isExpanded: true,
-                    items: filteredCategories.map((category) {
-                      return DropdownMenuItem(
-                        value: category.id,
-                        child: Text(category.name),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      if (value == null) return;
+          return StreamBuilder<List<AccountEntity>>(
+            stream: getIt<WatchAccounts>()(),
+            builder: (context, accountSnapshot) {
+              final accounts = accountSnapshot.data ?? [];
+              final AccountEntity? selectedAccount = accounts.isNotEmpty
+                  ? accounts.firstWhere(
+                      (account) => account.id == _accountId,
+                      orElse: () => accounts.first,
+                    )
+                  : null;
 
-                      final selected = filteredCategories.firstWhere(
-                        (category) => category.id == value,
-                        orElse: () => filteredCategories.first,
-                      );
+              if ((_accountId == null ||
+                      !accounts.any((account) => account.id == _accountId)) &&
+                  selectedAccount != null) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (!mounted) return;
+                  setState(() {
+                    _accountId = selectedAccount.id;
+                    _accountName = selectedAccount.name;
+                  });
+                });
+              }
 
-                      setState(() {
-                        _categoryId = selected.id;
-                        _categoryName = selected.name;
-                      });
-                    },
-                  ),
-                if (filteredCategories.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                    child: Text('No categories available for this type'),
-                  ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _amountController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Amount'),
-                ),
-                const SizedBox(height: 12),
-                Row(
+              return SizedBox(
+                width: MediaQuery.of(context).size.width * 0.8,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Expanded(child: Text(_formatDate(_date))),
-                    TextButton(
-                      onPressed: _pickDateTime,
-                      child: const Text('Select date'),
+                    DropdownButton<TransactionType>(
+                      isExpanded: true,
+                      value: _type,
+                      items: const [
+                        DropdownMenuItem(
+                          value: TransactionType.income,
+                          child: Text('Income'),
+                        ),
+                        DropdownMenuItem(
+                          value: TransactionType.expense,
+                          child: Text('Expense'),
+                        ),
+                      ],
+                      onChanged: (value) {
+                        if (value != null) {
+                          final newCategories = categories
+                              .where((category) => category.type == value)
+                              .toList();
+                          setState(() {
+                            _type = value;
+                            if (newCategories.isNotEmpty) {
+                              _categoryId = newCategories.first.id;
+                              _categoryName = newCategories.first.name;
+                            } else {
+                              _categoryId = null;
+                              _categoryName = null;
+                            }
+                          });
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    if (snapshot.connectionState == ConnectionState.waiting)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        child: CircularProgressIndicator(),
+                      ),
+                    if (snapshot.hasError)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        child: Text('Failed to load categories'),
+                      ),
+                    if (snapshot.hasData)
+                      DropdownButton<int>(
+                        value: selectedCategory?.id,
+                        isExpanded: true,
+                        items: filteredCategories.map((category) {
+                          return DropdownMenuItem(
+                            value: category.id,
+                            child: Text(category.name),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          if (value == null) return;
+
+                          final selected = filteredCategories.firstWhere(
+                            (category) => category.id == value,
+                            orElse: () => filteredCategories.first,
+                          );
+
+                          setState(() {
+                            _categoryId = selected.id;
+                            _categoryName = selected.name;
+                          });
+                        },
+                      ),
+                    if (filteredCategories.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        child: Text('No categories available for this type'),
+                      ),
+                    const SizedBox(height: 12),
+                    if (accountSnapshot.connectionState ==
+                        ConnectionState.waiting)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        child: CircularProgressIndicator(),
+                      ),
+                    if (accountSnapshot.hasError)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        child: Text('Failed to load accounts'),
+                      ),
+                    if (accountSnapshot.hasData)
+                      DropdownButton<int>(
+                        value: selectedAccount?.id,
+                        isExpanded: true,
+                        items: accounts.map((account) {
+                          return DropdownMenuItem(
+                            value: account.id,
+                            child: Text(account.name),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          if (value == null) return;
+
+                          final selected = accounts.firstWhere(
+                            (account) => account.id == value,
+                            orElse: () => accounts.first,
+                          );
+
+                          setState(() {
+                            _accountId = selected.id;
+                            _accountName = selected.name;
+                          });
+                        },
+                      ),
+                    if (accounts.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        child: Text('No accounts available'),
+                      ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _amountController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(labelText: 'Amount'),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(child: Text(_formatDate(_date))),
+                        TextButton(
+                          onPressed: _pickDateTime,
+                          child: const Text('Select date'),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
+              );
+            },
           );
         },
       ),

@@ -14,6 +14,12 @@ class Categories extends Table {
   BoolColumn get isFallback => boolean().withDefault(const Constant(false))();
 }
 
+class Accounts extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text()();
+  BoolColumn get isFallback => boolean().withDefault(const Constant(false))();
+}
+
 class Transactions extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get type => text()();
@@ -22,29 +28,40 @@ class Transactions extends Table {
   IntColumn get categoryId => integer().customConstraint(
     'REFERENCES categories(id) NOT NULL DEFAULT 1',
   )();
+  IntColumn get accountId => integer().customConstraint(
+    'REFERENCES accounts(id) NOT NULL DEFAULT 1',
+  )();
 }
 
-@DriftDatabase(tables: [Transactions, Categories])
+@DriftDatabase(tables: [Transactions, Categories, Accounts])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (m) async {
       await m.createAll();
       await _insertDefaultCategories();
+      await _insertDefaultAccounts();
     },
     onUpgrade: (m, from, to) async {
-      if (from == 1) {
+      if (from < 2) {
         await m.createTable(categories);
         await _insertDefaultCategories();
         await m.addColumn(transactions, transactions.categoryId);
         await customStatement(
           'UPDATE transactions SET category_id = CASE WHEN type = \'income\' THEN 1 ELSE 2 END',
         );
+      }
+
+      if (from < 3) {
+        await m.createTable(accounts);
+        await _insertDefaultAccounts();
+        await m.addColumn(transactions, transactions.accountId);
+        await customStatement('UPDATE transactions SET account_id = 1');
       }
     },
   );
@@ -82,6 +99,18 @@ class AppDatabase extends _$AppDatabase {
           type: 'income',
         ),
         CategoriesCompanion.insert(name: 'Пассивный доход', type: 'income'),
+      ]);
+    });
+  }
+
+  Future<void> _insertDefaultAccounts() async {
+    await batch((batch) {
+      batch.insertAll(accounts, [
+        AccountsCompanion.insert(
+          name: 'Дебетовая карта',
+          isFallback: const Value(true),
+        ),
+        AccountsCompanion.insert(name: 'Кредитная карта'),
       ]);
     });
   }
@@ -126,6 +155,44 @@ class AppDatabase extends _$AppDatabase {
     return (update(transactions)
           ..where((t) => t.categoryId.equals(oldCategoryId)))
         .write(TransactionsCompanion(categoryId: Value(fallbackCategoryId)));
+  }
+
+  // Accounts
+  Future<int> insertAccount(AccountsCompanion entry) {
+    return into(accounts).insert(entry);
+  }
+
+  Stream<List<Account>> watchAccounts() {
+    return (select(
+      accounts,
+    )..orderBy([(a) => OrderingTerm(expression: a.name)])).watch();
+  }
+
+  Future<void> updateAccount(Account account) {
+    return update(accounts).replace(account);
+  }
+
+  Future<void> deleteAccount(int id) {
+    return (delete(accounts)..where((a) => a.id.equals(id))).go();
+  }
+
+  Future<Account?> accountById(int id) {
+    return (select(accounts)..where((a) => a.id.equals(id))).getSingleOrNull();
+  }
+
+  Future<Account?> fallbackAccount() {
+    return (select(
+      accounts,
+    )..where((a) => a.isFallback.equals(true))).getSingleOrNull();
+  }
+
+  Future<void> replaceAccountForTransactions(
+    int oldAccountId,
+    int fallbackAccountId,
+  ) {
+    return (update(transactions)
+          ..where((t) => t.accountId.equals(oldAccountId)))
+        .write(TransactionsCompanion(accountId: Value(fallbackAccountId)));
   }
 
   // CREATE

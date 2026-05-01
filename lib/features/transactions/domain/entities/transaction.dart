@@ -10,6 +10,8 @@ class TransactionEntity {
     required this.date,
     required this.categoryId,
     required this.categoryName,
+    required this.accountId,
+    required this.accountName,
   });
 
   final int id;
@@ -18,6 +20,8 @@ class TransactionEntity {
   final TransactionDate date;
   final int categoryId;
   final String categoryName;
+  final int accountId;
+  final String accountName;
 
   TransactionEntity copyWith({
     int? id,
@@ -26,6 +30,8 @@ class TransactionEntity {
     TransactionDate? date,
     int? categoryId,
     String? categoryName,
+    int? accountId,
+    String? accountName,
   }) {
     return TransactionEntity(
       id: id ?? this.id,
@@ -34,6 +40,8 @@ class TransactionEntity {
       date: date ?? this.date,
       categoryId: categoryId ?? this.categoryId,
       categoryName: categoryName ?? this.categoryName,
+      accountId: accountId ?? this.accountId,
+      accountName: accountName ?? this.accountName,
     );
   }
 }

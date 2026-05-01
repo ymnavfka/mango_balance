@@ -1,6 +1,12 @@
 import 'package:get_it/get_it.dart';
 
 import '../database/app_database.dart';
+import '../../../features/accounts/data/repositories/account_repository_impl.dart';
+import '../../../features/accounts/domain/repositories/account_repository.dart';
+import '../../../features/accounts/domain/usecases/add_account.dart';
+import '../../../features/accounts/domain/usecases/delete_account.dart';
+import '../../../features/accounts/domain/usecases/update_account.dart';
+import '../../../features/accounts/domain/usecases/watch_accounts.dart';
 import '../../../features/categories/data/repositories/category_repository_impl.dart';
 import '../../../features/categories/domain/repositories/category_repository.dart';
 import '../../../features/categories/domain/usecases/add_category.dart';
@@ -26,6 +32,9 @@ Future<void> setupDependencies() async {
   getIt.registerLazySingleton<TransactionRepository>(
     () => TransactionRepositoryImpl(getIt()),
   );
+  getIt.registerLazySingleton<AccountRepository>(
+    () => AccountRepositoryImpl(getIt()),
+  );
   getIt.registerLazySingleton<CategoryRepository>(
     () => CategoryRepositoryImpl(getIt()),
   );
@@ -35,6 +44,12 @@ Future<void> setupDependencies() async {
   getIt.registerLazySingleton(() => UpdateTransaction(getIt()));
   getIt.registerLazySingleton(() => DeleteTransaction(getIt()));
   getIt.registerLazySingleton(() => WatchTransactions(getIt()));
+
+  // Account UseCases
+  getIt.registerLazySingleton(() => AddAccount(getIt()));
+  getIt.registerLazySingleton(() => UpdateAccount(getIt()));
+  getIt.registerLazySingleton(() => DeleteAccount(getIt()));
+  getIt.registerLazySingleton(() => WatchAccounts(getIt()));
 
   // Category UseCases
   getIt.registerLazySingleton(() => AddCategory(getIt()));

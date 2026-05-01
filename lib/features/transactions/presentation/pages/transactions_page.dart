@@ -127,7 +127,9 @@ class TransactionsPage extends StatelessWidget {
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              subtitle: Text(tx.categoryName),
+                              subtitle: Text(
+                                '${tx.categoryName} · ${tx.accountName}',
+                              ),
                               onTap: () {
                                 final cubit = context.read<TransactionCubit>();
 

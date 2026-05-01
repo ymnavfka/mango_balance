@@ -20,6 +20,10 @@ class TransactionRepositoryImpl implements TransactionRepository {
             db.categories,
             db.categories.id.equalsExp(db.transactions.categoryId),
           ),
+          leftOuterJoin(
+            db.accounts,
+            db.accounts.id.equalsExp(db.transactions.accountId),
+          ),
         ])..orderBy([
           OrderingTerm(
             expression: db.transactions.date,
@@ -31,7 +35,8 @@ class TransactionRepositoryImpl implements TransactionRepository {
       (rows) => rows.map((row) {
         final transaction = row.readTable(db.transactions);
         final category = row.readTable(db.categories);
-        return _mapToEntity(transaction, category);
+        final account = row.readTable(db.accounts);
+        return _mapToEntity(transaction, category, account);
       }).toList(),
     );
   }
@@ -43,7 +48,10 @@ class TransactionRepositoryImpl implements TransactionRepository {
         type: _mapType(tx.type),
         amount: tx.amount.value,
         date: tx.date.value,
-      ).copyWith(categoryId: Value(tx.categoryId)),
+      ).copyWith(
+        categoryId: Value(tx.categoryId),
+        accountId: Value(tx.accountId),
+      ),
     );
   }
 
@@ -56,6 +64,7 @@ class TransactionRepositoryImpl implements TransactionRepository {
         amount: tx.amount.value,
         date: tx.date.value,
         categoryId: tx.categoryId,
+        accountId: tx.accountId,
       ),
     );
   }
@@ -65,7 +74,11 @@ class TransactionRepositoryImpl implements TransactionRepository {
     await db.deleteTransaction(id);
   }
 
-  TransactionEntity _mapToEntity(Transaction dbTx, Category? category) {
+  TransactionEntity _mapToEntity(
+    Transaction dbTx,
+    Category? category,
+    Account? account,
+  ) {
     return TransactionEntity(
       id: dbTx.id,
       type: dbTx.type == 'income'
@@ -75,6 +88,8 @@ class TransactionRepositoryImpl implements TransactionRepository {
       date: TransactionDate(dbTx.date),
       categoryId: dbTx.categoryId,
       categoryName: category?.name ?? 'Other',
+      accountId: dbTx.accountId,
+      accountName: account?.name ?? 'Дебетовая карта',
     );
   }
 
