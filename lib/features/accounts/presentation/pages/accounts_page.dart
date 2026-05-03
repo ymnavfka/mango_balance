@@ -20,50 +20,93 @@ class AccountsPage extends StatelessWidget {
             return const Center(child: Text('No accounts yet'));
           }
 
-          return ListView.builder(
-            itemCount: state.accounts.length,
-            itemBuilder: (context, index) {
-              final account = state.accounts[index];
-              return ListTile(
-                title: Text(account.name),
-                subtitle: Text(
-                  account.isFallback ? 'Default account' : 'Custom',
-                ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
+          return Column(
+            children: [
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit),
-                      onPressed: () {
-                        showDialog(
-                          context: context,
-                          builder: (_) => AccountFormDialog(
-                            initial: account,
-                            onSubmit: (updated) {
-                              context.read<AccountCubit>().updateAccount(
-                                updated,
-                              );
-                            },
-                          ),
-                        );
-                      },
-                    ),
-                    IconButton(
-                      icon: Icon(
-                        account.isFallback ? Icons.lock : Icons.delete,
+                    const Expanded(
+                      child: Text(
+                        'Total balance',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                      onPressed: account.isFallback
-                          ? null
-                          : () {
-                              context.read<AccountCubit>().deleteAccount(
-                                account.id,
-                              );
-                            },
+                    ),
+                    Text(
+                      state.totalBalance.toStringAsFixed(2),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: state.totalBalance < 0
+                            ? Colors.red
+                            : Colors.green,
+                      ),
                     ),
                   ],
                 ),
-              );
-            },
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: state.accounts.length,
+                  itemBuilder: (context, index) {
+                    final account = state.accounts[index];
+                    final balance = state.balances[account.id] ?? 0;
+                    return ListTile(
+                      title: Text(account.name),
+                      subtitle: Text(
+                        account.isFallback ? 'Default account' : 'Custom',
+                      ),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            balance.toStringAsFixed(2),
+                            style: TextStyle(
+                              color: balance < 0 ? Colors.red : Colors.green,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          IconButton(
+                            icon: const Icon(Icons.edit),
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (_) => AccountFormDialog(
+                                  initial: account,
+                                  onSubmit: (updated) {
+                                    context.read<AccountCubit>().updateAccount(
+                                      updated,
+                                    );
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                          IconButton(
+                            icon: Icon(
+                              account.isFallback ? Icons.lock : Icons.delete,
+                            ),
+                            onPressed: account.isFallback
+                                ? null
+                                : () {
+                                    context.read<AccountCubit>().deleteAccount(
+                                      account.id,
+                                    );
+                                  },
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
           );
         },
       ),

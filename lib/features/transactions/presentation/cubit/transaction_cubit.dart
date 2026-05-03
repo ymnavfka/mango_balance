@@ -26,12 +26,13 @@ class TransactionCubit extends Cubit<TransactionState> {
 
   late final StreamSubscription<List<TransactionEntity>>
   _transactionsSubscription;
+  List<TransactionEntity> _allTransactions = [];
+  int? _selectedAccountId;
 
   void _init() {
     _transactionsSubscription = watchTransactionsUseCase().listen((list) {
-      final sections = _buildSections(list);
-
-      emit(state.copyWith(transactions: list, sections: sections));
+      _allTransactions = list;
+      _updateState();
     });
   }
 
@@ -61,18 +62,69 @@ class TransactionCubit extends Cubit<TransactionState> {
     await addTransaction(tx);
   }
 
-  double calculateBalance(List<TransactionEntity> transactions) {
-    double total = 0;
+  void selectAccount(int? accountId) {
+    _selectedAccountId = accountId;
+    _updateState();
+  }
+
+  void _updateState() {
+    final accountBalances = _calculateAccountBalances(_allTransactions);
+    final totalBalance = accountBalances.values.fold<double>(
+      0,
+      (sum, value) => sum + value,
+    );
+    final filteredTransactions = _filterTransactions(_allTransactions);
+    final sections = _buildSections(filteredTransactions);
+    final selectedBalance = _selectedAccountId == null
+        ? totalBalance
+        : accountBalances[_selectedAccountId!] ?? 0;
+
+    emit(
+      state.copyWith(
+        transactions: filteredTransactions,
+        sections: sections,
+        selectedAccountId: _selectedAccountId,
+        totalBalance: totalBalance,
+        selectedBalance: selectedBalance,
+        accountBalances: accountBalances,
+      ),
+    );
+  }
+
+  List<TransactionEntity> _filterTransactions(
+    List<TransactionEntity> transactions,
+  ) {
+    if (_selectedAccountId == null) {
+      return transactions;
+    }
+
+    return transactions.where((tx) {
+      return tx.accountId == _selectedAccountId ||
+          tx.toAccountId == _selectedAccountId;
+    }).toList();
+  }
+
+  Map<int, double> _calculateAccountBalances(
+    List<TransactionEntity> transactions,
+  ) {
+    final balances = <int, double>{};
 
     for (final tx in transactions) {
+      balances[tx.accountId] = (balances[tx.accountId] ?? 0);
       if (tx.type == TransactionType.income) {
-        total += tx.amount.value;
+        balances[tx.accountId] = balances[tx.accountId]! + tx.amount.value;
+      } else if (tx.type == TransactionType.expense) {
+        balances[tx.accountId] = balances[tx.accountId]! - tx.amount.value;
       } else {
-        total -= tx.amount.value;
+        balances[tx.accountId] = balances[tx.accountId]! - tx.amount.value;
+        if (tx.toAccountId != null) {
+          balances[tx.toAccountId!] =
+              (balances[tx.toAccountId!] ?? 0) + tx.amount.value;
+        }
       }
     }
 
-    return total;
+    return balances;
   }
 
   List<TransactionSection> _buildSections(

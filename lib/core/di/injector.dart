@@ -71,6 +71,7 @@ Future<void> setupDependencies() async {
   getIt.registerFactory(
     () => AccountCubit(
       watchAccountsUseCase: getIt(),
+      watchTransactionsUseCase: getIt(),
       addAccountUseCase: getIt(),
       updateAccountUseCase: getIt(),
       deleteAccountUseCase: getIt(),
