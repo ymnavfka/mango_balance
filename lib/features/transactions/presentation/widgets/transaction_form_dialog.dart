@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/di/injector.dart';
 import '../../../../core/enums/transaction_type.dart';
 import '../../../accounts/domain/entities/account.dart';
-import '../../../accounts/domain/usecases/watch_accounts.dart';
+import '../../../accounts/presentation/cubit/account_cubit.dart';
 import '../../../categories/domain/entities/category.dart';
-import '../../../categories/domain/usecases/watch_categories.dart';
+import '../../../categories/presentation/cubit/category_cubit.dart';
 import '../../domain/entities/transaction.dart';
 import '../../domain/value_objects/amount.dart';
 import '../../domain/value_objects/transaction_date.dart';
@@ -74,16 +74,14 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
       lastDate: now,
     );
 
-    if (!mounted) return;
-    if (pickedDate == null) return;
+    if (!mounted || pickedDate == null) return;
 
     final pickedTime = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.fromDateTime(_date),
     );
 
-    if (!mounted) return;
-    if (pickedTime == null) return;
+    if (!mounted || pickedTime == null) return;
 
     final newDate = DateTime(
       pickedDate.year,
@@ -170,295 +168,261 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final watchCategories = getIt<WatchCategories>();
+    final categories = context.watch<CategoryCubit>().state.categories;
+    final accounts = context.watch<AccountCubit>().state.accounts;
+    final filteredCategories = categories
+        .where((category) => category.type == _type)
+        .toList();
+    final isTransfer = _type == TransactionType.transfer;
+
+    final CategoryEntity? selectedCategory = filteredCategories.isNotEmpty
+        ? filteredCategories.firstWhere(
+            (category) => category.id == _categoryId,
+            orElse: () => filteredCategories.first,
+          )
+        : null;
+
+    if ((_categoryId == null ||
+            !filteredCategories.any(
+              (category) => category.id == _categoryId,
+            )) &&
+        selectedCategory != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() {
+          _categoryId = selectedCategory.id;
+          _categoryName = selectedCategory.name;
+        });
+      });
+    }
+
+    final AccountEntity? selectedAccount = accounts.isNotEmpty
+        ? accounts.firstWhere(
+            (account) => account.id == _accountId,
+            orElse: () => accounts.first,
+          )
+        : null;
+
+    final AccountEntity? selectedToAccount = accounts.isNotEmpty
+        ? accounts.firstWhere(
+            (account) => account.id == _toAccountId,
+            orElse: () {
+              if (accounts.length > 1) {
+                return accounts.firstWhere(
+                  (account) => account.id != _accountId,
+                  orElse: () => accounts.first,
+                );
+              }
+              return accounts.first;
+            },
+          )
+        : null;
+
+    if ((_accountId == null ||
+            !accounts.any((account) => account.id == _accountId)) &&
+        selectedAccount != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() {
+          _accountId = selectedAccount.id;
+          _accountName = selectedAccount.name;
+        });
+      });
+    }
+
+    if (isTransfer &&
+        (_toAccountId == null ||
+            !accounts.any((account) => account.id == _toAccountId)) &&
+        selectedToAccount != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() {
+          _toAccountId = selectedToAccount.id;
+          _toAccountName = selectedToAccount.name;
+        });
+      });
+    }
 
     return AlertDialog(
       title: Text(
         widget.initial == null ? 'Add transaction' : 'Edit transaction',
       ),
-      content: StreamBuilder<List<CategoryEntity>>(
-        stream: watchCategories(),
-        builder: (context, snapshot) {
-          final categories = snapshot.data ?? [];
-          final filteredCategories = categories
-              .where((category) => category.type == _type)
-              .toList();
+      content: SizedBox(
+        width: MediaQuery.of(context).size.width * 0.8,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            DropdownButton<TransactionType>(
+              isExpanded: true,
+              value: _type,
+              items: const [
+                DropdownMenuItem(
+                  value: TransactionType.income,
+                  child: Text('Income'),
+                ),
+                DropdownMenuItem(
+                  value: TransactionType.expense,
+                  child: Text('Expense'),
+                ),
+                DropdownMenuItem(
+                  value: TransactionType.transfer,
+                  child: Text('Transfer'),
+                ),
+              ],
+              onChanged: (value) {
+                if (value != null) {
+                  final newCategories = categories
+                      .where((category) => category.type == value)
+                      .toList();
+                  setState(() {
+                    _type = value;
+                    if (newCategories.isNotEmpty) {
+                      _categoryId = newCategories.first.id;
+                      _categoryName = newCategories.first.name;
+                    } else {
+                      _categoryId = null;
+                      _categoryName = null;
+                    }
+                    if (value != TransactionType.transfer) {
+                      _toAccountId = null;
+                      _toAccountName = null;
+                    }
+                  });
+                }
+              },
+            ),
+            const SizedBox(height: 12),
+            if (_type != TransactionType.transfer)
+              if (filteredCategories.isNotEmpty)
+                DropdownButton<int>(
+                  value: selectedCategory?.id,
+                  isExpanded: true,
+                  items: filteredCategories.map((category) {
+                    return DropdownMenuItem(
+                      value: category.id,
+                      child: Text(category.name),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    if (value == null) return;
 
-          final bool isTransfer = _type == TransactionType.transfer;
-          final CategoryEntity? selectedCategory = filteredCategories.isNotEmpty
-              ? filteredCategories.firstWhere(
-                  (category) => category.id == _categoryId,
-                  orElse: () => filteredCategories.first,
+                    final selected = filteredCategories.firstWhere(
+                      (category) => category.id == value,
+                      orElse: () => filteredCategories.first,
+                    );
+
+                    setState(() {
+                      _categoryId = selected.id;
+                      _categoryName = selected.name;
+                    });
+                  },
                 )
-              : null;
+              else
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  child: Text('No categories available for this type'),
+                ),
+            const SizedBox(height: 12),
+            if (accounts.isNotEmpty)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text('From account'),
+                  DropdownButton<int>(
+                    value: selectedAccount?.id,
+                    isExpanded: true,
+                    items: accounts.map((account) {
+                      return DropdownMenuItem(
+                        value: account.id,
+                        child: Text(account.name),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      if (value == null) return;
 
-          if ((_categoryId == null ||
-                  !filteredCategories.any(
-                    (category) => category.id == _categoryId,
-                  )) &&
-              selectedCategory != null) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (!mounted) return;
-              setState(() {
-                _categoryId = selectedCategory.id;
-                _categoryName = selectedCategory.name;
-              });
-            });
-          }
+                      final selected = accounts.firstWhere(
+                        (account) => account.id == value,
+                        orElse: () => accounts.first,
+                      );
 
-          return StreamBuilder<List<AccountEntity>>(
-            stream: getIt<WatchAccounts>()(),
-            builder: (context, accountSnapshot) {
-              final accounts = accountSnapshot.data ?? [];
-              final AccountEntity? selectedAccount = accounts.isNotEmpty
-                  ? accounts.firstWhere(
-                      (account) => account.id == _accountId,
-                      orElse: () => accounts.first,
-                    )
-                  : null;
-
-              final AccountEntity? selectedToAccount = accounts.isNotEmpty
-                  ? accounts.firstWhere(
-                      (account) => account.id == _toAccountId,
-                      orElse: () {
-                        if (accounts.length > 1) {
-                          return accounts.firstWhere(
-                            (account) => account.id != _accountId,
-                            orElse: () => accounts.first,
+                      setState(() {
+                        _accountId = selected.id;
+                        _accountName = selected.name;
+                        if (_type == TransactionType.transfer &&
+                            _toAccountId == selected.id) {
+                          final nextAccount = accounts.firstWhere(
+                            (account) => account.id != selected.id,
+                            orElse: () => selected,
                           );
+                          _toAccountId = nextAccount.id;
+                          _toAccountName = nextAccount.name;
                         }
-                        return accounts.first;
-                      },
-                    )
-                  : null;
-
-              if ((_accountId == null ||
-                      !accounts.any((account) => account.id == _accountId)) &&
-                  selectedAccount != null) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (!mounted) return;
-                  setState(() {
-                    _accountId = selectedAccount.id;
-                    _accountName = selectedAccount.name;
-                  });
-                });
-              }
-
-              if (isTransfer &&
-                  (_toAccountId == null ||
-                      !accounts.any((account) => account.id == _toAccountId)) &&
-                  selectedToAccount != null) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (!mounted) return;
-                  setState(() {
-                    _toAccountId = selectedToAccount.id;
-                    _toAccountName = selectedToAccount.name;
-                  });
-                });
-              }
-
-              return SizedBox(
-                width: MediaQuery.of(context).size.width * 0.8,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    DropdownButton<TransactionType>(
+                      });
+                    },
+                  ),
+                  if (_type == TransactionType.transfer) ...[
+                    const SizedBox(height: 12),
+                    const Text('To account'),
+                    DropdownButton<int>(
+                      value: selectedToAccount?.id,
                       isExpanded: true,
-                      value: _type,
-                      items: const [
-                        DropdownMenuItem(
-                          value: TransactionType.income,
-                          child: Text('Income'),
-                        ),
-                        DropdownMenuItem(
-                          value: TransactionType.expense,
-                          child: Text('Expense'),
-                        ),
-                        DropdownMenuItem(
-                          value: TransactionType.transfer,
-                          child: Text('Transfer'),
-                        ),
-                      ],
+                      items: accounts.map((account) {
+                        return DropdownMenuItem(
+                          value: account.id,
+                          child: Text(account.name),
+                        );
+                      }).toList(),
                       onChanged: (value) {
-                        if (value != null) {
-                          final newCategories = categories
-                              .where((category) => category.type == value)
-                              .toList();
-                          setState(() {
-                            _type = value;
-                            if (newCategories.isNotEmpty) {
-                              _categoryId = newCategories.first.id;
-                              _categoryName = newCategories.first.name;
-                            } else {
-                              _categoryId = null;
-                              _categoryName = null;
-                            }
-                            if (value != TransactionType.transfer) {
-                              _toAccountId = null;
-                              _toAccountName = null;
-                            }
-                          });
-                        }
+                        if (value == null) return;
+
+                        final selected = accounts.firstWhere(
+                          (account) => account.id == value,
+                          orElse: () => accounts.first,
+                        );
+
+                        setState(() {
+                          _toAccountId = selected.id;
+                          _toAccountName = selected.name;
+                        });
                       },
-                    ),
-                    const SizedBox(height: 12),
-                    if (snapshot.connectionState == ConnectionState.waiting)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 16),
-                        child: CircularProgressIndicator(),
-                      ),
-                    if (snapshot.hasError)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 16),
-                        child: Text('Failed to load categories'),
-                      ),
-                    if (_type != TransactionType.transfer)
-                      if (snapshot.hasData)
-                        DropdownButton<int>(
-                          value: selectedCategory?.id,
-                          isExpanded: true,
-                          items: filteredCategories.map((category) {
-                            return DropdownMenuItem(
-                              value: category.id,
-                              child: Text(category.name),
-                            );
-                          }).toList(),
-                          onChanged: (value) {
-                            if (value == null) return;
-
-                            final selected = filteredCategories.firstWhere(
-                              (category) => category.id == value,
-                              orElse: () => filteredCategories.first,
-                            );
-
-                            setState(() {
-                              _categoryId = selected.id;
-                              _categoryName = selected.name;
-                            });
-                          },
-                        ),
-                    if (_type != TransactionType.transfer &&
-                        filteredCategories.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 16),
-                        child: Text('No categories available for this type'),
-                      ),
-                    const SizedBox(height: 12),
-                    if (accountSnapshot.connectionState ==
-                        ConnectionState.waiting)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 16),
-                        child: CircularProgressIndicator(),
-                      ),
-                    if (accountSnapshot.hasError)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 16),
-                        child: Text('Failed to load accounts'),
-                      ),
-                    if (accountSnapshot.hasData)
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          const Text('From account'),
-                          DropdownButton<int>(
-                            value: selectedAccount?.id,
-                            isExpanded: true,
-                            items: accounts.map((account) {
-                              return DropdownMenuItem(
-                                value: account.id,
-                                child: Text(account.name),
-                              );
-                            }).toList(),
-                            onChanged: (value) {
-                              if (value == null) return;
-
-                              final selected = accounts.firstWhere(
-                                (account) => account.id == value,
-                                orElse: () => accounts.first,
-                              );
-
-                              setState(() {
-                                _accountId = selected.id;
-                                _accountName = selected.name;
-                                if (_type == TransactionType.transfer &&
-                                    _toAccountId == selected.id) {
-                                  final nextAccount = accounts.firstWhere(
-                                    (account) => account.id != selected.id,
-                                    orElse: () => selected,
-                                  );
-                                  _toAccountId = nextAccount.id;
-                                  _toAccountName = nextAccount.name;
-                                }
-                              });
-                            },
-                          ),
-                          if (_type == TransactionType.transfer) ...[
-                            const SizedBox(height: 12),
-                            const Text('To account'),
-                            DropdownButton<int>(
-                              value: selectedToAccount?.id,
-                              isExpanded: true,
-                              items: accounts.map((account) {
-                                return DropdownMenuItem(
-                                  value: account.id,
-                                  child: Text(account.name),
-                                );
-                              }).toList(),
-                              onChanged: (value) {
-                                if (value == null) return;
-
-                                final selected = accounts.firstWhere(
-                                  (account) => account.id == value,
-                                  orElse: () => accounts.first,
-                                );
-
-                                setState(() {
-                                  _toAccountId = selected.id;
-                                  _toAccountName = selected.name;
-                                });
-                              },
-                            ),
-                          ],
-                        ],
-                      ),
-                    if (accountSnapshot.hasData && accounts.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 16),
-                        child: Text('No accounts available'),
-                      ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _amountController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Amount'),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _commentController,
-                      keyboardType: TextInputType.text,
-                      maxLines: 2,
-                      decoration: const InputDecoration(
-                        labelText: 'Comment',
-                        hintText: 'Optional comment',
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(child: Text(_formatDate(_date))),
-                        TextButton(
-                          onPressed: _pickDateTime,
-                          child: const Text('Select date'),
-                        ),
-                      ],
                     ),
                   ],
+                ],
+              )
+            else
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: Text('No accounts available'),
+              ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _amountController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Amount'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _commentController,
+              keyboardType: TextInputType.text,
+              maxLines: 2,
+              decoration: const InputDecoration(
+                labelText: 'Comment',
+                hintText: 'Optional comment',
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(child: Text(_formatDate(_date))),
+                TextButton(
+                  onPressed: _pickDateTime,
+                  child: const Text('Select date'),
                 ),
-              );
-            },
-          );
-        },
+              ],
+            ),
+          ],
+        ),
       ),
       actions: [
         TextButton(

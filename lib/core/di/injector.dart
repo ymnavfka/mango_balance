@@ -18,7 +18,9 @@ import '../../../features/categories/presentation/cubit/category_cubit.dart';
 import '../../../features/transactions/data/repositories/transaction_repository_impl.dart';
 import '../../../features/transactions/domain/repositories/transaction_repository.dart';
 import '../../../features/transactions/domain/usecases/add_transaction.dart';
+import '../../../features/transactions/domain/usecases/calculate_account_balances.dart';
 import '../../../features/transactions/domain/usecases/delete_transaction.dart';
+import '../../../features/transactions/domain/usecases/filter_transactions_by_account.dart';
 import '../../../features/transactions/domain/usecases/update_transaction.dart';
 import '../../../features/transactions/domain/usecases/watch_transactions.dart';
 import '../../../features/transactions/presentation/cubit/transaction_cubit.dart';
@@ -45,6 +47,8 @@ Future<void> setupDependencies() async {
   getIt.registerLazySingleton(() => UpdateTransaction(getIt()));
   getIt.registerLazySingleton(() => DeleteTransaction(getIt()));
   getIt.registerLazySingleton(() => WatchTransactions(getIt()));
+  getIt.registerLazySingleton(() => CalculateAccountBalances());
+  getIt.registerLazySingleton(() => FilterTransactionsByAccount());
 
   // Account UseCases
   getIt.registerLazySingleton(() => AddAccount(getIt()));
@@ -65,6 +69,8 @@ Future<void> setupDependencies() async {
       updateTransactionUseCase: getIt(),
       deleteTransactionUseCase: getIt(),
       watchTransactionsUseCase: getIt(),
+      calculateAccountBalancesUseCase: getIt(),
+      filterTransactionsUseCase: getIt(),
     ),
   );
 
@@ -72,6 +78,7 @@ Future<void> setupDependencies() async {
     () => AccountCubit(
       watchAccountsUseCase: getIt(),
       watchTransactionsUseCase: getIt(),
+      calculateAccountBalancesUseCase: getIt(),
       addAccountUseCase: getIt(),
       updateAccountUseCase: getIt(),
       deleteAccountUseCase: getIt(),
