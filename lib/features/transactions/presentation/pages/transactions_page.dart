@@ -219,9 +219,8 @@ class _TransactionsPageState extends State<TransactionsPage> {
                                       ),
                                     ),
                                     subtitle: Text(
-                                      tx.type == TransactionType.transfer
-                                          ? 'Перевод: ${tx.accountName} → ${tx.toAccountName}'
-                                          : '${tx.categoryName} · ${tx.accountName}',
+                                      '${tx.type == TransactionType.transfer ? 'Перевод: ${tx.accountName} → ${tx.toAccountName}' : '${tx.categoryName} · ${tx.accountName}'}'
+                                      '${tx.comment != null && tx.comment!.isNotEmpty ? '\n${tx.comment}' : ''}',
                                     ),
                                     onTap: () {
                                       final cubit = context

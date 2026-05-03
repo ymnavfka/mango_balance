@@ -56,6 +56,7 @@ class TransactionRepositoryImpl implements TransactionRepository {
         date: tx.date.value,
       ).copyWith(
         categoryId: Value(tx.categoryId),
+        comment: Value(tx.comment),
         accountId: Value(tx.accountId),
         toAccountId: Value(tx.toAccountId ?? tx.accountId),
       ),
@@ -71,6 +72,7 @@ class TransactionRepositoryImpl implements TransactionRepository {
         amount: tx.amount.value,
         date: tx.date.value,
         categoryId: tx.categoryId,
+        comment: tx.comment,
         accountId: tx.accountId,
         toAccountId: tx.toAccountId ?? tx.accountId,
       ),
@@ -107,6 +109,7 @@ class TransactionRepositoryImpl implements TransactionRepository {
       accountName: account?.name ?? 'Дебетовая карта',
       toAccountId: dbTx.toAccountId,
       toAccountName: toAccount?.name ?? account?.name ?? 'Дебетовая карта',
+      comment: dbTx.comment,
     );
   }
 

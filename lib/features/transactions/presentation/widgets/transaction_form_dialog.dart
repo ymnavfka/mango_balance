@@ -26,6 +26,7 @@ class TransactionFormDialog extends StatefulWidget {
 
 class _TransactionFormDialogState extends State<TransactionFormDialog> {
   late TextEditingController _amountController;
+  late TextEditingController _commentController;
   late TransactionType _type;
   late DateTime _date;
   int? _categoryId;
@@ -42,6 +43,9 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
     _amountController = TextEditingController(
       text: widget.initial?.amount.value.toString() ?? '',
     );
+    _commentController = TextEditingController(
+      text: widget.initial?.comment ?? '',
+    );
 
     _type = widget.initial?.type ?? TransactionType.expense;
     _date = widget.initial?.date.value ?? DateTime.now();
@@ -56,6 +60,7 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
   @override
   void dispose() {
     _amountController.dispose();
+    _commentController.dispose();
     super.dispose();
   }
 
@@ -135,6 +140,7 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
     }
 
     try {
+      final comment = _commentController.text.trim();
       widget.onSubmit(
         TransactionEntity(
           id: widget.initial?.id ?? 0,
@@ -151,6 +157,7 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
           toAccountName: _type == TransactionType.transfer
               ? _toAccountName
               : _accountName,
+          comment: comment.isEmpty ? null : comment,
         ),
       );
       Navigator.pop(context);
@@ -425,6 +432,16 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
                       controller: _amountController,
                       keyboardType: TextInputType.number,
                       decoration: const InputDecoration(labelText: 'Amount'),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _commentController,
+                      keyboardType: TextInputType.text,
+                      maxLines: 2,
+                      decoration: const InputDecoration(
+                        labelText: 'Comment',
+                        hintText: 'Optional comment',
+                      ),
                     ),
                     const SizedBox(height: 12),
                     Row(

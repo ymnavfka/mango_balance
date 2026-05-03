@@ -14,6 +14,7 @@ class TransactionEntity {
     required this.accountName,
     required this.toAccountId,
     required this.toAccountName,
+    required this.comment,
   });
 
   final int id;
@@ -26,6 +27,7 @@ class TransactionEntity {
   final String accountName;
   final int? toAccountId;
   final String? toAccountName;
+  final String? comment;
 
   TransactionEntity copyWith({
     int? id,
@@ -38,6 +40,7 @@ class TransactionEntity {
     String? accountName,
     int? toAccountId,
     String? toAccountName,
+    String? comment,
   }) {
     return TransactionEntity(
       id: id ?? this.id,
@@ -50,6 +53,7 @@ class TransactionEntity {
       accountName: accountName ?? this.accountName,
       toAccountId: toAccountId ?? this.toAccountId,
       toAccountName: toAccountName ?? this.toAccountName,
+      comment: comment ?? this.comment,
     );
   }
 }

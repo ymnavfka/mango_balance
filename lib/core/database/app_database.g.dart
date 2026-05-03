@@ -607,6 +607,17 @@ class $TransactionsTable extends Transactions
     $customConstraints: 'REFERENCES categories(id) NOT NULL DEFAULT 1',
     defaultValue: const CustomExpression('1'),
   );
+  static const VerificationMeta _commentMeta = const VerificationMeta(
+    'comment',
+  );
+  @override
+  late final GeneratedColumn<String> comment = GeneratedColumn<String>(
+    'comment',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _accountIdMeta = const VerificationMeta(
     'accountId',
   );
@@ -640,6 +651,7 @@ class $TransactionsTable extends Transactions
     amount,
     date,
     categoryId,
+    comment,
     accountId,
     toAccountId,
   ];
@@ -688,6 +700,12 @@ class $TransactionsTable extends Transactions
         categoryId.isAcceptableOrUnknown(data['category_id']!, _categoryIdMeta),
       );
     }
+    if (data.containsKey('comment')) {
+      context.handle(
+        _commentMeta,
+        comment.isAcceptableOrUnknown(data['comment']!, _commentMeta),
+      );
+    }
     if (data.containsKey('account_id')) {
       context.handle(
         _accountIdMeta,
@@ -732,6 +750,10 @@ class $TransactionsTable extends Transactions
         DriftSqlType.int,
         data['${effectivePrefix}category_id'],
       )!,
+      comment: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}comment'],
+      ),
       accountId: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}account_id'],
@@ -755,6 +777,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
   final double amount;
   final DateTime date;
   final int categoryId;
+  final String? comment;
   final int accountId;
   final int toAccountId;
   const Transaction({
@@ -763,6 +786,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     required this.amount,
     required this.date,
     required this.categoryId,
+    this.comment,
     required this.accountId,
     required this.toAccountId,
   });
@@ -774,6 +798,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     map['amount'] = Variable<double>(amount);
     map['date'] = Variable<DateTime>(date);
     map['category_id'] = Variable<int>(categoryId);
+    if (!nullToAbsent || comment != null) {
+      map['comment'] = Variable<String>(comment);
+    }
     map['account_id'] = Variable<int>(accountId);
     map['to_account_id'] = Variable<int>(toAccountId);
     return map;
@@ -786,6 +813,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       amount: Value(amount),
       date: Value(date),
       categoryId: Value(categoryId),
+      comment: comment == null && nullToAbsent
+          ? const Value.absent()
+          : Value(comment),
       accountId: Value(accountId),
       toAccountId: Value(toAccountId),
     );
@@ -802,6 +832,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       amount: serializer.fromJson<double>(json['amount']),
       date: serializer.fromJson<DateTime>(json['date']),
       categoryId: serializer.fromJson<int>(json['categoryId']),
+      comment: serializer.fromJson<String?>(json['comment']),
       accountId: serializer.fromJson<int>(json['accountId']),
       toAccountId: serializer.fromJson<int>(json['toAccountId']),
     );
@@ -815,6 +846,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       'amount': serializer.toJson<double>(amount),
       'date': serializer.toJson<DateTime>(date),
       'categoryId': serializer.toJson<int>(categoryId),
+      'comment': serializer.toJson<String?>(comment),
       'accountId': serializer.toJson<int>(accountId),
       'toAccountId': serializer.toJson<int>(toAccountId),
     };
@@ -826,6 +858,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     double? amount,
     DateTime? date,
     int? categoryId,
+    Value<String?> comment = const Value.absent(),
     int? accountId,
     int? toAccountId,
   }) => Transaction(
@@ -834,6 +867,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     amount: amount ?? this.amount,
     date: date ?? this.date,
     categoryId: categoryId ?? this.categoryId,
+    comment: comment.present ? comment.value : this.comment,
     accountId: accountId ?? this.accountId,
     toAccountId: toAccountId ?? this.toAccountId,
   );
@@ -846,6 +880,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       categoryId: data.categoryId.present
           ? data.categoryId.value
           : this.categoryId,
+      comment: data.comment.present ? data.comment.value : this.comment,
       accountId: data.accountId.present ? data.accountId.value : this.accountId,
       toAccountId: data.toAccountId.present
           ? data.toAccountId.value
@@ -861,6 +896,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           ..write('amount: $amount, ')
           ..write('date: $date, ')
           ..write('categoryId: $categoryId, ')
+          ..write('comment: $comment, ')
           ..write('accountId: $accountId, ')
           ..write('toAccountId: $toAccountId')
           ..write(')'))
@@ -868,8 +904,16 @@ class Transaction extends DataClass implements Insertable<Transaction> {
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, type, amount, date, categoryId, accountId, toAccountId);
+  int get hashCode => Object.hash(
+    id,
+    type,
+    amount,
+    date,
+    categoryId,
+    comment,
+    accountId,
+    toAccountId,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -879,6 +923,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           other.amount == this.amount &&
           other.date == this.date &&
           other.categoryId == this.categoryId &&
+          other.comment == this.comment &&
           other.accountId == this.accountId &&
           other.toAccountId == this.toAccountId);
 }
@@ -889,6 +934,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
   final Value<double> amount;
   final Value<DateTime> date;
   final Value<int> categoryId;
+  final Value<String?> comment;
   final Value<int> accountId;
   final Value<int> toAccountId;
   const TransactionsCompanion({
@@ -897,6 +943,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     this.amount = const Value.absent(),
     this.date = const Value.absent(),
     this.categoryId = const Value.absent(),
+    this.comment = const Value.absent(),
     this.accountId = const Value.absent(),
     this.toAccountId = const Value.absent(),
   });
@@ -906,6 +953,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     required double amount,
     required DateTime date,
     this.categoryId = const Value.absent(),
+    this.comment = const Value.absent(),
     this.accountId = const Value.absent(),
     this.toAccountId = const Value.absent(),
   }) : type = Value(type),
@@ -917,6 +965,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     Expression<double>? amount,
     Expression<DateTime>? date,
     Expression<int>? categoryId,
+    Expression<String>? comment,
     Expression<int>? accountId,
     Expression<int>? toAccountId,
   }) {
@@ -926,6 +975,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
       if (amount != null) 'amount': amount,
       if (date != null) 'date': date,
       if (categoryId != null) 'category_id': categoryId,
+      if (comment != null) 'comment': comment,
       if (accountId != null) 'account_id': accountId,
       if (toAccountId != null) 'to_account_id': toAccountId,
     });
@@ -937,6 +987,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     Value<double>? amount,
     Value<DateTime>? date,
     Value<int>? categoryId,
+    Value<String?>? comment,
     Value<int>? accountId,
     Value<int>? toAccountId,
   }) {
@@ -946,6 +997,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
       amount: amount ?? this.amount,
       date: date ?? this.date,
       categoryId: categoryId ?? this.categoryId,
+      comment: comment ?? this.comment,
       accountId: accountId ?? this.accountId,
       toAccountId: toAccountId ?? this.toAccountId,
     );
@@ -969,6 +1021,9 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     if (categoryId.present) {
       map['category_id'] = Variable<int>(categoryId.value);
     }
+    if (comment.present) {
+      map['comment'] = Variable<String>(comment.value);
+    }
     if (accountId.present) {
       map['account_id'] = Variable<int>(accountId.value);
     }
@@ -986,6 +1041,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
           ..write('amount: $amount, ')
           ..write('date: $date, ')
           ..write('categoryId: $categoryId, ')
+          ..write('comment: $comment, ')
           ..write('accountId: $accountId, ')
           ..write('toAccountId: $toAccountId')
           ..write(')'))
@@ -1652,6 +1708,7 @@ typedef $$TransactionsTableCreateCompanionBuilder =
       required double amount,
       required DateTime date,
       Value<int> categoryId,
+      Value<String?> comment,
       Value<int> accountId,
       Value<int> toAccountId,
     });
@@ -1662,6 +1719,7 @@ typedef $$TransactionsTableUpdateCompanionBuilder =
       Value<double> amount,
       Value<DateTime> date,
       Value<int> categoryId,
+      Value<String?> comment,
       Value<int> accountId,
       Value<int> toAccountId,
     });
@@ -1754,6 +1812,11 @@ class $$TransactionsTableFilterComposer
 
   ColumnFilters<DateTime> get date => $composableBuilder(
     column: $table.date,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get comment => $composableBuilder(
+    column: $table.comment,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1856,6 +1919,11 @@ class $$TransactionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get comment => $composableBuilder(
+    column: $table.comment,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$CategoriesTableOrderingComposer get categoryId {
     final $$CategoriesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -1946,6 +2014,9 @@ class $$TransactionsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get date =>
       $composableBuilder(column: $table.date, builder: (column) => column);
+
+  GeneratedColumn<String> get comment =>
+      $composableBuilder(column: $table.comment, builder: (column) => column);
 
   $$CategoriesTableAnnotationComposer get categoryId {
     final $$CategoriesTableAnnotationComposer composer = $composerBuilder(
@@ -2054,6 +2125,7 @@ class $$TransactionsTableTableManager
                 Value<double> amount = const Value.absent(),
                 Value<DateTime> date = const Value.absent(),
                 Value<int> categoryId = const Value.absent(),
+                Value<String?> comment = const Value.absent(),
                 Value<int> accountId = const Value.absent(),
                 Value<int> toAccountId = const Value.absent(),
               }) => TransactionsCompanion(
@@ -2062,6 +2134,7 @@ class $$TransactionsTableTableManager
                 amount: amount,
                 date: date,
                 categoryId: categoryId,
+                comment: comment,
                 accountId: accountId,
                 toAccountId: toAccountId,
               ),
@@ -2072,6 +2145,7 @@ class $$TransactionsTableTableManager
                 required double amount,
                 required DateTime date,
                 Value<int> categoryId = const Value.absent(),
+                Value<String?> comment = const Value.absent(),
                 Value<int> accountId = const Value.absent(),
                 Value<int> toAccountId = const Value.absent(),
               }) => TransactionsCompanion.insert(
@@ -2080,6 +2154,7 @@ class $$TransactionsTableTableManager
                 amount: amount,
                 date: date,
                 categoryId: categoryId,
+                comment: comment,
                 accountId: accountId,
                 toAccountId: toAccountId,
               ),
