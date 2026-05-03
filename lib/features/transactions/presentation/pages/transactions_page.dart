@@ -110,25 +110,37 @@ class TransactionsPage extends StatelessWidget {
 
                             child: ListTile(
                               leading: Icon(
-                                tx.type == TransactionType.income
+                                tx.type == TransactionType.transfer
+                                    ? Icons.swap_horiz
+                                    : tx.type == TransactionType.income
                                     ? Icons.arrow_downward
                                     : Icons.arrow_upward,
-                                color: tx.type == TransactionType.income
+                                color: tx.type == TransactionType.transfer
+                                    ? Colors.blue
+                                    : tx.type == TransactionType.income
                                     ? Colors.green
                                     : Colors.red,
                               ),
                               title: Text(
-                                '${tx.type == TransactionType.income ? '+' : '-'}'
+                                '${tx.type == TransactionType.income
+                                    ? '+'
+                                    : tx.type == TransactionType.expense
+                                    ? '-'
+                                    : ''}'
                                 '${tx.amount.value.toStringAsFixed(2)}',
                                 style: TextStyle(
-                                  color: tx.type == TransactionType.income
+                                  color: tx.type == TransactionType.transfer
+                                      ? Colors.blue
+                                      : tx.type == TransactionType.income
                                       ? Colors.green
                                       : Colors.red,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                               subtitle: Text(
-                                '${tx.categoryName} · ${tx.accountName}',
+                                tx.type == TransactionType.transfer
+                                    ? 'Перевод: ${tx.accountName} → ${tx.toAccountName}'
+                                    : '${tx.categoryName} · ${tx.accountName}',
                               ),
                               onTap: () {
                                 final cubit = context.read<TransactionCubit>();

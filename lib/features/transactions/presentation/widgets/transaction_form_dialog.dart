@@ -32,6 +32,8 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
   String? _categoryName;
   int? _accountId;
   String? _accountName;
+  int? _toAccountId;
+  String? _toAccountName;
 
   @override
   void initState() {
@@ -47,6 +49,8 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
     _categoryName = widget.initial?.categoryName;
     _accountId = widget.initial?.accountId;
     _accountName = widget.initial?.accountName;
+    _toAccountId = widget.initial?.toAccountId;
+    _toAccountName = widget.initial?.toAccountName;
   }
 
   @override
@@ -97,7 +101,8 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
   void _submit() {
     final amount = double.tryParse(_amountController.text) ?? 0.0;
 
-    if (_categoryId == null || _categoryName == null) {
+    if (_type != TransactionType.transfer &&
+        (_categoryId == null || _categoryName == null)) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Please select a category')));
@@ -105,10 +110,28 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
     }
 
     if (_accountId == null || _accountName == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Please select an account')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a source account')),
+      );
       return;
+    }
+
+    if (_type == TransactionType.transfer) {
+      if (_toAccountId == null || _toAccountName == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please select a destination account')),
+        );
+        return;
+      }
+
+      if (_toAccountId == _accountId) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Source and destination accounts must differ'),
+          ),
+        );
+        return;
+      }
     }
 
     try {
@@ -118,10 +141,16 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
           type: _type,
           amount: Amount(amount),
           date: TransactionDate(_date),
-          categoryId: _categoryId!,
-          categoryName: _categoryName!,
+          categoryId: _categoryId ?? 1,
+          categoryName: _categoryName ?? 'Перевод',
           accountId: _accountId!,
           accountName: _accountName!,
+          toAccountId: _type == TransactionType.transfer
+              ? _toAccountId
+              : _accountId,
+          toAccountName: _type == TransactionType.transfer
+              ? _toAccountName
+              : _accountName,
         ),
       );
       Navigator.pop(context);
@@ -148,6 +177,7 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
               .where((category) => category.type == _type)
               .toList();
 
+          final bool isTransfer = _type == TransactionType.transfer;
           final CategoryEntity? selectedCategory = filteredCategories.isNotEmpty
               ? filteredCategories.firstWhere(
                   (category) => category.id == _categoryId,
@@ -180,6 +210,21 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
                     )
                   : null;
 
+              final AccountEntity? selectedToAccount = accounts.isNotEmpty
+                  ? accounts.firstWhere(
+                      (account) => account.id == _toAccountId,
+                      orElse: () {
+                        if (accounts.length > 1) {
+                          return accounts.firstWhere(
+                            (account) => account.id != _accountId,
+                            orElse: () => accounts.first,
+                          );
+                        }
+                        return accounts.first;
+                      },
+                    )
+                  : null;
+
               if ((_accountId == null ||
                       !accounts.any((account) => account.id == _accountId)) &&
                   selectedAccount != null) {
@@ -188,6 +233,19 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
                   setState(() {
                     _accountId = selectedAccount.id;
                     _accountName = selectedAccount.name;
+                  });
+                });
+              }
+
+              if (isTransfer &&
+                  (_toAccountId == null ||
+                      !accounts.any((account) => account.id == _toAccountId)) &&
+                  selectedToAccount != null) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (!mounted) return;
+                  setState(() {
+                    _toAccountId = selectedToAccount.id;
+                    _toAccountName = selectedToAccount.name;
                   });
                 });
               }
@@ -210,6 +268,10 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
                           value: TransactionType.expense,
                           child: Text('Expense'),
                         ),
+                        DropdownMenuItem(
+                          value: TransactionType.transfer,
+                          child: Text('Transfer'),
+                        ),
                       ],
                       onChanged: (value) {
                         if (value != null) {
@@ -224,6 +286,10 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
                             } else {
                               _categoryId = null;
                               _categoryName = null;
+                            }
+                            if (value != TransactionType.transfer) {
+                              _toAccountId = null;
+                              _toAccountName = null;
                             }
                           });
                         }
@@ -240,31 +306,33 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
                         padding: EdgeInsets.symmetric(vertical: 16),
                         child: Text('Failed to load categories'),
                       ),
-                    if (snapshot.hasData)
-                      DropdownButton<int>(
-                        value: selectedCategory?.id,
-                        isExpanded: true,
-                        items: filteredCategories.map((category) {
-                          return DropdownMenuItem(
-                            value: category.id,
-                            child: Text(category.name),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          if (value == null) return;
+                    if (_type != TransactionType.transfer)
+                      if (snapshot.hasData)
+                        DropdownButton<int>(
+                          value: selectedCategory?.id,
+                          isExpanded: true,
+                          items: filteredCategories.map((category) {
+                            return DropdownMenuItem(
+                              value: category.id,
+                              child: Text(category.name),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            if (value == null) return;
 
-                          final selected = filteredCategories.firstWhere(
-                            (category) => category.id == value,
-                            orElse: () => filteredCategories.first,
-                          );
+                            final selected = filteredCategories.firstWhere(
+                              (category) => category.id == value,
+                              orElse: () => filteredCategories.first,
+                            );
 
-                          setState(() {
-                            _categoryId = selected.id;
-                            _categoryName = selected.name;
-                          });
-                        },
-                      ),
-                    if (filteredCategories.isEmpty)
+                            setState(() {
+                              _categoryId = selected.id;
+                              _categoryName = selected.name;
+                            });
+                          },
+                        ),
+                    if (_type != TransactionType.transfer &&
+                        filteredCategories.isEmpty)
                       const Padding(
                         padding: EdgeInsets.symmetric(vertical: 16),
                         child: Text('No categories available for this type'),
@@ -282,30 +350,72 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
                         child: Text('Failed to load accounts'),
                       ),
                     if (accountSnapshot.hasData)
-                      DropdownButton<int>(
-                        value: selectedAccount?.id,
-                        isExpanded: true,
-                        items: accounts.map((account) {
-                          return DropdownMenuItem(
-                            value: account.id,
-                            child: Text(account.name),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          if (value == null) return;
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const Text('From account'),
+                          DropdownButton<int>(
+                            value: selectedAccount?.id,
+                            isExpanded: true,
+                            items: accounts.map((account) {
+                              return DropdownMenuItem(
+                                value: account.id,
+                                child: Text(account.name),
+                              );
+                            }).toList(),
+                            onChanged: (value) {
+                              if (value == null) return;
 
-                          final selected = accounts.firstWhere(
-                            (account) => account.id == value,
-                            orElse: () => accounts.first,
-                          );
+                              final selected = accounts.firstWhere(
+                                (account) => account.id == value,
+                                orElse: () => accounts.first,
+                              );
 
-                          setState(() {
-                            _accountId = selected.id;
-                            _accountName = selected.name;
-                          });
-                        },
+                              setState(() {
+                                _accountId = selected.id;
+                                _accountName = selected.name;
+                                if (_type == TransactionType.transfer &&
+                                    _toAccountId == selected.id) {
+                                  final nextAccount = accounts.firstWhere(
+                                    (account) => account.id != selected.id,
+                                    orElse: () => selected,
+                                  );
+                                  _toAccountId = nextAccount.id;
+                                  _toAccountName = nextAccount.name;
+                                }
+                              });
+                            },
+                          ),
+                          if (_type == TransactionType.transfer) ...[
+                            const SizedBox(height: 12),
+                            const Text('To account'),
+                            DropdownButton<int>(
+                              value: selectedToAccount?.id,
+                              isExpanded: true,
+                              items: accounts.map((account) {
+                                return DropdownMenuItem(
+                                  value: account.id,
+                                  child: Text(account.name),
+                                );
+                              }).toList(),
+                              onChanged: (value) {
+                                if (value == null) return;
+
+                                final selected = accounts.firstWhere(
+                                  (account) => account.id == value,
+                                  orElse: () => accounts.first,
+                                );
+
+                                setState(() {
+                                  _toAccountId = selected.id;
+                                  _toAccountName = selected.name;
+                                });
+                              },
+                            ),
+                          ],
+                        ],
                       ),
-                    if (accounts.isEmpty)
+                    if (accountSnapshot.hasData && accounts.isEmpty)
                       const Padding(
                         padding: EdgeInsets.symmetric(vertical: 16),
                         child: Text('No accounts available'),

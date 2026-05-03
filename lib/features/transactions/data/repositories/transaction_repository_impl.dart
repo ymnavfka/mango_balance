@@ -14,6 +14,7 @@ class TransactionRepositoryImpl implements TransactionRepository {
 
   @override
   Stream<List<TransactionEntity>> watchTransactions() {
+    final toAccounts = db.alias(db.accounts, 'to_accounts');
     final query =
         db.select(db.transactions).join([
           leftOuterJoin(
@@ -23,6 +24,10 @@ class TransactionRepositoryImpl implements TransactionRepository {
           leftOuterJoin(
             db.accounts,
             db.accounts.id.equalsExp(db.transactions.accountId),
+          ),
+          leftOuterJoin(
+            toAccounts,
+            toAccounts.id.equalsExp(db.transactions.toAccountId),
           ),
         ])..orderBy([
           OrderingTerm(
@@ -36,7 +41,8 @@ class TransactionRepositoryImpl implements TransactionRepository {
         final transaction = row.readTable(db.transactions);
         final category = row.readTable(db.categories);
         final account = row.readTable(db.accounts);
-        return _mapToEntity(transaction, category, account);
+        final toAccount = row.readTable(toAccounts);
+        return _mapToEntity(transaction, category, account, toAccount);
       }).toList(),
     );
   }
@@ -51,6 +57,7 @@ class TransactionRepositoryImpl implements TransactionRepository {
       ).copyWith(
         categoryId: Value(tx.categoryId),
         accountId: Value(tx.accountId),
+        toAccountId: Value(tx.toAccountId ?? tx.accountId),
       ),
     );
   }
@@ -65,6 +72,7 @@ class TransactionRepositoryImpl implements TransactionRepository {
         date: tx.date.value,
         categoryId: tx.categoryId,
         accountId: tx.accountId,
+        toAccountId: tx.toAccountId ?? tx.accountId,
       ),
     );
   }
@@ -78,22 +86,37 @@ class TransactionRepositoryImpl implements TransactionRepository {
     Transaction dbTx,
     Category? category,
     Account? account,
+    Account? toAccount,
   ) {
+    final type = dbTx.type == 'income'
+        ? TransactionType.income
+        : dbTx.type == 'expense'
+        ? TransactionType.expense
+        : TransactionType.transfer;
+
     return TransactionEntity(
       id: dbTx.id,
-      type: dbTx.type == 'income'
-          ? TransactionType.income
-          : TransactionType.expense,
+      type: type,
       amount: Amount(dbTx.amount),
       date: TransactionDate(dbTx.date),
       categoryId: dbTx.categoryId,
-      categoryName: category?.name ?? 'Other',
+      categoryName: type == TransactionType.transfer
+          ? 'Перевод'
+          : category?.name ?? 'Other',
       accountId: dbTx.accountId,
       accountName: account?.name ?? 'Дебетовая карта',
+      toAccountId: dbTx.toAccountId,
+      toAccountName: toAccount?.name ?? account?.name ?? 'Дебетовая карта',
     );
   }
 
   String _mapType(TransactionType type) {
-    return type == TransactionType.income ? 'income' : 'expense';
+    if (type == TransactionType.income) {
+      return 'income';
+    }
+    if (type == TransactionType.expense) {
+      return 'expense';
+    }
+    return 'transfer';
   }
 }

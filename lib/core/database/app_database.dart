@@ -28,7 +28,14 @@ class Transactions extends Table {
   IntColumn get categoryId => integer().customConstraint(
     'REFERENCES categories(id) NOT NULL DEFAULT 1',
   )();
+
+  @ReferenceName('fromTransactions')
   IntColumn get accountId => integer().customConstraint(
+    'REFERENCES accounts(id) NOT NULL DEFAULT 1',
+  )();
+
+  @ReferenceName('toTransactions')
+  IntColumn get toAccountId => integer().customConstraint(
     'REFERENCES accounts(id) NOT NULL DEFAULT 1',
   )();
 }
@@ -38,7 +45,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -62,6 +69,14 @@ class AppDatabase extends _$AppDatabase {
         await _insertDefaultAccounts();
         await m.addColumn(transactions, transactions.accountId);
         await customStatement('UPDATE transactions SET account_id = 1');
+      }
+
+      if (from < 4) {
+        await _insertTransferCategory();
+        await m.addColumn(transactions, transactions.toAccountId);
+        await customStatement(
+          'UPDATE transactions SET to_account_id = account_id',
+        );
       }
     },
   );
@@ -99,8 +114,29 @@ class AppDatabase extends _$AppDatabase {
           type: 'income',
         ),
         CategoriesCompanion.insert(name: 'Пассивный доход', type: 'income'),
+        CategoriesCompanion.insert(
+          name: 'Перевод',
+          type: 'transfer',
+          isFallback: const Value(true),
+        ),
       ]);
     });
+  }
+
+  Future<void> _insertTransferCategory() async {
+    final existingTransfer = await (select(
+      categories,
+    )..where((c) => c.type.equals('transfer'))).get();
+
+    if (existingTransfer.isEmpty) {
+      await into(categories).insert(
+        CategoriesCompanion.insert(
+          name: 'Перевод',
+          type: 'transfer',
+          isFallback: const Value(true),
+        ),
+      );
+    }
   }
 
   Future<void> _insertDefaultAccounts() async {
