@@ -25,6 +25,12 @@ import '../../../features/profiles/domain/usecases/set_active_profile.dart';
 import '../../../features/profiles/domain/usecases/watch_active_profile.dart';
 import '../../../features/profiles/domain/usecases/watch_profiles.dart';
 import '../../../features/profiles/presentation/cubit/profile_cubit.dart';
+import '../../../features/import/data/parsers/xlsx_import_parser.dart';
+import '../../../features/import/data/repositories/import_repository_impl.dart';
+import '../../../features/import/domain/repositories/import_repository.dart';
+import '../../../features/import/domain/usecases/import_to_profile.dart';
+import '../../../features/import/domain/usecases/parse_xlsx_file.dart';
+import '../../../features/import/presentation/cubit/import_cubit.dart';
 import '../../../features/transactions/data/repositories/transaction_repository_impl.dart';
 import '../../../features/transactions/domain/repositories/transaction_repository.dart';
 import '../../../features/transactions/domain/usecases/add_transaction.dart';
@@ -61,6 +67,9 @@ Future<void> setupDependencies() async {
   getIt.registerLazySingleton<ProfileRepository>(
     () => ProfileRepositoryImpl(getIt()),
   );
+  getIt.registerLazySingleton<ImportRepository>(
+    () => ImportRepositoryImpl(getIt()),
+  );
 
   // Transaction UseCases
   getIt.registerLazySingleton(() => AddTransaction(getIt()));
@@ -89,6 +98,11 @@ Future<void> setupDependencies() async {
   getIt.registerLazySingleton(() => RenameProfile(getIt()));
   getIt.registerLazySingleton(() => SetActiveProfile(getIt()));
   getIt.registerLazySingleton(() => DeleteProfile(getIt()));
+
+  // Import
+  getIt.registerLazySingleton(() => XlsxImportParser());
+  getIt.registerLazySingleton(() => ParseXlsxFile(getIt()));
+  getIt.registerLazySingleton(() => ImportToProfile(getIt()));
 
   // Cubits
   getIt.registerFactory(
@@ -134,6 +148,14 @@ Future<void> setupDependencies() async {
       renameProfileUseCase: getIt(),
       setActiveProfileUseCase: getIt(),
       deleteProfileUseCase: getIt(),
+    ),
+  );
+
+  getIt.registerFactory(
+    () => ImportCubit(
+      parseXlsxFileUseCase: getIt(),
+      importToProfileUseCase: getIt(),
+      createProfileUseCase: getIt(),
     ),
   );
 }

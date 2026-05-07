@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/di/injector.dart';
 import '../../../../core/enums/transaction_type.dart';
 import '../../../accounts/presentation/cubit/account_cubit.dart';
+import '../../../import/presentation/cubit/import_cubit.dart';
+import '../../../import/presentation/widgets/import_dialog.dart';
+import '../../../profiles/presentation/cubit/profile_cubit.dart';
 import '../../../shared/widgets/app_drawer.dart';
 import '../cubit/transaction_cubit.dart';
 import '../cubit/transaction_state.dart';
@@ -29,9 +33,22 @@ class _TransactionsPageState extends State<TransactionsPage> {
         title: const Text('Transactions'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.category),
+            icon: const Icon(Icons.file_upload),
+            tooltip: 'Import from XLSX',
             onPressed: () {
-              Navigator.of(context).pushReplacementNamed('/categories');
+              final profileCubit = context.read<ProfileCubit>();
+              showDialog(
+                context: context,
+                builder: (_) => MultiBlocProvider(
+                  providers: [
+                    BlocProvider<ProfileCubit>.value(value: profileCubit),
+                    BlocProvider<ImportCubit>(
+                      create: (_) => getIt<ImportCubit>(),
+                    ),
+                  ],
+                  child: const ImportDialog(),
+                ),
+              );
             },
           ),
         ],
