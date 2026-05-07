@@ -6,7 +6,7 @@ class WatchCategories {
 
   final CategoryRepository repository;
 
-  Stream<List<CategoryEntity>> call() {
-    return repository.watchCategories();
+  Stream<List<CategoryEntity>> call(int profileId) {
+    return repository.watchCategories(profileId);
   }
 }

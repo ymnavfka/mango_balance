@@ -2,39 +2,43 @@ import 'package:drift/drift.dart';
 
 import '../../../../core/database/app_database.dart';
 import '../../../../core/enums/transaction_type.dart';
+import '../../../../core/services/active_profile_holder.dart';
 import '../../domain/entities/transaction.dart';
 import '../../domain/repositories/transaction_repository.dart';
 import '../../domain/value_objects/amount.dart';
 import '../../domain/value_objects/transaction_date.dart';
 
 class TransactionRepositoryImpl implements TransactionRepository {
-  TransactionRepositoryImpl(this.db);
+  TransactionRepositoryImpl(this.db, this.activeProfile);
 
   final AppDatabase db;
+  final ActiveProfileHolder activeProfile;
 
   @override
-  Stream<List<TransactionEntity>> watchTransactions() {
+  Stream<List<TransactionEntity>> watchTransactions(int profileId) {
     final toAccounts = db.alias(db.accounts, 'to_accounts');
     final query =
         db.select(db.transactions).join([
-          leftOuterJoin(
-            db.categories,
-            db.categories.id.equalsExp(db.transactions.categoryId),
-          ),
-          leftOuterJoin(
-            db.accounts,
-            db.accounts.id.equalsExp(db.transactions.accountId),
-          ),
-          leftOuterJoin(
-            toAccounts,
-            toAccounts.id.equalsExp(db.transactions.toAccountId),
-          ),
-        ])..orderBy([
-          OrderingTerm(
-            expression: db.transactions.date,
-            mode: OrderingMode.desc,
-          ),
-        ]);
+            leftOuterJoin(
+              db.categories,
+              db.categories.id.equalsExp(db.transactions.categoryId),
+            ),
+            leftOuterJoin(
+              db.accounts,
+              db.accounts.id.equalsExp(db.transactions.accountId),
+            ),
+            leftOuterJoin(
+              toAccounts,
+              toAccounts.id.equalsExp(db.transactions.toAccountId),
+            ),
+          ])
+          ..where(db.transactions.profileId.equals(profileId))
+          ..orderBy([
+            OrderingTerm(
+              expression: db.transactions.date,
+              mode: OrderingMode.desc,
+            ),
+          ]);
 
     return query.watch().map(
       (rows) => rows.map((row) {
@@ -59,12 +63,20 @@ class TransactionRepositoryImpl implements TransactionRepository {
         comment: Value(tx.comment),
         accountId: Value(tx.accountId),
         toAccountId: Value(tx.toAccountId ?? tx.accountId),
+        profileId: Value(activeProfile.id),
       ),
     );
   }
 
   @override
   Future<void> updateTransaction(TransactionEntity tx) async {
+    final existing = await (db.select(
+      db.transactions,
+    )..where((t) => t.id.equals(tx.id))).getSingleOrNull();
+    if (existing == null) {
+      return;
+    }
+
     await db.updateTransaction(
       Transaction(
         id: tx.id,
@@ -75,6 +87,7 @@ class TransactionRepositoryImpl implements TransactionRepository {
         comment: tx.comment,
         accountId: tx.accountId,
         toAccountId: tx.toAccountId ?? tx.accountId,
+        profileId: existing.profileId,
       ),
     );
   }

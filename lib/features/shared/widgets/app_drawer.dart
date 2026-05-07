@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-enum AppRoute { transactions, categories, accounts }
+import '../../profiles/presentation/cubit/profile_cubit.dart';
+import '../../profiles/presentation/cubit/profile_state.dart';
+
+enum AppRoute { transactions, categories, accounts, profiles }
 
 extension AppRouteX on AppRoute {
   String get routeName {
@@ -11,6 +15,8 @@ extension AppRouteX on AppRoute {
         return '/categories';
       case AppRoute.accounts:
         return '/accounts';
+      case AppRoute.profiles:
+        return '/profiles';
     }
   }
 
@@ -22,6 +28,8 @@ extension AppRouteX on AppRoute {
         return 'Categories';
       case AppRoute.accounts:
         return 'Accounts';
+      case AppRoute.profiles:
+        return 'Profiles';
     }
   }
 
@@ -33,6 +41,8 @@ extension AppRouteX on AppRoute {
         return Icons.category;
       case AppRoute.accounts:
         return Icons.account_balance_wallet;
+      case AppRoute.profiles:
+        return Icons.person;
     }
   }
 }
@@ -53,11 +63,27 @@ class AppDrawer extends StatelessWidget {
             ),
             child: Align(
               alignment: Alignment.bottomLeft,
-              child: Text(
-                'Mango Balance',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(color: Colors.white),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text(
+                    'Mango Balance',
+                    style: Theme.of(
+                      context,
+                    ).textTheme.titleLarge?.copyWith(color: Colors.white),
+                  ),
+                  const SizedBox(height: 4),
+                  BlocBuilder<ProfileCubit, ProfileState>(
+                    builder: (context, state) {
+                      final name = state.activeProfile?.name ?? '—';
+                      return Text(
+                        'Profile: $name',
+                        style: const TextStyle(color: Colors.white70),
+                      );
+                    },
+                  ),
+                ],
               ),
             ),
           ),

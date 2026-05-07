@@ -6,7 +6,7 @@ class WatchAccounts {
 
   final AccountRepository repository;
 
-  Stream<List<AccountEntity>> call() {
-    return repository.watchAccounts();
+  Stream<List<AccountEntity>> call(int profileId) {
+    return repository.watchAccounts(profileId);
   }
 }

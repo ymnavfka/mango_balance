@@ -2,17 +2,21 @@ import 'package:drift/drift.dart';
 
 import '../../../../core/database/app_database.dart';
 import '../../../../core/enums/transaction_type.dart';
+import '../../../../core/services/active_profile_holder.dart';
 import '../../domain/entities/category.dart';
 import '../../domain/repositories/category_repository.dart';
 
 class CategoryRepositoryImpl implements CategoryRepository {
-  CategoryRepositoryImpl(this.db);
+  CategoryRepositoryImpl(this.db, this.activeProfile);
 
   final AppDatabase db;
+  final ActiveProfileHolder activeProfile;
 
   @override
-  Stream<List<CategoryEntity>> watchCategories() {
-    return db.watchCategories().map((list) => list.map(_mapToEntity).toList());
+  Stream<List<CategoryEntity>> watchCategories(int profileId) {
+    return db
+        .watchCategoriesByProfile(profileId)
+        .map((list) => list.map(_mapToEntity).toList());
   }
 
   @override
@@ -22,6 +26,7 @@ class CategoryRepositoryImpl implements CategoryRepository {
         name: category.name.trim(),
         type: _mapType(category.type),
         isFallback: Value(category.isFallback),
+        profileId: Value(activeProfile.id),
       ),
     );
   }
@@ -32,12 +37,18 @@ class CategoryRepositoryImpl implements CategoryRepository {
       throw Exception('Fallback categories cannot be edited');
     }
 
+    final existing = await db.categoryById(category.id);
+    if (existing == null) {
+      return;
+    }
+
     await db.updateCategory(
       Category(
         id: category.id,
         name: category.name.trim(),
         type: _mapType(category.type),
         isFallback: category.isFallback,
+        profileId: existing.profileId,
       ),
     );
   }
@@ -53,7 +64,10 @@ class CategoryRepositoryImpl implements CategoryRepository {
       throw Exception('Fallback categories cannot be deleted');
     }
 
-    final fallback = await db.fallbackCategory(category.type);
+    final fallback = await db.fallbackCategory(
+      category.type,
+      category.profileId,
+    );
     if (fallback == null) {
       throw Exception('Fallback category is missing');
     }

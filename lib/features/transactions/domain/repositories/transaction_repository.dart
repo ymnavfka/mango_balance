@@ -1,7 +1,7 @@
 import '../entities/transaction.dart';
 
 abstract class TransactionRepository {
-  Stream<List<TransactionEntity>> watchTransactions();
+  Stream<List<TransactionEntity>> watchTransactions(int profileId);
 
   Future<void> addTransaction(TransactionEntity tx);
 

@@ -6,6 +6,8 @@ import 'features/accounts/presentation/cubit/account_cubit.dart';
 import 'features/accounts/presentation/pages/accounts_page.dart';
 import 'features/categories/presentation/cubit/category_cubit.dart';
 import 'features/categories/presentation/pages/categories_page.dart';
+import 'features/profiles/presentation/cubit/profile_cubit.dart';
+import 'features/profiles/presentation/pages/profiles_page.dart';
 import 'features/transactions/presentation/cubit/transaction_cubit.dart';
 import 'features/transactions/presentation/pages/transactions_page.dart';
 
@@ -24,6 +26,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
+        BlocProvider<ProfileCubit>(create: (_) => getIt<ProfileCubit>()),
         BlocProvider<TransactionCubit>(
           create: (_) => getIt<TransactionCubit>(),
         ),
@@ -37,6 +40,7 @@ class MyApp extends StatelessWidget {
           '/': (_) => const TransactionsPage(),
           '/categories': (_) => const CategoriesPage(),
           '/accounts': (_) => const AccountsPage(),
+          '/profiles': (_) => const ProfilesPage(),
         },
       ),
     );

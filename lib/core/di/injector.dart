@@ -1,6 +1,7 @@
 import 'package:get_it/get_it.dart';
 
 import '../database/app_database.dart';
+import '../services/active_profile_holder.dart';
 import '../../../features/accounts/data/repositories/account_repository_impl.dart';
 import '../../../features/accounts/domain/repositories/account_repository.dart';
 import '../../../features/accounts/domain/usecases/add_account.dart';
@@ -15,6 +16,15 @@ import '../../../features/categories/domain/usecases/delete_category.dart';
 import '../../../features/categories/domain/usecases/update_category.dart';
 import '../../../features/categories/domain/usecases/watch_categories.dart';
 import '../../../features/categories/presentation/cubit/category_cubit.dart';
+import '../../../features/profiles/data/repositories/profile_repository_impl.dart';
+import '../../../features/profiles/domain/repositories/profile_repository.dart';
+import '../../../features/profiles/domain/usecases/create_profile.dart';
+import '../../../features/profiles/domain/usecases/delete_profile.dart';
+import '../../../features/profiles/domain/usecases/rename_profile.dart';
+import '../../../features/profiles/domain/usecases/set_active_profile.dart';
+import '../../../features/profiles/domain/usecases/watch_active_profile.dart';
+import '../../../features/profiles/domain/usecases/watch_profiles.dart';
+import '../../../features/profiles/presentation/cubit/profile_cubit.dart';
 import '../../../features/transactions/data/repositories/transaction_repository_impl.dart';
 import '../../../features/transactions/domain/repositories/transaction_repository.dart';
 import '../../../features/transactions/domain/usecases/add_transaction.dart';
@@ -29,17 +39,27 @@ final getIt = GetIt.instance;
 
 Future<void> setupDependencies() async {
   // Database
-  getIt.registerLazySingleton<AppDatabase>(() => AppDatabase());
+  final database = AppDatabase();
+  getIt.registerSingleton<AppDatabase>(database);
+
+  // Active profile holder seeded from DB
+  final initialActive = await database.activeProfile();
+  getIt.registerSingleton<ActiveProfileHolder>(
+    ActiveProfileHolder(initialId: initialActive?.id ?? 1),
+  );
 
   // Repositories
   getIt.registerLazySingleton<TransactionRepository>(
-    () => TransactionRepositoryImpl(getIt()),
+    () => TransactionRepositoryImpl(getIt(), getIt()),
   );
   getIt.registerLazySingleton<AccountRepository>(
-    () => AccountRepositoryImpl(getIt()),
+    () => AccountRepositoryImpl(getIt(), getIt()),
   );
   getIt.registerLazySingleton<CategoryRepository>(
-    () => CategoryRepositoryImpl(getIt()),
+    () => CategoryRepositoryImpl(getIt(), getIt()),
+  );
+  getIt.registerLazySingleton<ProfileRepository>(
+    () => ProfileRepositoryImpl(getIt()),
   );
 
   // Transaction UseCases
@@ -62,9 +82,18 @@ Future<void> setupDependencies() async {
   getIt.registerLazySingleton(() => DeleteCategory(getIt()));
   getIt.registerLazySingleton(() => WatchCategories(getIt()));
 
+  // Profile UseCases
+  getIt.registerLazySingleton(() => WatchProfiles(getIt()));
+  getIt.registerLazySingleton(() => WatchActiveProfile(getIt()));
+  getIt.registerLazySingleton(() => CreateProfile(getIt()));
+  getIt.registerLazySingleton(() => RenameProfile(getIt()));
+  getIt.registerLazySingleton(() => SetActiveProfile(getIt()));
+  getIt.registerLazySingleton(() => DeleteProfile(getIt()));
+
   // Cubits
   getIt.registerFactory(
     () => TransactionCubit(
+      activeProfile: getIt(),
       addTransactionUseCase: getIt(),
       updateTransactionUseCase: getIt(),
       deleteTransactionUseCase: getIt(),
@@ -76,6 +105,7 @@ Future<void> setupDependencies() async {
 
   getIt.registerFactory(
     () => AccountCubit(
+      activeProfile: getIt(),
       watchAccountsUseCase: getIt(),
       watchTransactionsUseCase: getIt(),
       calculateAccountBalancesUseCase: getIt(),
@@ -87,10 +117,23 @@ Future<void> setupDependencies() async {
 
   getIt.registerFactory(
     () => CategoryCubit(
+      activeProfile: getIt(),
       watchCategoriesUseCase: getIt(),
       addCategoryUseCase: getIt(),
       updateCategoryUseCase: getIt(),
       deleteCategoryUseCase: getIt(),
+    ),
+  );
+
+  getIt.registerFactory(
+    () => ProfileCubit(
+      activeProfileHolder: getIt(),
+      watchProfilesUseCase: getIt(),
+      watchActiveProfileUseCase: getIt(),
+      createProfileUseCase: getIt(),
+      renameProfileUseCase: getIt(),
+      setActiveProfileUseCase: getIt(),
+      deleteProfileUseCase: getIt(),
     ),
   );
 }

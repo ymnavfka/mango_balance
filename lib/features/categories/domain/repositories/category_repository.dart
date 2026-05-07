@@ -1,7 +1,7 @@
 import '../entities/category.dart';
 
 abstract class CategoryRepository {
-  Stream<List<CategoryEntity>> watchCategories();
+  Stream<List<CategoryEntity>> watchCategories(int profileId);
 
   Future<void> addCategory(CategoryEntity category);
 

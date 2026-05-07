@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../../../../core/services/active_profile_holder.dart';
 import '../../domain/entities/category.dart';
 import '../../domain/usecases/add_category.dart';
 import '../../domain/usecases/delete_category.dart';
@@ -10,6 +12,7 @@ import 'category_state.dart';
 
 class CategoryCubit extends Cubit<CategoryState> {
   CategoryCubit({
+    required this.activeProfile,
     required this.watchCategoriesUseCase,
     required this.addCategoryUseCase,
     required this.updateCategoryUseCase,
@@ -18,22 +21,33 @@ class CategoryCubit extends Cubit<CategoryState> {
     _init();
   }
 
+  final ActiveProfileHolder activeProfile;
   final WatchCategories watchCategoriesUseCase;
   final AddCategory addCategoryUseCase;
   final UpdateCategory updateCategoryUseCase;
   final DeleteCategory deleteCategoryUseCase;
 
-  late final StreamSubscription<List<CategoryEntity>> _categoriesSubscription;
+  StreamSubscription<List<CategoryEntity>>? _categoriesSubscription;
+  late final StreamSubscription<int> _profileSubscription;
 
   void _init() {
-    _categoriesSubscription = watchCategoriesUseCase().listen((categories) {
+    _resubscribe(activeProfile.id);
+    _profileSubscription = activeProfile.stream.listen(_resubscribe);
+  }
+
+  void _resubscribe(int profileId) {
+    _categoriesSubscription?.cancel();
+    _categoriesSubscription = watchCategoriesUseCase(profileId).listen((
+      categories,
+    ) {
       emit(state.copyWith(categories: categories));
     });
   }
 
   @override
   Future<void> close() async {
-    await _categoriesSubscription.cancel();
+    await _categoriesSubscription?.cancel();
+    await _profileSubscription.cancel();
     return super.close();
   }
 

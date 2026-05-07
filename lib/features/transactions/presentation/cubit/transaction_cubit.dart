@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../../../../core/services/active_profile_holder.dart';
 import '../../domain/entities/transaction.dart';
 import '../../domain/usecases/add_transaction.dart';
 import '../../domain/usecases/calculate_account_balances.dart';
@@ -13,6 +15,7 @@ import 'transaction_state.dart';
 
 class TransactionCubit extends Cubit<TransactionState> {
   TransactionCubit({
+    required this.activeProfile,
     required this.addTransactionUseCase,
     required this.updateTransactionUseCase,
     required this.deleteTransactionUseCase,
@@ -23,6 +26,7 @@ class TransactionCubit extends Cubit<TransactionState> {
     _init();
   }
 
+  final ActiveProfileHolder activeProfile;
   final AddTransaction addTransactionUseCase;
   final UpdateTransaction updateTransactionUseCase;
   final DeleteTransaction deleteTransactionUseCase;
@@ -30,13 +34,26 @@ class TransactionCubit extends Cubit<TransactionState> {
   final CalculateAccountBalances calculateAccountBalancesUseCase;
   final FilterTransactionsByAccount filterTransactionsUseCase;
 
-  late final StreamSubscription<List<TransactionEntity>>
-  _transactionsSubscription;
+  StreamSubscription<List<TransactionEntity>>? _transactionsSubscription;
+  late final StreamSubscription<int> _profileSubscription;
   List<TransactionEntity> _allTransactions = [];
   int? _selectedAccountId;
 
   void _init() {
-    _transactionsSubscription = watchTransactionsUseCase().listen((list) {
+    _resubscribe(activeProfile.id);
+    _profileSubscription = activeProfile.stream.listen(_resubscribe);
+  }
+
+  void _resubscribe(int profileId) {
+    _transactionsSubscription?.cancel();
+
+    _allTransactions = [];
+    _selectedAccountId = null;
+    emit(TransactionState.initial());
+
+    _transactionsSubscription = watchTransactionsUseCase(profileId).listen((
+      list,
+    ) {
       _allTransactions = list;
       _updateState();
     });
@@ -44,7 +61,8 @@ class TransactionCubit extends Cubit<TransactionState> {
 
   @override
   Future<void> close() async {
-    await _transactionsSubscription.cancel();
+    await _transactionsSubscription?.cancel();
+    await _profileSubscription.cancel();
     return super.close();
   }
 
