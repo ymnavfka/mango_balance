@@ -25,6 +25,11 @@ import '../../../features/profiles/domain/usecases/set_active_profile.dart';
 import '../../../features/profiles/domain/usecases/watch_active_profile.dart';
 import '../../../features/profiles/domain/usecases/watch_profiles.dart';
 import '../../../features/profiles/presentation/cubit/profile_cubit.dart';
+import '../../../features/statistics/domain/usecases/build_category_breakdown.dart';
+import '../../../features/statistics/domain/usecases/build_statistics_snapshot.dart';
+import '../../../features/statistics/domain/usecases/build_time_series.dart';
+import '../../../features/statistics/domain/usecases/compute_period_range.dart';
+import '../../../features/statistics/presentation/cubit/statistics_cubit.dart';
 import '../../../features/export/data/file_writers/xlsx_file_saver.dart';
 import '../../../features/export/data/repositories/export_repository_impl.dart';
 import '../../../features/export/domain/repositories/export_repository.dart';
@@ -116,6 +121,18 @@ Future<void> setupDependencies() async {
   getIt.registerLazySingleton(() => XlsxFileSaver());
   getIt.registerLazySingleton(() => BuildXlsxExport(getIt()));
 
+  // Statistics
+  getIt.registerLazySingleton(() => ComputePeriodRange());
+  getIt.registerLazySingleton(() => BuildCategoryBreakdown());
+  getIt.registerLazySingleton(() => BuildTimeSeries(getIt()));
+  getIt.registerLazySingleton(
+    () => BuildStatisticsSnapshot(
+      computePeriodRange: getIt(),
+      buildCategoryBreakdown: getIt(),
+      buildTimeSeries: getIt(),
+    ),
+  );
+
   // Cubits
   getIt.registerFactory(
     () => TransactionCubit(
@@ -173,5 +190,14 @@ Future<void> setupDependencies() async {
 
   getIt.registerFactory(
     () => ExportCubit(buildXlsxExportUseCase: getIt(), fileSaver: getIt()),
+  );
+
+  getIt.registerFactory(
+    () => StatisticsCubit(
+      activeProfile: getIt(),
+      watchTransactionsUseCase: getIt(),
+      buildStatisticsSnapshotUseCase: getIt(),
+      computePeriodRangeUseCase: getIt(),
+    ),
   );
 }
