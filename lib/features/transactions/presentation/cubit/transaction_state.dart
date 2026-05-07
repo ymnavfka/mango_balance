@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 import '../../../../core/enums/transaction_type.dart';
 import '../../domain/entities/transaction.dart';
 
@@ -10,6 +12,7 @@ class TransactionState {
     required this.selectedBalance,
     required this.accountBalances,
     required this.visibleTypes,
+    required this.dateRange,
   });
 
   factory TransactionState.initial() {
@@ -21,6 +24,7 @@ class TransactionState {
       selectedBalance: 0,
       accountBalances: {},
       visibleTypes: TransactionType.values.toSet(),
+      dateRange: null,
     );
   }
 
@@ -31,6 +35,7 @@ class TransactionState {
   final double selectedBalance;
   final Map<int, double> accountBalances;
   final Set<TransactionType> visibleTypes;
+  final DateTimeRange? dateRange;
 
   TransactionState copyWith({
     List<TransactionEntity>? transactions,
@@ -40,6 +45,7 @@ class TransactionState {
     double? selectedBalance,
     Map<int, double>? accountBalances,
     Set<TransactionType>? visibleTypes,
+    Object? dateRange = _unset,
   }) {
     return TransactionState(
       transactions: transactions ?? this.transactions,
@@ -51,6 +57,9 @@ class TransactionState {
       selectedBalance: selectedBalance ?? this.selectedBalance,
       accountBalances: accountBalances ?? this.accountBalances,
       visibleTypes: visibleTypes ?? this.visibleTypes,
+      dateRange: identical(dateRange, _unset)
+          ? this.dateRange
+          : dateRange as DateTimeRange?,
     );
   }
 

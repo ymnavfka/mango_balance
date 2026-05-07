@@ -1,15 +1,18 @@
 import 'dart:async';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/enums/transaction_type.dart';
 import '../../../../core/services/active_profile_holder.dart';
+import '../../data/datasources/date_range_filter_storage.dart';
 import '../../data/datasources/transaction_type_filter_storage.dart';
 import '../../domain/entities/transaction.dart';
 import '../../domain/usecases/add_transaction.dart';
 import '../../domain/usecases/calculate_account_balances.dart';
 import '../../domain/usecases/delete_transaction.dart';
 import '../../domain/usecases/filter_transactions_by_account.dart';
+import '../../domain/usecases/filter_transactions_by_date_range.dart';
 import '../../domain/usecases/filter_transactions_by_type.dart';
 import '../../domain/usecases/update_transaction.dart';
 import '../../domain/usecases/watch_transactions.dart';
@@ -26,9 +29,12 @@ class TransactionCubit extends Cubit<TransactionState> {
     required this.calculateAccountBalancesUseCase,
     required this.filterTransactionsUseCase,
     required this.filterTransactionsByTypeUseCase,
+    required this.filterTransactionsByDateRangeUseCase,
     required this.typeFilterStorage,
+    required this.dateRangeFilterStorage,
   }) : super(TransactionState.initial()) {
     _visibleTypes = typeFilterStorage.read();
+    _dateRange = dateRangeFilterStorage.read();
     _init();
   }
 
@@ -40,13 +46,16 @@ class TransactionCubit extends Cubit<TransactionState> {
   final CalculateAccountBalances calculateAccountBalancesUseCase;
   final FilterTransactionsByAccount filterTransactionsUseCase;
   final FilterTransactionsByType filterTransactionsByTypeUseCase;
+  final FilterTransactionsByDateRange filterTransactionsByDateRangeUseCase;
   final TransactionTypeFilterStorage typeFilterStorage;
+  final DateRangeFilterStorage dateRangeFilterStorage;
 
   StreamSubscription<List<TransactionEntity>>? _transactionsSubscription;
   late final StreamSubscription<int> _profileSubscription;
   List<TransactionEntity> _allTransactions = [];
   int? _selectedAccountId;
   late Set<TransactionType> _visibleTypes;
+  late DateTimeRange? _dateRange;
 
   void _init() {
     _resubscribe(activeProfile.id);
@@ -58,7 +67,12 @@ class TransactionCubit extends Cubit<TransactionState> {
 
     _allTransactions = [];
     _selectedAccountId = null;
-    emit(TransactionState.initial().copyWith(visibleTypes: _visibleTypes));
+    emit(
+      TransactionState.initial().copyWith(
+        visibleTypes: _visibleTypes,
+        dateRange: _dateRange,
+      ),
+    );
 
     _transactionsSubscription = watchTransactionsUseCase(profileId).listen((
       list,
@@ -109,6 +123,12 @@ class TransactionCubit extends Cubit<TransactionState> {
     _updateState();
   }
 
+  Future<void> setDateRange(DateTimeRange? range) async {
+    _dateRange = range;
+    await dateRangeFilterStorage.write(range);
+    _updateState();
+  }
+
   void _updateState() {
     final accountBalances = calculateAccountBalancesUseCase(_allTransactions);
     final totalBalance = accountBalances.values.fold<double>(
@@ -120,20 +140,22 @@ class TransactionCubit extends Cubit<TransactionState> {
       _selectedAccountId,
     );
     final byType = filterTransactionsByTypeUseCase(byAccount, _visibleTypes);
-    final sections = TransactionSectionBuilder.buildSections(byType);
+    final byDate = filterTransactionsByDateRangeUseCase(byType, _dateRange);
+    final sections = TransactionSectionBuilder.buildSections(byDate);
     final selectedBalance = _selectedAccountId == null
         ? totalBalance
         : accountBalances[_selectedAccountId!] ?? 0;
 
     emit(
       state.copyWith(
-        transactions: byType,
+        transactions: byDate,
         sections: sections,
         selectedAccountId: _selectedAccountId,
         totalBalance: totalBalance,
         selectedBalance: selectedBalance,
         accountBalances: accountBalances,
         visibleTypes: _visibleTypes,
+        dateRange: _dateRange,
       ),
     );
   }

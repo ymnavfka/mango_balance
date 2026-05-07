@@ -42,6 +42,7 @@ import '../../../features/import/domain/repositories/import_repository.dart';
 import '../../../features/import/domain/usecases/import_to_profile.dart';
 import '../../../features/import/domain/usecases/parse_xlsx_file.dart';
 import '../../../features/import/presentation/cubit/import_cubit.dart';
+import '../../../features/transactions/data/datasources/date_range_filter_storage.dart';
 import '../../../features/transactions/data/datasources/transaction_type_filter_storage.dart';
 import '../../../features/transactions/data/repositories/transaction_repository_impl.dart';
 import '../../../features/transactions/domain/repositories/transaction_repository.dart';
@@ -49,6 +50,7 @@ import '../../../features/transactions/domain/usecases/add_transaction.dart';
 import '../../../features/transactions/domain/usecases/calculate_account_balances.dart';
 import '../../../features/transactions/domain/usecases/delete_transaction.dart';
 import '../../../features/transactions/domain/usecases/filter_transactions_by_account.dart';
+import '../../../features/transactions/domain/usecases/filter_transactions_by_date_range.dart';
 import '../../../features/transactions/domain/usecases/filter_transactions_by_type.dart';
 import '../../../features/transactions/domain/usecases/update_transaction.dart';
 import '../../../features/transactions/domain/usecases/watch_transactions.dart';
@@ -65,6 +67,7 @@ Future<void> setupDependencies() async {
   final sharedPreferences = await SharedPreferences.getInstance();
   getIt.registerSingleton<SharedPreferences>(sharedPreferences);
   getIt.registerLazySingleton(() => TransactionTypeFilterStorage(getIt()));
+  getIt.registerLazySingleton(() => DateRangeFilterStorage(getIt()));
 
   // Active profile holder seeded from DB
   final initialActive = await database.activeProfile();
@@ -100,6 +103,7 @@ Future<void> setupDependencies() async {
   getIt.registerLazySingleton(() => CalculateAccountBalances());
   getIt.registerLazySingleton(() => FilterTransactionsByAccount());
   getIt.registerLazySingleton(() => FilterTransactionsByType());
+  getIt.registerLazySingleton(() => FilterTransactionsByDateRange());
 
   // Account UseCases
   getIt.registerLazySingleton(() => AddAccount(getIt()));
@@ -153,7 +157,9 @@ Future<void> setupDependencies() async {
       calculateAccountBalancesUseCase: getIt(),
       filterTransactionsUseCase: getIt(),
       filterTransactionsByTypeUseCase: getIt(),
+      filterTransactionsByDateRangeUseCase: getIt(),
       typeFilterStorage: getIt(),
+      dateRangeFilterStorage: getIt(),
     ),
   );
 

@@ -191,6 +191,11 @@ class _TransactionsPageState extends State<TransactionsPage> {
                 ),
               ),
               const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: _DateRangeFilter(range: state.dateRange),
+              ),
+              const SizedBox(height: 8),
               Expanded(
                 child: state.sections.isEmpty
                     ? const Center(child: Text('No transactions'))
@@ -321,6 +326,95 @@ class _TransactionsPageState extends State<TransactionsPage> {
           );
         },
         child: const Icon(Icons.add),
+      ),
+    );
+  }
+}
+
+class _DateRangeFilter extends StatelessWidget {
+  const _DateRangeFilter({required this.range});
+
+  final DateTimeRange? range;
+
+  static const _months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+
+  String _formatDate(DateTime date) {
+    return '${date.day} ${_months[date.month - 1]} ${date.year}';
+  }
+
+  String _label() {
+    final r = range;
+    if (r == null) return 'All time';
+    return '${_formatDate(r.start)} – ${_formatDate(r.end)}';
+  }
+
+  Future<void> _pick(BuildContext context) async {
+    final cubit = context.read<TransactionCubit>();
+    final now = DateTime.now();
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2000),
+      lastDate: now,
+      initialDateRange: range,
+    );
+    if (picked != null) {
+      await cubit.setDateRange(picked);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isActive = range != null;
+    final theme = Theme.of(context);
+
+    return Material(
+      color: theme.colorScheme.surfaceContainerHighest,
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        onTap: () => _pick(context),
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
+            children: [
+              Icon(
+                Icons.calendar_today,
+                size: 18,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  _label(),
+                  style: TextStyle(
+                    fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                  ),
+                ),
+              ),
+              if (isActive)
+                IconButton(
+                  icon: const Icon(Icons.close, size: 20),
+                  tooltip: 'Clear date filter',
+                  visualDensity: VisualDensity.compact,
+                  onPressed: () =>
+                      context.read<TransactionCubit>().setDateRange(null),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
