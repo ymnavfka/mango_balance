@@ -31,7 +31,7 @@ class TransactionState {
   TransactionState copyWith({
     List<TransactionEntity>? transactions,
     List<TransactionSection>? sections,
-    int? selectedAccountId,
+    Object? selectedAccountId = _unset,
     double? totalBalance,
     double? selectedBalance,
     Map<int, double>? accountBalances,
@@ -39,12 +39,16 @@ class TransactionState {
     return TransactionState(
       transactions: transactions ?? this.transactions,
       sections: sections ?? this.sections,
-      selectedAccountId: selectedAccountId ?? this.selectedAccountId,
+      selectedAccountId: identical(selectedAccountId, _unset)
+          ? this.selectedAccountId
+          : selectedAccountId as int?,
       totalBalance: totalBalance ?? this.totalBalance,
       selectedBalance: selectedBalance ?? this.selectedBalance,
       accountBalances: accountBalances ?? this.accountBalances,
     );
   }
+
+  static const Object _unset = Object();
 }
 
 class TransactionSection {
