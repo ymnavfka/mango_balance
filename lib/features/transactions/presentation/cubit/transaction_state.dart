@@ -1,3 +1,4 @@
+import '../../../../core/enums/transaction_type.dart';
 import '../../domain/entities/transaction.dart';
 
 class TransactionState {
@@ -8,6 +9,7 @@ class TransactionState {
     required this.totalBalance,
     required this.selectedBalance,
     required this.accountBalances,
+    required this.visibleTypes,
   });
 
   factory TransactionState.initial() {
@@ -18,6 +20,7 @@ class TransactionState {
       totalBalance: 0,
       selectedBalance: 0,
       accountBalances: {},
+      visibleTypes: TransactionType.values.toSet(),
     );
   }
 
@@ -27,6 +30,7 @@ class TransactionState {
   final double totalBalance;
   final double selectedBalance;
   final Map<int, double> accountBalances;
+  final Set<TransactionType> visibleTypes;
 
   TransactionState copyWith({
     List<TransactionEntity>? transactions,
@@ -35,6 +39,7 @@ class TransactionState {
     double? totalBalance,
     double? selectedBalance,
     Map<int, double>? accountBalances,
+    Set<TransactionType>? visibleTypes,
   }) {
     return TransactionState(
       transactions: transactions ?? this.transactions,
@@ -45,6 +50,7 @@ class TransactionState {
       totalBalance: totalBalance ?? this.totalBalance,
       selectedBalance: selectedBalance ?? this.selectedBalance,
       accountBalances: accountBalances ?? this.accountBalances,
+      visibleTypes: visibleTypes ?? this.visibleTypes,
     );
   }
 

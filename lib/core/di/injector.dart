@@ -1,4 +1,5 @@
 import 'package:get_it/get_it.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../database/app_database.dart';
 import '../services/active_profile_holder.dart';
@@ -41,12 +42,14 @@ import '../../../features/import/domain/repositories/import_repository.dart';
 import '../../../features/import/domain/usecases/import_to_profile.dart';
 import '../../../features/import/domain/usecases/parse_xlsx_file.dart';
 import '../../../features/import/presentation/cubit/import_cubit.dart';
+import '../../../features/transactions/data/datasources/transaction_type_filter_storage.dart';
 import '../../../features/transactions/data/repositories/transaction_repository_impl.dart';
 import '../../../features/transactions/domain/repositories/transaction_repository.dart';
 import '../../../features/transactions/domain/usecases/add_transaction.dart';
 import '../../../features/transactions/domain/usecases/calculate_account_balances.dart';
 import '../../../features/transactions/domain/usecases/delete_transaction.dart';
 import '../../../features/transactions/domain/usecases/filter_transactions_by_account.dart';
+import '../../../features/transactions/domain/usecases/filter_transactions_by_type.dart';
 import '../../../features/transactions/domain/usecases/update_transaction.dart';
 import '../../../features/transactions/domain/usecases/watch_transactions.dart';
 import '../../../features/transactions/presentation/cubit/transaction_cubit.dart';
@@ -57,6 +60,11 @@ Future<void> setupDependencies() async {
   // Database
   final database = AppDatabase();
   getIt.registerSingleton<AppDatabase>(database);
+
+  // Preferences
+  final sharedPreferences = await SharedPreferences.getInstance();
+  getIt.registerSingleton<SharedPreferences>(sharedPreferences);
+  getIt.registerLazySingleton(() => TransactionTypeFilterStorage(getIt()));
 
   // Active profile holder seeded from DB
   final initialActive = await database.activeProfile();
@@ -91,6 +99,7 @@ Future<void> setupDependencies() async {
   getIt.registerLazySingleton(() => WatchTransactions(getIt()));
   getIt.registerLazySingleton(() => CalculateAccountBalances());
   getIt.registerLazySingleton(() => FilterTransactionsByAccount());
+  getIt.registerLazySingleton(() => FilterTransactionsByType());
 
   // Account UseCases
   getIt.registerLazySingleton(() => AddAccount(getIt()));
@@ -143,6 +152,8 @@ Future<void> setupDependencies() async {
       watchTransactionsUseCase: getIt(),
       calculateAccountBalancesUseCase: getIt(),
       filterTransactionsUseCase: getIt(),
+      filterTransactionsByTypeUseCase: getIt(),
+      typeFilterStorage: getIt(),
     ),
   );
 

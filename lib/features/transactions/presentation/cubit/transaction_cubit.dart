@@ -2,13 +2,16 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/enums/transaction_type.dart';
 import '../../../../core/services/active_profile_holder.dart';
+import '../../data/datasources/transaction_type_filter_storage.dart';
 import '../../domain/entities/transaction.dart';
 import '../../domain/usecases/add_transaction.dart';
 import '../../domain/usecases/calculate_account_balances.dart';
-import '../../domain/usecases/filter_transactions_by_account.dart';
-import '../../domain/usecases/update_transaction.dart';
 import '../../domain/usecases/delete_transaction.dart';
+import '../../domain/usecases/filter_transactions_by_account.dart';
+import '../../domain/usecases/filter_transactions_by_type.dart';
+import '../../domain/usecases/update_transaction.dart';
 import '../../domain/usecases/watch_transactions.dart';
 import '../helpers/transaction_section_builder.dart';
 import 'transaction_state.dart';
@@ -22,7 +25,10 @@ class TransactionCubit extends Cubit<TransactionState> {
     required this.watchTransactionsUseCase,
     required this.calculateAccountBalancesUseCase,
     required this.filterTransactionsUseCase,
+    required this.filterTransactionsByTypeUseCase,
+    required this.typeFilterStorage,
   }) : super(TransactionState.initial()) {
+    _visibleTypes = typeFilterStorage.read();
     _init();
   }
 
@@ -33,11 +39,14 @@ class TransactionCubit extends Cubit<TransactionState> {
   final WatchTransactions watchTransactionsUseCase;
   final CalculateAccountBalances calculateAccountBalancesUseCase;
   final FilterTransactionsByAccount filterTransactionsUseCase;
+  final FilterTransactionsByType filterTransactionsByTypeUseCase;
+  final TransactionTypeFilterStorage typeFilterStorage;
 
   StreamSubscription<List<TransactionEntity>>? _transactionsSubscription;
   late final StreamSubscription<int> _profileSubscription;
   List<TransactionEntity> _allTransactions = [];
   int? _selectedAccountId;
+  late Set<TransactionType> _visibleTypes;
 
   void _init() {
     _resubscribe(activeProfile.id);
@@ -49,7 +58,7 @@ class TransactionCubit extends Cubit<TransactionState> {
 
     _allTransactions = [];
     _selectedAccountId = null;
-    emit(TransactionState.initial());
+    emit(TransactionState.initial().copyWith(visibleTypes: _visibleTypes));
 
     _transactionsSubscription = watchTransactionsUseCase(profileId).listen((
       list,
@@ -87,31 +96,44 @@ class TransactionCubit extends Cubit<TransactionState> {
     _updateState();
   }
 
+  Future<void> toggleTransactionType(TransactionType type) async {
+    final next = Set<TransactionType>.from(_visibleTypes);
+    if (next.contains(type)) {
+      if (next.length == 1) return;
+      next.remove(type);
+    } else {
+      next.add(type);
+    }
+    _visibleTypes = next;
+    await typeFilterStorage.write(next);
+    _updateState();
+  }
+
   void _updateState() {
     final accountBalances = calculateAccountBalancesUseCase(_allTransactions);
     final totalBalance = accountBalances.values.fold<double>(
       0,
       (sum, value) => sum + value,
     );
-    final filteredTransactions = filterTransactionsUseCase(
+    final byAccount = filterTransactionsUseCase(
       _allTransactions,
       _selectedAccountId,
     );
-    final sections = TransactionSectionBuilder.buildSections(
-      filteredTransactions,
-    );
+    final byType = filterTransactionsByTypeUseCase(byAccount, _visibleTypes);
+    final sections = TransactionSectionBuilder.buildSections(byType);
     final selectedBalance = _selectedAccountId == null
         ? totalBalance
         : accountBalances[_selectedAccountId!] ?? 0;
 
     emit(
       state.copyWith(
-        transactions: filteredTransactions,
+        transactions: byType,
         sections: sections,
         selectedAccountId: _selectedAccountId,
         totalBalance: totalBalance,
         selectedBalance: selectedBalance,
         accountBalances: accountBalances,
+        visibleTypes: _visibleTypes,
       ),
     );
   }

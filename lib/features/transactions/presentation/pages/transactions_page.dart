@@ -165,7 +165,32 @@ class _TransactionsPageState extends State<TransactionsPage> {
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    _TypeFilterCheckbox(
+                      label: 'Income',
+                      type: TransactionType.income,
+                      visibleTypes: state.visibleTypes,
+                    ),
+                    const SizedBox(width: 8),
+                    _TypeFilterCheckbox(
+                      label: 'Expense',
+                      type: TransactionType.expense,
+                      visibleTypes: state.visibleTypes,
+                    ),
+                    const SizedBox(width: 8),
+                    _TypeFilterCheckbox(
+                      label: 'Transfer',
+                      type: TransactionType.transfer,
+                      visibleTypes: state.visibleTypes,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
               Expanded(
                 child: state.sections.isEmpty
                     ? const Center(child: Text('No transactions'))
@@ -296,6 +321,47 @@ class _TransactionsPageState extends State<TransactionsPage> {
           );
         },
         child: const Icon(Icons.add),
+      ),
+    );
+  }
+}
+
+class _TypeFilterCheckbox extends StatelessWidget {
+  const _TypeFilterCheckbox({
+    required this.label,
+    required this.type,
+    required this.visibleTypes,
+  });
+
+  final String label;
+  final TransactionType type;
+  final Set<TransactionType> visibleTypes;
+
+  @override
+  Widget build(BuildContext context) {
+    final isChecked = visibleTypes.contains(type);
+    final isOnlyOneActive = visibleTypes.length == 1 && isChecked;
+    return Expanded(
+      child: InkWell(
+        onTap: isOnlyOneActive
+            ? null
+            : () =>
+                  context.read<TransactionCubit>().toggleTransactionType(type),
+        borderRadius: BorderRadius.circular(4),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Checkbox(
+              value: isChecked,
+              onChanged: isOnlyOneActive
+                  ? null
+                  : (_) => context
+                        .read<TransactionCubit>()
+                        .toggleTransactionType(type),
+            ),
+            Flexible(child: Text(label, overflow: TextOverflow.ellipsis)),
+          ],
+        ),
       ),
     );
   }
