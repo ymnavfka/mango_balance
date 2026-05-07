@@ -4,6 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/di/injector.dart';
 import '../../../../core/enums/transaction_type.dart';
 import '../../../accounts/presentation/cubit/account_cubit.dart';
+import '../../../export/presentation/cubit/export_cubit.dart';
+import '../../../export/presentation/widgets/export_dialog.dart';
 import '../../../import/presentation/cubit/import_cubit.dart';
 import '../../../import/presentation/widgets/import_dialog.dart';
 import '../../../profiles/presentation/cubit/profile_cubit.dart';
@@ -32,6 +34,25 @@ class _TransactionsPageState extends State<TransactionsPage> {
       appBar: AppBar(
         title: const Text('Transactions'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.file_download),
+            tooltip: 'Export to XLSX',
+            onPressed: () {
+              final profileCubit = context.read<ProfileCubit>();
+              showDialog(
+                context: context,
+                builder: (_) => MultiBlocProvider(
+                  providers: [
+                    BlocProvider<ProfileCubit>.value(value: profileCubit),
+                    BlocProvider<ExportCubit>(
+                      create: (_) => getIt<ExportCubit>(),
+                    ),
+                  ],
+                  child: const ExportDialog(),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.file_upload),
             tooltip: 'Import from XLSX',

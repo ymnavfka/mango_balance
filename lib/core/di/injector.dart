@@ -25,6 +25,11 @@ import '../../../features/profiles/domain/usecases/set_active_profile.dart';
 import '../../../features/profiles/domain/usecases/watch_active_profile.dart';
 import '../../../features/profiles/domain/usecases/watch_profiles.dart';
 import '../../../features/profiles/presentation/cubit/profile_cubit.dart';
+import '../../../features/export/data/file_writers/xlsx_file_saver.dart';
+import '../../../features/export/data/repositories/export_repository_impl.dart';
+import '../../../features/export/domain/repositories/export_repository.dart';
+import '../../../features/export/domain/usecases/build_xlsx_export.dart';
+import '../../../features/export/presentation/cubit/export_cubit.dart';
 import '../../../features/import/data/parsers/xlsx_import_parser.dart';
 import '../../../features/import/data/repositories/import_repository_impl.dart';
 import '../../../features/import/domain/repositories/import_repository.dart';
@@ -70,6 +75,9 @@ Future<void> setupDependencies() async {
   getIt.registerLazySingleton<ImportRepository>(
     () => ImportRepositoryImpl(getIt()),
   );
+  getIt.registerLazySingleton<ExportRepository>(
+    () => ExportRepositoryImpl(getIt()),
+  );
 
   // Transaction UseCases
   getIt.registerLazySingleton(() => AddTransaction(getIt()));
@@ -103,6 +111,10 @@ Future<void> setupDependencies() async {
   getIt.registerLazySingleton(() => XlsxImportParser());
   getIt.registerLazySingleton(() => ParseXlsxFile(getIt()));
   getIt.registerLazySingleton(() => ImportToProfile(getIt()));
+
+  // Export
+  getIt.registerLazySingleton(() => XlsxFileSaver());
+  getIt.registerLazySingleton(() => BuildXlsxExport(getIt()));
 
   // Cubits
   getIt.registerFactory(
@@ -157,5 +169,9 @@ Future<void> setupDependencies() async {
       importToProfileUseCase: getIt(),
       createProfileUseCase: getIt(),
     ),
+  );
+
+  getIt.registerFactory(
+    () => ExportCubit(buildXlsxExportUseCase: getIt(), fileSaver: getIt()),
   );
 }
