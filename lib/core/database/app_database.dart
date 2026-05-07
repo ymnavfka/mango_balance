@@ -57,12 +57,41 @@ class Transactions extends Table {
   )();
 }
 
-@DriftDatabase(tables: [Transactions, Categories, Accounts, Profiles])
+class Budgets extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get profileId => integer().customConstraint(
+    'REFERENCES profiles(id) NOT NULL DEFAULT 1',
+  )();
+  TextColumn get name => text()();
+  RealColumn get limitAmount => real()();
+  TextColumn get periodType => text()();
+  BoolColumn get allCategories =>
+      boolean().withDefault(const Constant(false))();
+}
+
+class BudgetCategories extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get budgetId =>
+      integer().customConstraint('REFERENCES budgets(id) NOT NULL')();
+  IntColumn get categoryId =>
+      integer().customConstraint('REFERENCES categories(id) NOT NULL')();
+}
+
+@DriftDatabase(
+  tables: [
+    Transactions,
+    Categories,
+    Accounts,
+    Profiles,
+    Budgets,
+    BudgetCategories,
+  ],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -110,6 +139,11 @@ class AppDatabase extends _$AppDatabase {
         await customStatement('UPDATE categories SET profile_id = 1');
         await customStatement('UPDATE accounts SET profile_id = 1');
         await customStatement('UPDATE transactions SET profile_id = 1');
+      }
+
+      if (from < 7) {
+        await m.createTable(budgets);
+        await m.createTable(budgetCategories);
       }
     },
   );
@@ -380,6 +414,15 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> deleteProfile(int id) {
     return transaction(() async {
+      final profileBudgetIds = await (select(
+        budgets,
+      )..where((b) => b.profileId.equals(id))).map((row) => row.id).get();
+      if (profileBudgetIds.isNotEmpty) {
+        await (delete(
+          budgetCategories,
+        )..where((bc) => bc.budgetId.isIn(profileBudgetIds))).go();
+      }
+      await (delete(budgets)..where((b) => b.profileId.equals(id))).go();
       await (delete(transactions)..where((t) => t.profileId.equals(id))).go();
       await (delete(accounts)..where((a) => a.profileId.equals(id))).go();
       await (delete(categories)..where((c) => c.profileId.equals(id))).go();
@@ -407,7 +450,12 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<void> deleteCategory(int id) {
-    return (delete(categories)..where((c) => c.id.equals(id))).go();
+    return transaction(() async {
+      await (delete(
+        budgetCategories,
+      )..where((bc) => bc.categoryId.equals(id))).go();
+      await (delete(categories)..where((c) => c.id.equals(id))).go();
+    });
   }
 
   Future<Category?> categoryById(int id) {
@@ -496,6 +544,81 @@ class AppDatabase extends _$AppDatabase {
   Future<void> deleteTransaction(int id) {
     return (delete(transactions)..where((t) => t.id.equals(id))).go();
   }
+
+  // Budgets
+  Future<int> insertBudget(BudgetsCompanion entry) {
+    return into(budgets).insert(entry);
+  }
+
+  Future<void> updateBudgetRow(Budget budget) {
+    return update(budgets).replace(budget);
+  }
+
+  Future<void> deleteBudget(int id) {
+    return transaction(() async {
+      await (delete(
+        budgetCategories,
+      )..where((bc) => bc.budgetId.equals(id))).go();
+      await (delete(budgets)..where((b) => b.id.equals(id))).go();
+    });
+  }
+
+  Future<void> insertBudgetCategory(int budgetId, int categoryId) {
+    return into(budgetCategories).insert(
+      BudgetCategoriesCompanion.insert(
+        budgetId: budgetId,
+        categoryId: categoryId,
+      ),
+    );
+  }
+
+  Future<void> deleteBudgetCategoriesForBudget(int budgetId) {
+    return (delete(
+      budgetCategories,
+    )..where((bc) => bc.budgetId.equals(budgetId))).go();
+  }
+
+  Future<void> replaceBudgetCategories(int budgetId, List<int> categoryIds) {
+    return transaction(() async {
+      await deleteBudgetCategoriesForBudget(budgetId);
+      for (final categoryId in categoryIds) {
+        await insertBudgetCategory(budgetId, categoryId);
+      }
+    });
+  }
+
+  Stream<List<BudgetWithCategoryIds>> watchBudgetsByProfile(int profileId) {
+    final query = select(budgets).join([
+      leftOuterJoin(
+        budgetCategories,
+        budgetCategories.budgetId.equalsExp(budgets.id),
+      ),
+    ])..where(budgets.profileId.equals(profileId));
+
+    return query.watch().map((rows) {
+      final grouped = <int, BudgetWithCategoryIds>{};
+      for (final row in rows) {
+        final budget = row.readTable(budgets);
+        final junction = row.readTableOrNull(budgetCategories);
+        final entry = grouped.putIfAbsent(
+          budget.id,
+          () => BudgetWithCategoryIds(budget: budget, categoryIds: []),
+        );
+        if (junction != null &&
+            !entry.categoryIds.contains(junction.categoryId)) {
+          entry.categoryIds.add(junction.categoryId);
+        }
+      }
+      return grouped.values.toList();
+    });
+  }
+}
+
+class BudgetWithCategoryIds {
+  BudgetWithCategoryIds({required this.budget, required this.categoryIds});
+
+  final Budget budget;
+  final List<int> categoryIds;
 }
 
 LazyDatabase _openConnection() {

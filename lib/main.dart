@@ -6,6 +6,8 @@ import 'features/accounts/presentation/cubit/account_cubit.dart';
 import 'features/accounts/presentation/pages/accounts_page.dart';
 import 'features/categories/presentation/cubit/category_cubit.dart';
 import 'features/categories/presentation/pages/categories_page.dart';
+import 'features/budgets/presentation/cubit/budget_cubit.dart';
+import 'features/budgets/presentation/pages/budgets_page.dart';
 import 'features/profiles/presentation/cubit/profile_cubit.dart';
 import 'features/profiles/presentation/pages/profiles_page.dart';
 import 'features/statistics/presentation/cubit/statistics_cubit.dart';
@@ -35,6 +37,7 @@ class MyApp extends StatelessWidget {
         BlocProvider<CategoryCubit>(create: (_) => getIt<CategoryCubit>()),
         BlocProvider<AccountCubit>(create: (_) => getIt<AccountCubit>()),
         BlocProvider<StatisticsCubit>(create: (_) => getIt<StatisticsCubit>()),
+        BlocProvider<BudgetCubit>(create: (_) => getIt<BudgetCubit>()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -42,6 +45,7 @@ class MyApp extends StatelessWidget {
         routes: {
           '/': (_) => const TransactionsPage(),
           '/statistics': (_) => const StatisticsPage(),
+          '/budgets': (_) => const BudgetsPage(),
           '/categories': (_) => const CategoriesPage(),
           '/accounts': (_) => const AccountsPage(),
           '/profiles': (_) => const ProfilesPage(),

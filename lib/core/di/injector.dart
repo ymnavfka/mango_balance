@@ -26,6 +26,14 @@ import '../../../features/profiles/domain/usecases/set_active_profile.dart';
 import '../../../features/profiles/domain/usecases/watch_active_profile.dart';
 import '../../../features/profiles/domain/usecases/watch_profiles.dart';
 import '../../../features/profiles/presentation/cubit/profile_cubit.dart';
+import '../../../features/budgets/data/repositories/budget_repository_impl.dart';
+import '../../../features/budgets/domain/repositories/budget_repository.dart';
+import '../../../features/budgets/domain/usecases/add_budget.dart';
+import '../../../features/budgets/domain/usecases/build_budgets_progress.dart';
+import '../../../features/budgets/domain/usecases/delete_budget.dart';
+import '../../../features/budgets/domain/usecases/update_budget.dart';
+import '../../../features/budgets/domain/usecases/watch_budgets.dart';
+import '../../../features/budgets/presentation/cubit/budget_cubit.dart';
 import '../../../features/statistics/domain/usecases/build_category_breakdown.dart';
 import '../../../features/statistics/domain/usecases/build_statistics_snapshot.dart';
 import '../../../features/statistics/domain/usecases/build_time_series.dart';
@@ -94,6 +102,9 @@ Future<void> setupDependencies() async {
   getIt.registerLazySingleton<ExportRepository>(
     () => ExportRepositoryImpl(getIt()),
   );
+  getIt.registerLazySingleton<BudgetRepository>(
+    () => BudgetRepositoryImpl(getIt(), getIt()),
+  );
 
   // Transaction UseCases
   getIt.registerLazySingleton(() => AddTransaction(getIt()));
@@ -133,6 +144,13 @@ Future<void> setupDependencies() async {
   // Export
   getIt.registerLazySingleton(() => XlsxFileSaver());
   getIt.registerLazySingleton(() => BuildXlsxExport(getIt()));
+
+  // Budgets
+  getIt.registerLazySingleton(() => WatchBudgets(getIt()));
+  getIt.registerLazySingleton(() => AddBudget(getIt()));
+  getIt.registerLazySingleton(() => UpdateBudget(getIt()));
+  getIt.registerLazySingleton(() => DeleteBudget(getIt()));
+  getIt.registerLazySingleton(() => BuildBudgetsProgress());
 
   // Statistics
   getIt.registerLazySingleton(() => ComputePeriodRange());
@@ -215,6 +233,19 @@ Future<void> setupDependencies() async {
       watchTransactionsUseCase: getIt(),
       buildStatisticsSnapshotUseCase: getIt(),
       computePeriodRangeUseCase: getIt(),
+    ),
+  );
+
+  getIt.registerFactory(
+    () => BudgetCubit(
+      activeProfile: getIt(),
+      watchBudgetsUseCase: getIt(),
+      watchTransactionsUseCase: getIt(),
+      watchCategoriesUseCase: getIt(),
+      addBudgetUseCase: getIt(),
+      updateBudgetUseCase: getIt(),
+      deleteBudgetUseCase: getIt(),
+      buildBudgetsProgressUseCase: getIt(),
     ),
   );
 }

@@ -4,7 +4,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../profiles/presentation/cubit/profile_cubit.dart';
 import '../../profiles/presentation/cubit/profile_state.dart';
 
-enum AppRoute { transactions, statistics, categories, accounts, profiles }
+enum AppRoute {
+  transactions,
+  statistics,
+  budgets,
+  categories,
+  accounts,
+  profiles,
+}
 
 extension AppRouteX on AppRoute {
   String get routeName {
@@ -13,6 +20,8 @@ extension AppRouteX on AppRoute {
         return '/';
       case AppRoute.statistics:
         return '/statistics';
+      case AppRoute.budgets:
+        return '/budgets';
       case AppRoute.categories:
         return '/categories';
       case AppRoute.accounts:
@@ -28,6 +37,8 @@ extension AppRouteX on AppRoute {
         return 'Transactions';
       case AppRoute.statistics:
         return 'Statistics';
+      case AppRoute.budgets:
+        return 'Budgets';
       case AppRoute.categories:
         return 'Categories';
       case AppRoute.accounts:
@@ -43,6 +54,8 @@ extension AppRouteX on AppRoute {
         return Icons.list;
       case AppRoute.statistics:
         return Icons.bar_chart;
+      case AppRoute.budgets:
+        return Icons.savings;
       case AppRoute.categories:
         return Icons.category;
       case AppRoute.accounts:
