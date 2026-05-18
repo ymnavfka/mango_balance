@@ -1,7 +1,7 @@
 class Amount {
   Amount(this.value) {
     if (value <= 0) {
-      throw Exception('Amount must be greater than zero');
+      throw Exception('Сумма должна быть больше нуля');
     }
   }
 

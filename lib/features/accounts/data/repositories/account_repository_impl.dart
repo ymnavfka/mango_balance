@@ -63,12 +63,12 @@ class AccountRepositoryImpl implements AccountRepository {
     }
 
     if (account.isFallback) {
-      throw Exception('Default account cannot be deleted');
+      throw Exception('Счёт по умолчанию нельзя удалить');
     }
 
     final fallback = await db.fallbackAccount(account.profileId);
     if (fallback == null) {
-      throw Exception('Fallback account not found');
+      throw Exception('Базовый счёт не найден');
     }
 
     await db.replaceAccountForTransactions(account.id, fallback.id);

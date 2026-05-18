@@ -13,11 +13,11 @@ class AccountsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: const AppDrawer(currentRoute: AppRoute.accounts),
-      appBar: AppBar(title: const Text('Accounts')),
+      appBar: AppBar(title: const Text('Счета')),
       body: BlocBuilder<AccountCubit, AccountState>(
         builder: (context, state) {
           if (state.accounts.isEmpty) {
-            return const Center(child: Text('No accounts yet'));
+            return const Center(child: Text('Счетов ещё нет'));
           }
 
           return Column(
@@ -29,7 +29,7 @@ class AccountsPage extends StatelessWidget {
                   children: [
                     const Expanded(
                       child: Text(
-                        'Total balance',
+                        'Общий баланс',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -59,7 +59,9 @@ class AccountsPage extends StatelessWidget {
                     return ListTile(
                       title: Text(account.name),
                       subtitle: Text(
-                        account.isFallback ? 'Default account' : 'Custom',
+                        account.isFallback
+                            ? 'Счёт по умолчанию'
+                            : 'Пользовательский',
                       ),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,

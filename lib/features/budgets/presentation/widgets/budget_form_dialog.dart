@@ -52,16 +52,18 @@ class _BudgetFormDialogState extends State<BudgetFormDialog> {
   void _submit() {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
-      _showError('Name must not be empty');
+      _showError('Название не должно быть пустым');
       return;
     }
     final limit = double.tryParse(_limitController.text.replaceAll(',', '.'));
     if (limit == null || limit <= 0) {
-      _showError('Limit must be a positive number');
+      _showError('Лимит должен быть положительным числом');
       return;
     }
     if (!_allCategories && _selectedCategoryIds.isEmpty) {
-      _showError('Select at least one category or enable "All categories"');
+      _showError(
+        'Выберите хотя бы одну категорию или включите «Все категории»',
+      );
       return;
     }
 
@@ -94,7 +96,9 @@ class _BudgetFormDialogState extends State<BudgetFormDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.initial == null ? 'Add budget' : 'Edit budget'),
+      title: Text(
+        widget.initial == null ? 'Новый бюджет' : 'Редактирование бюджета',
+      ),
       content: SizedBox(
         width: 360,
         child: SingleChildScrollView(
@@ -104,7 +108,7 @@ class _BudgetFormDialogState extends State<BudgetFormDialog> {
             children: [
               TextField(
                 controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Name'),
+                decoration: const InputDecoration(labelText: 'Название'),
               ),
               const SizedBox(height: 12),
               TextField(
@@ -112,11 +116,11 @@ class _BudgetFormDialogState extends State<BudgetFormDialog> {
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
-                decoration: const InputDecoration(labelText: 'Limit amount'),
+                decoration: const InputDecoration(labelText: 'Лимит'),
               ),
               const SizedBox(height: 16),
               const Text(
-                'Period',
+                'Период',
                 style: TextStyle(fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 8),
@@ -133,8 +137,10 @@ class _BudgetFormDialogState extends State<BudgetFormDialog> {
               const SizedBox(height: 16),
               CheckboxListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('All expense categories'),
-                subtitle: const Text('Includes categories added in the future'),
+                title: const Text('Все категории расходов'),
+                subtitle: const Text(
+                  'Включая категории, добавленные в будущем',
+                ),
                 value: _allCategories,
                 onChanged: (value) {
                   setState(() {
@@ -163,7 +169,7 @@ class _BudgetFormDialogState extends State<BudgetFormDialog> {
                     if (expenseCategories.isEmpty) {
                       return const Padding(
                         padding: EdgeInsets.symmetric(vertical: 8),
-                        child: Text('No expense categories available'),
+                        child: Text('Нет доступных категорий расходов'),
                       );
                     }
                     return Column(
@@ -193,11 +199,11 @@ class _BudgetFormDialogState extends State<BudgetFormDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: const Text('Отмена'),
         ),
         TextButton(
           onPressed: _submit,
-          child: Text(widget.initial == null ? 'Add' : 'Save'),
+          child: Text(widget.initial == null ? 'Добавить' : 'Сохранить'),
         ),
       ],
     );

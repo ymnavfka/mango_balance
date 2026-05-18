@@ -17,7 +17,7 @@ class StatisticsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: const AppDrawer(currentRoute: AppRoute.statistics),
-      appBar: AppBar(title: const Text('Statistics')),
+      appBar: AppBar(title: const Text('Статистика')),
       body: BlocBuilder<StatisticsCubit, StatisticsState>(
         builder: (context, state) {
           final snapshot = state.snapshot;
@@ -32,7 +32,7 @@ class StatisticsPage extends StatelessWidget {
                   onSelected: cubit.selectPeriodType,
                 ),
                 const Expanded(
-                  child: Center(child: Text('No transactions yet')),
+                  child: Center(child: Text('Транзакций ещё нет')),
                 ),
               ],
             );
@@ -60,7 +60,7 @@ class StatisticsPage extends StatelessWidget {
                     padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     child: Center(
                       child: Text(
-                        'All time',
+                        'За всё время',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -69,13 +69,13 @@ class StatisticsPage extends StatelessWidget {
                     ),
                   ),
                 CategoryDonutChart(
-                  title: 'Income by category',
+                  title: 'Доходы по категориям',
                   total: snapshot.totalIncome,
                   breakdown: snapshot.incomeBreakdown,
                   accentColor: Colors.green,
                 ),
                 CategoryDonutChart(
-                  title: 'Expenses by category',
+                  title: 'Расходы по категориям',
                   total: snapshot.totalExpense,
                   breakdown: snapshot.expenseBreakdown,
                   accentColor: Colors.red,

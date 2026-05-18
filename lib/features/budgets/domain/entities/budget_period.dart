@@ -4,11 +4,11 @@ extension BudgetPeriodX on BudgetPeriod {
   String get label {
     switch (this) {
       case BudgetPeriod.week:
-        return 'Week';
+        return 'Неделя';
       case BudgetPeriod.month:
-        return 'Month';
+        return 'Месяц';
       case BudgetPeriod.year:
-        return 'Year';
+        return 'Год';
     }
   }
 

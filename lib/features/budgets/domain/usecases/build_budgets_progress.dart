@@ -40,7 +40,7 @@ class BuildBudgetsProgress {
       final names = budget.allCategories
           ? const <String>[]
           : budget.categoryIds
-                .map((id) => categoryNameById[id] ?? 'Deleted category')
+                .map((id) => categoryNameById[id] ?? 'Удалённая категория')
                 .toList();
 
       result.add(

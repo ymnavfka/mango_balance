@@ -34,7 +34,7 @@ class CategoryRepositoryImpl implements CategoryRepository {
   @override
   Future<void> updateCategory(CategoryEntity category) async {
     if (category.isFallback) {
-      throw Exception('Fallback categories cannot be edited');
+      throw Exception('Базовые категории нельзя редактировать');
     }
 
     final existing = await db.categoryById(category.id);
@@ -61,7 +61,7 @@ class CategoryRepositoryImpl implements CategoryRepository {
     }
 
     if (category.isFallback) {
-      throw Exception('Fallback categories cannot be deleted');
+      throw Exception('Базовые категории нельзя удалить');
     }
 
     final fallback = await db.fallbackCategory(
@@ -69,7 +69,7 @@ class CategoryRepositoryImpl implements CategoryRepository {
       category.profileId,
     );
     if (fallback == null) {
-      throw Exception('Fallback category is missing');
+      throw Exception('Базовая категория отсутствует');
     }
 
     await db.replaceCategoryForTransactions(category.id, fallback.id);

@@ -1,7 +1,7 @@
 class TransactionDate {
   TransactionDate(this.value) {
     if (value.isAfter(DateTime.now())) {
-      throw Exception('Date cannot be in the future');
+      throw Exception('Дата не может быть в будущем');
     }
   }
   final DateTime value;

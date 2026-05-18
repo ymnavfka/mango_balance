@@ -34,7 +34,9 @@ class _CategoryFormDialogState extends State<CategoryFormDialog> {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Category name must not be empty')),
+        const SnackBar(
+          content: Text('Название категории не должно быть пустым'),
+        ),
       );
       return;
     }
@@ -55,14 +57,16 @@ class _CategoryFormDialogState extends State<CategoryFormDialog> {
     final isFallback = widget.initial?.isFallback ?? false;
 
     return AlertDialog(
-      title: Text(widget.initial == null ? 'Add category' : 'Edit category'),
+      title: Text(
+        widget.initial == null ? 'Новая категория' : 'Редактирование категории',
+      ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           TextField(
             controller: _nameController,
             enabled: !isFallback,
-            decoration: const InputDecoration(labelText: 'Category name'),
+            decoration: const InputDecoration(labelText: 'Название категории'),
           ),
           const SizedBox(height: 12),
           DropdownButton<TransactionType>(
@@ -70,11 +74,11 @@ class _CategoryFormDialogState extends State<CategoryFormDialog> {
             items: const [
               DropdownMenuItem(
                 value: TransactionType.income,
-                child: Text('Income'),
+                child: Text('Доход'),
               ),
               DropdownMenuItem(
                 value: TransactionType.expense,
-                child: Text('Expense'),
+                child: Text('Расход'),
               ),
             ],
             onChanged: isFallback
@@ -89,7 +93,7 @@ class _CategoryFormDialogState extends State<CategoryFormDialog> {
             const Padding(
               padding: EdgeInsets.only(top: 12.0),
               child: Text(
-                'Fallback categories cannot be edited or deleted',
+                'Базовые категории нельзя редактировать или удалить',
                 style: TextStyle(color: Colors.grey),
               ),
             ),
@@ -98,7 +102,7 @@ class _CategoryFormDialogState extends State<CategoryFormDialog> {
       actions: [
         TextButton(
           onPressed: isFallback ? null : _submit,
-          child: Text(widget.initial == null ? 'Add' : 'Save'),
+          child: Text(widget.initial == null ? 'Добавить' : 'Сохранить'),
         ),
       ],
     );

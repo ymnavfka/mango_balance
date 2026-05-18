@@ -8,7 +8,7 @@ class RenameProfile {
   Future<void> call(int id, String name) {
     final trimmed = name.trim();
     if (trimmed.isEmpty) {
-      throw Exception('Profile name is required');
+      throw Exception('Название профиля обязательно');
     }
     return repository.renameProfile(id, trimmed);
   }

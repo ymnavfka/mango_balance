@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/enums/transaction_type.dart';
 import '../../../shared/widgets/app_drawer.dart';
 import '../cubit/category_cubit.dart';
 import '../cubit/category_state.dart';
@@ -13,11 +14,11 @@ class CategoriesPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: const AppDrawer(currentRoute: AppRoute.categories),
-      appBar: AppBar(title: const Text('Categories')),
+      appBar: AppBar(title: const Text('Категории')),
       body: BlocBuilder<CategoryCubit, CategoryState>(
         builder: (context, state) {
           if (state.categories.isEmpty) {
-            return const Center(child: Text('No categories yet'));
+            return const Center(child: Text('Категорий ещё нет'));
           }
 
           return ListView.builder(
@@ -27,7 +28,7 @@ class CategoriesPage extends StatelessWidget {
               return ListTile(
                 title: Text(category.name),
                 subtitle: Text(
-                  '${category.type.name}${category.isFallback ? ' • Fallback' : ''}',
+                  '${category.type.label}${category.isFallback ? ' • Базовая' : ''}',
                 ),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,

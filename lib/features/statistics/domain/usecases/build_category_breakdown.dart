@@ -58,7 +58,7 @@ class BuildCategoryBreakdown {
       result.add(
         CategoryBreakdown(
           categoryId: null,
-          categoryName: 'Other',
+          categoryName: 'Другое',
           amount: otherAmount,
           share: otherAmount / total,
         ),

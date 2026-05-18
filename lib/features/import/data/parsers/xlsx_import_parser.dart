@@ -5,11 +5,19 @@ import 'package:excel/excel.dart';
 import '../../domain/entities/parsed_import.dart';
 
 class XlsxImportParser {
-  static const _expensesSheetName = 'Expenses';
-  static const _incomeSheetName = 'Income';
-  static const _transfersSheetName = 'Transfers';
+  static const _expensesSheetNames = ['Расходы', 'Expenses'];
+  static const _incomeSheetNames = ['Доходы', 'Income'];
+  static const _transfersSheetNames = ['Переводы', 'Transfers'];
 
   static final DateTime _excelEpoch = DateTime(1899, 12, 30);
+
+  Sheet? _findSheet(Excel excel, List<String> names) {
+    for (final name in names) {
+      final sheet = excel.tables[name];
+      if (sheet != null) return sheet;
+    }
+    return null;
+  }
 
   ParsedImport parse(Uint8List bytes) {
     final excel = Excel.decodeBytes(bytes);
@@ -19,7 +27,7 @@ class XlsxImportParser {
     final incomes = <ParsedIncome>[];
     final transfers = <ParsedTransfer>[];
 
-    final expensesSheet = excel.tables[_expensesSheetName];
+    final expensesSheet = _findSheet(excel, _expensesSheetNames);
     if (expensesSheet != null) {
       for (var i = 2; i < expensesSheet.maxRows; i++) {
         final row = expensesSheet.row(i);
@@ -51,7 +59,7 @@ class XlsxImportParser {
       }
     }
 
-    final incomeSheet = excel.tables[_incomeSheetName];
+    final incomeSheet = _findSheet(excel, _incomeSheetNames);
     if (incomeSheet != null) {
       for (var i = 2; i < incomeSheet.maxRows; i++) {
         final row = incomeSheet.row(i);
@@ -83,7 +91,7 @@ class XlsxImportParser {
       }
     }
 
-    final transfersSheet = excel.tables[_transfersSheetName];
+    final transfersSheet = _findSheet(excel, _transfersSheetNames);
     if (transfersSheet != null) {
       for (var i = 2; i < transfersSheet.maxRows; i++) {
         final row = transfersSheet.row(i);

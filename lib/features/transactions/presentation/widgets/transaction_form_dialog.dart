@@ -110,21 +110,21 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
         (_categoryId == null || _categoryName == null)) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Please select a category')));
+      ).showSnackBar(const SnackBar(content: Text('Выберите категорию')));
       return;
     }
 
     if (_accountId == null || _accountName == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a source account')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Выберите счёт-источник')));
       return;
     }
 
     if (_type == TransactionType.transfer) {
       if (_toAccountId == null || _toAccountName == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please select a destination account')),
+          const SnackBar(content: Text('Выберите счёт-получатель')),
         );
         return;
       }
@@ -132,7 +132,7 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
       if (_toAccountId == _accountId) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Source and destination accounts must differ'),
+            content: Text('Счёт-источник и счёт-получатель должны отличаться'),
           ),
         );
         return;
@@ -253,7 +253,9 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
 
     return AlertDialog(
       title: Text(
-        widget.initial == null ? 'Add transaction' : 'Edit transaction',
+        widget.initial == null
+            ? 'Новая транзакция'
+            : 'Редактирование транзакции',
       ),
       content: SizedBox(
         width: MediaQuery.of(context).size.width * 0.8,
@@ -267,15 +269,15 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
               items: const [
                 DropdownMenuItem(
                   value: TransactionType.income,
-                  child: Text('Income'),
+                  child: Text('Доход'),
                 ),
                 DropdownMenuItem(
                   value: TransactionType.expense,
-                  child: Text('Expense'),
+                  child: Text('Расход'),
                 ),
                 DropdownMenuItem(
                   value: TransactionType.transfer,
-                  child: Text('Transfer'),
+                  child: Text('Перевод'),
                 ),
               ],
               onChanged: (value) {
@@ -329,14 +331,14 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
               else
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 16),
-                  child: Text('No categories available for this type'),
+                  child: Text('Нет категорий для этого типа'),
                 ),
             const SizedBox(height: 12),
             if (accounts.isNotEmpty)
               Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text('From account'),
+                  const Text('Счёт-источник'),
                   DropdownButton<int>(
                     value: selectedAccount?.id,
                     isExpanded: true,
@@ -371,7 +373,7 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
                   ),
                   if (_type == TransactionType.transfer) ...[
                     const SizedBox(height: 12),
-                    const Text('To account'),
+                    const Text('Счёт-получатель'),
                     DropdownButton<int>(
                       value: selectedToAccount?.id,
                       isExpanded: true,
@@ -401,13 +403,13 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
             else
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 16),
-                child: Text('No accounts available'),
+                child: Text('Нет доступных счетов'),
               ),
             const SizedBox(height: 12),
             TextField(
               controller: _amountController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Amount'),
+              decoration: const InputDecoration(labelText: 'Сумма'),
             ),
             const SizedBox(height: 12),
             TextField(
@@ -415,8 +417,8 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
               keyboardType: TextInputType.text,
               maxLines: 2,
               decoration: const InputDecoration(
-                labelText: 'Comment',
-                hintText: 'Optional comment',
+                labelText: 'Комментарий',
+                hintText: 'Необязательный комментарий',
               ),
             ),
             const SizedBox(height: 12),
@@ -425,7 +427,7 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
                 Expanded(child: Text(_formatDate(_date))),
                 TextButton(
                   onPressed: _pickDateTime,
-                  child: const Text('Select date'),
+                  child: const Text('Выбрать дату'),
                 ),
               ],
             ),
@@ -435,7 +437,7 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
       actions: [
         TextButton(
           onPressed: _submit,
-          child: Text(widget.initial == null ? 'Add' : 'Save'),
+          child: Text(widget.initial == null ? 'Добавить' : 'Сохранить'),
         ),
       ],
     );

@@ -81,10 +81,10 @@ class ProfileCubit extends Cubit<ProfileState> {
 
   Future<void> deleteProfile(int id) async {
     if (state.profiles.length <= 1) {
-      throw Exception('Cannot delete the last profile');
+      throw Exception('Нельзя удалить последний профиль');
     }
     if (state.activeProfile?.id == id) {
-      throw Exception('Cannot delete the active profile');
+      throw Exception('Нельзя удалить активный профиль');
     }
     await deleteProfileUseCase(id);
   }

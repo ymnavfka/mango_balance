@@ -33,11 +33,11 @@ class _TransactionsPageState extends State<TransactionsPage> {
     return Scaffold(
       drawer: const AppDrawer(currentRoute: AppRoute.transactions),
       appBar: AppBar(
-        title: const Text('Transactions'),
+        title: const Text('Транзакции'),
         actions: [
           IconButton(
             icon: const Icon(Icons.file_download),
-            tooltip: 'Export to XLSX',
+            tooltip: 'Экспорт в XLSX',
             onPressed: () {
               final profileCubit = context.read<ProfileCubit>();
               showDialog(
@@ -56,7 +56,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
           ),
           IconButton(
             icon: const Icon(Icons.file_upload),
-            tooltip: 'Import from XLSX',
+            tooltip: 'Импорт из XLSX',
             onPressed: () {
               final profileCubit = context.read<ProfileCubit>();
               showDialog(
@@ -103,7 +103,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
                       value: null,
                       child: Row(
                         children: [
-                          const Expanded(child: Text('Total')),
+                          const Expanded(child: Text('Итого')),
                           Text(
                             _formatMoney(state.totalBalance),
                             style: TextStyle(
@@ -146,8 +146,8 @@ class _TransactionsPageState extends State<TransactionsPage> {
                     Expanded(
                       child: Text(
                         state.selectedAccountId == null
-                            ? 'Total balance'
-                            : selectedAccount?.name ?? 'Account',
+                            ? 'Общий баланс'
+                            : selectedAccount?.name ?? 'Счёт',
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -173,19 +173,19 @@ class _TransactionsPageState extends State<TransactionsPage> {
                 child: Row(
                   children: [
                     _TypeFilterCheckbox(
-                      label: 'Income',
+                      label: 'Доход',
                       type: TransactionType.income,
                       visibleTypes: state.visibleTypes,
                     ),
                     const SizedBox(width: 8),
                     _TypeFilterCheckbox(
-                      label: 'Expense',
+                      label: 'Расход',
                       type: TransactionType.expense,
                       visibleTypes: state.visibleTypes,
                     ),
                     const SizedBox(width: 8),
                     _TypeFilterCheckbox(
-                      label: 'Transfer',
+                      label: 'Перевод',
                       type: TransactionType.transfer,
                       visibleTypes: state.visibleTypes,
                     ),
@@ -200,7 +200,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
               const SizedBox(height: 8),
               Expanded(
                 child: state.sections.isEmpty
-                    ? const Center(child: Text('No transactions'))
+                    ? const Center(child: Text('Нет транзакций'))
                     : ListView.builder(
                         itemCount: state.sections.length,
                         itemBuilder: (context, sectionIndex) {
@@ -233,10 +233,10 @@ class _TransactionsPageState extends State<TransactionsPage> {
                                       ..showSnackBar(
                                         SnackBar(
                                           content: const Text(
-                                            'Transaction deleted',
+                                            'Транзакция удалена',
                                           ),
                                           action: SnackBarAction(
-                                            label: 'Undo',
+                                            label: 'Отменить',
                                             onPressed: () {
                                               cubit.restoreTransaction(
                                                 removedTransaction,
@@ -339,18 +339,18 @@ class _DateRangeFilter extends StatelessWidget {
   final DateTimeRange? range;
 
   static const _months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
+    'янв',
+    'фев',
+    'мар',
+    'апр',
+    'мая',
+    'июн',
+    'июл',
+    'авг',
+    'сен',
+    'окт',
+    'ноя',
+    'дек',
   ];
 
   String _formatDate(DateTime date) {
@@ -359,7 +359,7 @@ class _DateRangeFilter extends StatelessWidget {
 
   String _label() {
     final r = range;
-    if (r == null) return 'All time';
+    if (r == null) return 'За всё время';
     return '${_formatDate(r.start)} – ${_formatDate(r.end)}';
   }
 
@@ -409,7 +409,7 @@ class _DateRangeFilter extends StatelessWidget {
               if (isActive)
                 IconButton(
                   icon: const Icon(Icons.close, size: 20),
-                  tooltip: 'Clear date filter',
+                  tooltip: 'Сбросить фильтр дат',
                   visualDensity: VisualDensity.compact,
                   onPressed: () =>
                       context.read<TransactionCubit>().setDateRange(null),

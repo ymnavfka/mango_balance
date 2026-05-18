@@ -3,18 +3,18 @@ import '../entities/period_type.dart';
 
 class ComputePeriodRange {
   static const _months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
+    'янв',
+    'фев',
+    'мар',
+    'апр',
+    'мая',
+    'июн',
+    'июл',
+    'авг',
+    'сен',
+    'окт',
+    'ноя',
+    'дек',
   ];
 
   PeriodRange call({
@@ -63,7 +63,7 @@ class ComputePeriodRange {
               )
             : DateTime(2000, 1, 1);
         final end = DateTime(anchor.year + 1, 1, 1);
-        return PeriodRange(start: start, end: end, label: 'All time');
+        return PeriodRange(start: start, end: end, label: 'За всё время');
     }
   }
 

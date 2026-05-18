@@ -52,12 +52,12 @@ class _ExportDialogState extends State<ExportDialog> {
     if (id == null) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Please select a profile')));
+      ).showSnackBar(const SnackBar(content: Text('Выберите профиль')));
       return;
     }
     if (_dateFrom != null && _dateTo != null && _dateFrom!.isAfter(_dateTo!)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('"From" must not be after "To"')),
+        const SnackBar(content: Text('Дата «С» не может быть позже даты «По»')),
       );
       return;
     }
@@ -81,8 +81,8 @@ class _ExportDialogState extends State<ExportDialog> {
             ..showSnackBar(
               SnackBar(
                 content: Text(
-                  'Exported ${r.exportedTransactions} transactions from "${r.profileName}"'
-                  '${r.savedPath != null ? ' to ${r.savedPath}' : ''}',
+                  'Экспортировано ${r.exportedTransactions} транзакций из профиля «${r.profileName}»'
+                  '${r.savedPath != null ? ' в ${r.savedPath}' : ''}',
                 ),
               ),
             );
@@ -96,7 +96,7 @@ class _ExportDialogState extends State<ExportDialog> {
         final isBusy = state.status == ExportStatus.working;
 
         return AlertDialog(
-          title: const Text('Export to XLSX'),
+          title: const Text('Экспорт в XLSX'),
           content: SizedBox(
             width: MediaQuery.of(context).size.width * 0.85,
             child: Column(
@@ -104,7 +104,7 @@ class _ExportDialogState extends State<ExportDialog> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const Text(
-                  'Profile',
+                  'Профиль',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 DropdownButton<int>(
@@ -114,7 +114,9 @@ class _ExportDialogState extends State<ExportDialog> {
                       .map(
                         (ProfileEntity p) => DropdownMenuItem<int>(
                           value: p.id,
-                          child: Text(p.name + (p.isActive ? ' (active)' : '')),
+                          child: Text(
+                            p.name + (p.isActive ? ' (активный)' : ''),
+                          ),
                         ),
                       )
                       .toList(),
@@ -128,12 +130,12 @@ class _ExportDialogState extends State<ExportDialog> {
                 ),
                 const SizedBox(height: 16),
                 const Text(
-                  'Date range (optional)',
+                  'Диапазон дат (необязательно)',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4),
                 _DateRow(
-                  label: 'From',
+                  label: 'С',
                   value: _dateFrom,
                   onPick: isBusy ? null : () => _pickDate(from: true),
                   onClear: isBusy || _dateFrom == null
@@ -142,7 +144,7 @@ class _ExportDialogState extends State<ExportDialog> {
                   format: _formatDate,
                 ),
                 _DateRow(
-                  label: 'To',
+                  label: 'По',
                   value: _dateTo,
                   onPick: isBusy ? null : () => _pickDate(from: false),
                   onClear: isBusy || _dateTo == null
@@ -152,7 +154,7 @@ class _ExportDialogState extends State<ExportDialog> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Leave both empty to export all transactions of the profile.',
+                  'Оставьте оба поля пустыми, чтобы экспортировать все транзакции профиля.',
                   style: TextStyle(color: Colors.grey[700], fontSize: 12),
                 ),
                 if (state.errorMessage != null) ...[
@@ -172,11 +174,11 @@ class _ExportDialogState extends State<ExportDialog> {
           actions: [
             TextButton(
               onPressed: isBusy ? null : () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
+              child: const Text('Отмена'),
             ),
             TextButton(
               onPressed: isBusy ? null : _runExport,
-              child: const Text('Export'),
+              child: const Text('Экспортировать'),
             ),
           ],
         );
@@ -208,10 +210,10 @@ class _DateRow extends StatelessWidget {
         children: [
           SizedBox(width: 56, child: Text(label)),
           Expanded(child: Text(value == null ? '—' : format(value!))),
-          TextButton(onPressed: onPick, child: const Text('Pick')),
+          TextButton(onPressed: onPick, child: const Text('Выбрать')),
           IconButton(
             icon: const Icon(Icons.clear, size: 18),
-            tooltip: 'Clear',
+            tooltip: 'Сбросить',
             onPressed: onClear,
           ),
         ],

@@ -8,7 +8,7 @@ class CreateProfile {
   Future<int> call({required String name, required bool includeStandardData}) {
     final trimmed = name.trim();
     if (trimmed.isEmpty) {
-      throw Exception('Profile name is required');
+      throw Exception('Название профиля обязательно');
     }
 
     return repository.createProfile(

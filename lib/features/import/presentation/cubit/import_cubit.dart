@@ -35,7 +35,7 @@ class ImportCubit extends Cubit<ImportState> {
         emit(
           state.copyWith(
             status: ImportStatus.failure,
-            errorMessage: 'No transactions found in the file',
+            errorMessage: 'В файле не найдено транзакций',
           ),
         );
         return;
@@ -45,7 +45,7 @@ class ImportCubit extends Cubit<ImportState> {
       emit(
         state.copyWith(
           status: ImportStatus.failure,
-          errorMessage: 'Failed to parse file: $e',
+          errorMessage: 'Не удалось прочитать файл: $e',
         ),
       );
     }
@@ -66,7 +66,7 @@ class ImportCubit extends Cubit<ImportState> {
       emit(
         state.copyWith(
           status: ImportStatus.failure,
-          errorMessage: 'Import failed: $e',
+          errorMessage: 'Ошибка импорта: $e',
         ),
       );
     }
@@ -94,7 +94,7 @@ class ImportCubit extends Cubit<ImportState> {
       emit(
         state.copyWith(
           status: ImportStatus.failure,
-          errorMessage: 'Import failed: $e',
+          errorMessage: 'Ошибка импорта: $e',
         ),
       );
     }

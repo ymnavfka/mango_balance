@@ -46,7 +46,7 @@ class ExportCubit extends Cubit<ExportState> {
         emit(
           state.copyWith(
             status: ExportStatus.failure,
-            errorMessage: 'No transactions match the selected range',
+            errorMessage: 'Нет транзакций в выбранном диапазоне',
           ),
         );
         return;
@@ -77,7 +77,7 @@ class ExportCubit extends Cubit<ExportState> {
       emit(
         state.copyWith(
           status: ExportStatus.failure,
-          errorMessage: 'Export failed: $e',
+          errorMessage: 'Ошибка экспорта: $e',
         ),
       );
     }

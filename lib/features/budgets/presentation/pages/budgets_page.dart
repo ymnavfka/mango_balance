@@ -36,11 +36,11 @@ class BudgetsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: const AppDrawer(currentRoute: AppRoute.budgets),
-      appBar: AppBar(title: const Text('Budgets')),
+      appBar: AppBar(title: const Text('Бюджеты')),
       body: BlocBuilder<BudgetCubit, BudgetState>(
         builder: (context, state) {
           if (state.progresses.isEmpty) {
-            return const Center(child: Text('No budgets yet'));
+            return const Center(child: Text('Бюджеты ещё не созданы'));
           }
           return ListView.builder(
             padding: const EdgeInsets.symmetric(vertical: 8),
@@ -71,9 +71,9 @@ class BudgetsPage extends StatelessWidget {
                     ..clearSnackBars()
                     ..showSnackBar(
                       SnackBar(
-                        content: const Text('Budget deleted'),
+                        content: const Text('Бюджет удалён'),
                         action: SnackBarAction(
-                          label: 'Undo',
+                          label: 'Отменить',
                           onPressed: () => cubit.addBudget(removed),
                         ),
                       ),

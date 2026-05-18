@@ -15,18 +15,18 @@ class TimeSeriesBarChart extends StatelessWidget {
   final PeriodType periodType;
 
   static const _months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
+    'янв',
+    'фев',
+    'мар',
+    'апр',
+    'мая',
+    'июн',
+    'июл',
+    'авг',
+    'сен',
+    'окт',
+    'ноя',
+    'дек',
   ];
 
   String _bucketLabel(PeriodBucket bucket) {
@@ -58,7 +58,7 @@ class TimeSeriesBarChart extends StatelessWidget {
     if (buckets.isEmpty) {
       return const Card(
         margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: SizedBox(height: 220, child: Center(child: Text('No data'))),
+        child: SizedBox(height: 220, child: Center(child: Text('Нет данных'))),
       );
     }
 
@@ -82,7 +82,7 @@ class TimeSeriesBarChart extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Income vs Expenses',
+              'Доходы и расходы',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
@@ -90,8 +90,8 @@ class TimeSeriesBarChart extends StatelessWidget {
               spacing: 16,
               runSpacing: 4,
               children: [
-                _LegendDot(color: Colors.green, label: 'Income'),
-                _LegendDot(color: Colors.red, label: 'Expense'),
+                _LegendDot(color: Colors.green, label: 'Доход'),
+                _LegendDot(color: Colors.red, label: 'Расход'),
               ],
             ),
             const SizedBox(height: 12),
@@ -161,9 +161,9 @@ class TimeSeriesBarChart extends StatelessWidget {
                                   final value = isIncome
                                       ? bucket.income
                                       : bucket.expense;
-                                  final label = isIncome ? 'Income' : 'Expense';
+                                  final label = isIncome ? 'Доход' : 'Расход';
                                   return BarTooltipItem(
-                                    '$label\n${_formatMoney(value)}\nNet: ${_formatMoney(bucket.net)}',
+                                    '$label\n${_formatMoney(value)}\nИтог: ${_formatMoney(bucket.net)}',
                                     const TextStyle(color: Colors.white),
                                   );
                                 },
@@ -207,7 +207,7 @@ class TimeSeriesBarChart extends StatelessWidget {
               children: [
                 Expanded(
                   child: _SummaryLine(
-                    label: 'Total income',
+                    label: 'Всего доходов',
                     value: _formatMoney(totalIncome),
                     color: Colors.green,
                   ),
@@ -218,7 +218,7 @@ class TimeSeriesBarChart extends StatelessWidget {
               children: [
                 Expanded(
                   child: _SummaryLine(
-                    label: 'Total expense',
+                    label: 'Всего расходов',
                     value: _formatMoney(totalExpense),
                     color: Colors.red,
                   ),
@@ -230,7 +230,7 @@ class TimeSeriesBarChart extends StatelessWidget {
               children: [
                 Expanded(
                   child: _SummaryLine(
-                    label: 'Net',
+                    label: 'Итог',
                     value: _formatMoney(totalNet),
                     color: totalNet < 0 ? Colors.red : Colors.green,
                     bold: true,

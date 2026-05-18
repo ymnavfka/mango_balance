@@ -8,7 +8,7 @@ class UpdateTransaction {
 
   Future<void> call(TransactionEntity tx) async {
     if (tx.categoryId <= 0) {
-      throw Exception('Category is required');
+      throw Exception('Категория обязательна');
     }
 
     await repository.updateTransaction(tx);

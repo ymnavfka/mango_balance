@@ -30,9 +30,9 @@ class _AccountFormDialogState extends State<AccountFormDialog> {
   void _submit() {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter an account name')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Введите название счёта')));
       return;
     }
 
@@ -49,15 +49,17 @@ class _AccountFormDialogState extends State<AccountFormDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.initial == null ? 'Add account' : 'Edit account'),
+      title: Text(
+        widget.initial == null ? 'Новый счёт' : 'Редактирование счёта',
+      ),
       content: TextField(
         controller: _nameController,
-        decoration: const InputDecoration(labelText: 'Account name'),
+        decoration: const InputDecoration(labelText: 'Название счёта'),
       ),
       actions: [
         TextButton(
           onPressed: _submit,
-          child: Text(widget.initial == null ? 'Add' : 'Save'),
+          child: Text(widget.initial == null ? 'Добавить' : 'Сохранить'),
         ),
       ],
     );

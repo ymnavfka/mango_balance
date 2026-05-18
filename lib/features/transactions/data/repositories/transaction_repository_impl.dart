@@ -117,7 +117,7 @@ class TransactionRepositoryImpl implements TransactionRepository {
       categoryId: dbTx.categoryId,
       categoryName: type == TransactionType.transfer
           ? 'Перевод'
-          : category?.name ?? 'Other',
+          : category?.name ?? 'Другое',
       accountId: dbTx.accountId,
       accountName: account?.name ?? 'Дебетовая карта',
       toAccountId: dbTx.toAccountId,

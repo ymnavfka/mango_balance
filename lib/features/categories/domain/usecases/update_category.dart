@@ -8,7 +8,7 @@ class UpdateCategory {
 
   Future<void> call(CategoryEntity category) async {
     if (category.name.trim().isEmpty) {
-      throw Exception('Category name must not be empty');
+      throw Exception('Название категории не должно быть пустым');
     }
 
     await repository.updateCategory(category);

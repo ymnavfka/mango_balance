@@ -4,15 +4,15 @@ extension PeriodTypeX on PeriodType {
   String get label {
     switch (this) {
       case PeriodType.day:
-        return 'Day';
+        return 'День';
       case PeriodType.week:
-        return 'Week';
+        return 'Неделя';
       case PeriodType.month:
-        return 'Month';
+        return 'Месяц';
       case PeriodType.year:
-        return 'Year';
+        return 'Год';
       case PeriodType.allTime:
-        return 'All time';
+        return 'За всё время';
     }
   }
 }

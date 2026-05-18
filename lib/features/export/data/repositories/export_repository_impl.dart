@@ -10,9 +10,9 @@ class ExportRepositoryImpl implements ExportRepository {
 
   final AppDatabase db;
 
-  static const _expensesSheet = 'Expenses';
-  static const _incomeSheet = 'Income';
-  static const _transfersSheet = 'Transfers';
+  static const _expensesSheet = 'Расходы';
+  static const _incomeSheet = 'Доходы';
+  static const _transfersSheet = 'Переводы';
 
   @override
   Future<ExportPayload> buildXlsx(ExportOptions options) async {
@@ -20,7 +20,7 @@ class ExportRepositoryImpl implements ExportRepository {
       db.profiles,
     )..where((p) => p.id.equals(options.profileId))).getSingleOrNull();
     if (profile == null) {
-      throw Exception('Profile ${options.profileId} does not exist');
+      throw Exception('Профиль ${options.profileId} не найден');
     }
 
     final toAccounts = db.alias(db.accounts, 'to_accounts');
@@ -57,25 +57,25 @@ class ExportRepositoryImpl implements ExportRepository {
     }
 
     excel.appendRow(_expensesSheet, [
-      TextCellValue('Date and time'),
-      TextCellValue('Category'),
-      TextCellValue('Account'),
-      TextCellValue('Amount'),
-      TextCellValue('Comment'),
+      TextCellValue('Дата и время'),
+      TextCellValue('Категория'),
+      TextCellValue('Счёт'),
+      TextCellValue('Сумма'),
+      TextCellValue('Комментарий'),
     ]);
     excel.appendRow(_incomeSheet, [
-      TextCellValue('Date and time'),
-      TextCellValue('Category'),
-      TextCellValue('Account'),
-      TextCellValue('Amount'),
-      TextCellValue('Comment'),
+      TextCellValue('Дата и время'),
+      TextCellValue('Категория'),
+      TextCellValue('Счёт'),
+      TextCellValue('Сумма'),
+      TextCellValue('Комментарий'),
     ]);
     excel.appendRow(_transfersSheet, [
-      TextCellValue('Date and time'),
-      TextCellValue('Outgoing'),
-      TextCellValue('Incoming'),
-      TextCellValue('Amount'),
-      TextCellValue('Comment'),
+      TextCellValue('Дата и время'),
+      TextCellValue('Счёт-источник'),
+      TextCellValue('Счёт-получатель'),
+      TextCellValue('Сумма'),
+      TextCellValue('Комментарий'),
     ]);
 
     int exportedCount = 0;
@@ -122,7 +122,7 @@ class ExportRepositoryImpl implements ExportRepository {
 
     final encoded = excel.encode();
     if (encoded == null) {
-      throw Exception('Failed to encode XLSX file');
+      throw Exception('Не удалось сформировать XLSX-файл');
     }
 
     return ExportPayload(

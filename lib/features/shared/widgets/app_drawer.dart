@@ -34,17 +34,17 @@ extension AppRouteX on AppRoute {
   String get title {
     switch (this) {
       case AppRoute.transactions:
-        return 'Transactions';
+        return 'Транзакции';
       case AppRoute.statistics:
-        return 'Statistics';
+        return 'Статистика';
       case AppRoute.budgets:
-        return 'Budgets';
+        return 'Бюджеты';
       case AppRoute.categories:
-        return 'Categories';
+        return 'Категории';
       case AppRoute.accounts:
-        return 'Accounts';
+        return 'Счета';
       case AppRoute.profiles:
-        return 'Profiles';
+        return 'Профили';
     }
   }
 
@@ -97,7 +97,7 @@ class AppDrawer extends StatelessWidget {
                     builder: (context, state) {
                       final name = state.activeProfile?.name ?? '—';
                       return Text(
-                        'Profile: $name',
+                        'Профиль: $name',
                         style: const TextStyle(color: Colors.white70),
                       );
                     },

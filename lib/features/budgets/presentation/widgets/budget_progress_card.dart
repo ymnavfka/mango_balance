@@ -29,19 +29,27 @@ class BudgetProgressCard extends StatelessWidget {
   }
 
   String _categoriesLabel() {
-    if (progress.budget.allCategories) return 'All categories';
-    if (progress.categoryNames.isEmpty) return 'No categories';
+    if (progress.budget.allCategories) return 'Все категории';
+    if (progress.categoryNames.isEmpty) return 'Нет категорий';
     if (progress.categoryNames.length <= 3) {
       return progress.categoryNames.join(', ');
     }
     return '${progress.categoryNames.take(2).join(', ')} +${progress.categoryNames.length - 2}';
   }
 
+  String _pluralDays(int days) {
+    final mod100 = days % 100;
+    final mod10 = days % 10;
+    if (mod100 >= 11 && mod100 <= 14) return 'дней';
+    if (mod10 == 1) return 'день';
+    if (mod10 >= 2 && mod10 <= 4) return 'дня';
+    return 'дней';
+  }
+
   String _daysLabel() {
     final days = progress.daysRemaining;
-    if (days == 0) return 'Last day of period';
-    if (days == 1) return '1 day left';
-    return '$days days left';
+    if (days == 0) return 'Последний день периода';
+    return 'Осталось $days ${_pluralDays(days)}';
   }
 
   @override
@@ -120,8 +128,8 @@ class BudgetProgressCard extends StatelessWidget {
                   ),
                   Text(
                     overshoot
-                        ? 'Over by ${_formatMoney(progress.spent - progress.limit)}'
-                        : '${_formatMoney(progress.remaining)} left',
+                        ? 'Превышение на ${_formatMoney(progress.spent - progress.limit)}'
+                        : 'Остаток ${_formatMoney(progress.remaining)}',
                     style: TextStyle(color: color),
                   ),
                 ],

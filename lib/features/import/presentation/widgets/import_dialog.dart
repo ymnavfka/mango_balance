@@ -52,7 +52,7 @@ class _ImportDialogState extends State<ImportDialog> {
     if (bytes == null) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to read file contents')),
+        const SnackBar(content: Text('Не удалось прочитать содержимое файла')),
       );
       return;
     }
@@ -69,9 +69,9 @@ class _ImportDialogState extends State<ImportDialog> {
     if (_target == _ImportTarget.existingProfile) {
       final id = _selectedProfileId;
       if (id == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please select a profile')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Выберите профиль')));
         return;
       }
       cubit.importIntoExisting(id);
@@ -79,7 +79,7 @@ class _ImportDialogState extends State<ImportDialog> {
       final name = _newProfileNameController.text.trim();
       if (name.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please enter a profile name')),
+          const SnackBar(content: Text('Введите название профиля')),
         );
         return;
       }
@@ -102,9 +102,9 @@ class _ImportDialogState extends State<ImportDialog> {
             ..showSnackBar(
               SnackBar(
                 content: Text(
-                  'Imported ${r.importedTransactions} transactions into "${r.profileName}". '
-                  '+${r.createdCategories} categories, +${r.createdAccounts} accounts.'
-                  '${r.skippedRows > 0 ? ' Skipped ${r.skippedRows} rows.' : ''}',
+                  'Импортировано ${r.importedTransactions} транзакций в профиль «${r.profileName}». '
+                  '+${r.createdCategories} категорий, +${r.createdAccounts} счетов.'
+                  '${r.skippedRows > 0 ? ' Пропущено ${r.skippedRows} строк.' : ''}',
                 ),
               ),
             );
@@ -117,7 +117,7 @@ class _ImportDialogState extends State<ImportDialog> {
             state.status == ImportStatus.importing;
 
         return AlertDialog(
-          title: const Text('Import from XLSX'),
+          title: const Text('Импорт из XLSX'),
           content: SizedBox(
             width: MediaQuery.of(context).size.width * 0.85,
             child: Column(
@@ -139,7 +139,7 @@ class _ImportDialogState extends State<ImportDialog> {
                 ],
                 const Divider(height: 24),
                 const Text(
-                  'Import target',
+                  'Куда импортировать',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 RadioGroup<_ImportTarget>(
@@ -157,7 +157,7 @@ class _ImportDialogState extends State<ImportDialog> {
                       const RadioListTile<_ImportTarget>(
                         contentPadding: EdgeInsets.zero,
                         value: _ImportTarget.existingProfile,
-                        title: Text('Import into existing profile'),
+                        title: Text('В существующий профиль'),
                       ),
                       if (_target == _ImportTarget.existingProfile)
                         Padding(
@@ -170,7 +170,8 @@ class _ImportDialogState extends State<ImportDialog> {
                                   (ProfileEntity p) => DropdownMenuItem<int>(
                                     value: p.id,
                                     child: Text(
-                                      p.name + (p.isActive ? ' (active)' : ''),
+                                      p.name +
+                                          (p.isActive ? ' (активный)' : ''),
                                     ),
                                   ),
                                 )
@@ -187,7 +188,7 @@ class _ImportDialogState extends State<ImportDialog> {
                       const RadioListTile<_ImportTarget>(
                         contentPadding: EdgeInsets.zero,
                         value: _ImportTarget.newProfile,
-                        title: Text('Create a new profile'),
+                        title: Text('Создать новый профиль'),
                       ),
                     ],
                   ),
@@ -201,7 +202,7 @@ class _ImportDialogState extends State<ImportDialog> {
                         TextField(
                           controller: _newProfileNameController,
                           decoration: const InputDecoration(
-                            labelText: 'New profile name',
+                            labelText: 'Название нового профиля',
                           ),
                           enabled: !isBusy,
                         ),
@@ -217,7 +218,7 @@ class _ImportDialogState extends State<ImportDialog> {
                                   });
                                 },
                           title: const Text(
-                            'Add standard categories and accounts',
+                            'Добавить стандартные категории и счета',
                           ),
                         ),
                       ],
@@ -233,13 +234,13 @@ class _ImportDialogState extends State<ImportDialog> {
           actions: [
             TextButton(
               onPressed: isBusy ? null : () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
+              child: const Text('Отмена'),
             ),
             TextButton(
               onPressed: (state.status == ImportStatus.ready && !isBusy)
                   ? _runImport
                   : null,
-              child: const Text('Import'),
+              child: const Text('Импортировать'),
             ),
           ],
         );
@@ -270,7 +271,7 @@ class _FileSection extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                fileName ?? 'No file selected',
+                fileName ?? 'Файл не выбран',
                 style: const TextStyle(fontWeight: FontWeight.w500),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -278,7 +279,7 @@ class _FileSection extends StatelessWidget {
             TextButton.icon(
               onPressed: onPick,
               icon: const Icon(Icons.attach_file),
-              label: const Text('Choose file'),
+              label: const Text('Выбрать файл'),
             ),
           ],
         ),
@@ -289,10 +290,10 @@ class _FileSection extends StatelessWidget {
               return Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(
-                  'Found: ${p.expenses.length} expenses, '
-                  '${p.incomes.length} incomes, '
-                  '${p.transfers.length} transfers'
-                  '${p.skippedRows > 0 ? '. Skipped ${p.skippedRows} rows.' : '.'}',
+                  'Найдено: ${p.expenses.length} расходов, '
+                  '${p.incomes.length} доходов, '
+                  '${p.transfers.length} переводов'
+                  '${p.skippedRows > 0 ? '. Пропущено ${p.skippedRows} строк.' : '.'}',
                   style: TextStyle(color: Colors.grey[700]),
                 ),
               );

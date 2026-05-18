@@ -20,7 +20,7 @@ class ImportRepositoryImpl implements ImportRepository {
         db.profiles,
       )..where((p) => p.id.equals(profileId))).getSingleOrNull();
       if (profile == null) {
-        throw Exception('Profile $profileId does not exist');
+        throw Exception('Профиль $profileId не найден');
       }
 
       final existingCategories = await (db.select(

@@ -158,12 +158,12 @@ class AppDatabase extends _$AppDatabase {
     await batch((batch) {
       batch.insertAll(categories, [
         CategoriesCompanion.insert(
-          name: 'Other (доходы)',
+          name: 'Другое (доходы)',
           type: 'income',
           isFallback: const Value(true),
         ),
         CategoriesCompanion.insert(
-          name: 'Other (расходы)',
+          name: 'Другое (расходы)',
           type: 'expense',
           isFallback: const Value(true),
         ),
@@ -228,13 +228,13 @@ class AppDatabase extends _$AppDatabase {
     await batch((batch) {
       batch.insertAll(categories, [
         CategoriesCompanion.insert(
-          name: 'Other (доходы)',
+          name: 'Другое (доходы)',
           type: 'income',
           isFallback: const Value(true),
           profileId: Value(profileId),
         ),
         CategoriesCompanion.insert(
-          name: 'Other (расходы)',
+          name: 'Другое (расходы)',
           type: 'expense',
           isFallback: const Value(true),
           profileId: Value(profileId),
@@ -308,13 +308,13 @@ class AppDatabase extends _$AppDatabase {
     await batch((batch) {
       batch.insertAll(categories, [
         CategoriesCompanion.insert(
-          name: 'Other (доходы)',
+          name: 'Другое (доходы)',
           type: 'income',
           isFallback: const Value(true),
           profileId: Value(profileId),
         ),
         CategoriesCompanion.insert(
-          name: 'Other (расходы)',
+          name: 'Другое (расходы)',
           type: 'expense',
           isFallback: const Value(true),
           profileId: Value(profileId),

@@ -45,9 +45,9 @@ class _ProfileFormDialogState extends State<ProfileFormDialog> {
   void _submit() {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a profile name')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Введите название профиля')));
       return;
     }
 
@@ -60,14 +60,14 @@ class _ProfileFormDialogState extends State<ProfileFormDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.isEdit ? 'Rename profile' : 'New profile'),
+      title: Text(widget.isEdit ? 'Переименовать профиль' : 'Новый профиль'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           TextField(
             controller: _nameController,
-            decoration: const InputDecoration(labelText: 'Profile name'),
+            decoration: const InputDecoration(labelText: 'Название профиля'),
             autofocus: true,
           ),
           if (!widget.isEdit) ...[
@@ -81,9 +81,9 @@ class _ProfileFormDialogState extends State<ProfileFormDialog> {
                   _includeStandardData = value ?? false;
                 });
               },
-              title: const Text('Add standard categories and accounts'),
+              title: const Text('Добавить стандартные категории и счета'),
               subtitle: const Text(
-                'If unchecked, only fallback categories and one default account will be created.',
+                'Если выключено, будут созданы только базовые категории и один счёт по умолчанию.',
               ),
             ),
           ],
@@ -92,11 +92,11 @@ class _ProfileFormDialogState extends State<ProfileFormDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: const Text('Отмена'),
         ),
         TextButton(
           onPressed: _submit,
-          child: Text(widget.isEdit ? 'Save' : 'Create'),
+          child: Text(widget.isEdit ? 'Сохранить' : 'Создать'),
         ),
       ],
     );

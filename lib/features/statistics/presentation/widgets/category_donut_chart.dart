@@ -59,7 +59,7 @@ class _CategoryDonutChartState extends State<CategoryDonutChart> {
             if (isEmpty)
               const SizedBox(
                 height: 220,
-                child: Center(child: Text('No data for this period')),
+                child: Center(child: Text('Нет данных за этот период')),
               )
             else
               SizedBox(
@@ -104,7 +104,7 @@ class _CategoryDonutChartState extends State<CategoryDonutChart> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'Total',
+                          'Всего',
                           style: TextStyle(
                             color: Theme.of(
                               context,

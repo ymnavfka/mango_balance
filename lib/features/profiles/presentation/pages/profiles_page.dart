@@ -13,11 +13,11 @@ class ProfilesPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: const AppDrawer(currentRoute: AppRoute.profiles),
-      appBar: AppBar(title: const Text('Profiles')),
+      appBar: AppBar(title: const Text('Профили')),
       body: BlocBuilder<ProfileCubit, ProfileState>(
         builder: (context, state) {
           if (state.profiles.isEmpty) {
-            return const Center(child: Text('No profiles yet'));
+            return const Center(child: Text('Профилей ещё нет'));
           }
 
           return ListView.builder(
@@ -35,7 +35,9 @@ class ProfilesPage extends StatelessWidget {
                       : null,
                 ),
                 title: Text(profile.name),
-                subtitle: Text(isActive ? 'Active' : 'Tap to switch'),
+                subtitle: Text(
+                  isActive ? 'Активный' : 'Нажмите для переключения',
+                ),
                 onTap: isActive
                     ? null
                     : () {
@@ -72,21 +74,21 @@ class ProfilesPage extends StatelessWidget {
                               final confirmed = await showDialog<bool>(
                                 context: context,
                                 builder: (dialogContext) => AlertDialog(
-                                  title: const Text('Delete profile?'),
+                                  title: const Text('Удалить профиль?'),
                                   content: Text(
-                                    'All transactions, categories and accounts of "${profile.name}" will be removed.',
+                                    'Все транзакции, категории и счета профиля «${profile.name}» будут удалены.',
                                   ),
                                   actions: [
                                     TextButton(
                                       onPressed: () => Navigator.of(
                                         dialogContext,
                                       ).pop(false),
-                                      child: const Text('Cancel'),
+                                      child: const Text('Отмена'),
                                     ),
                                     TextButton(
                                       onPressed: () =>
                                           Navigator.of(dialogContext).pop(true),
-                                      child: const Text('Delete'),
+                                      child: const Text('Удалить'),
                                     ),
                                   ],
                                 ),
