@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/di/injector.dart';
 import '../../../../core/enums/transaction_type.dart';
+import '../../../../core/utils/popularity_ranker.dart';
 import '../../../accounts/presentation/cubit/account_cubit.dart';
 import '../../../export/presentation/cubit/export_cubit.dart';
 import '../../../export/presentation/widgets/export_dialog.dart';
@@ -77,7 +78,8 @@ class _TransactionsPageState extends State<TransactionsPage> {
       body: BlocBuilder<TransactionCubit, TransactionState>(
         builder: (context, state) {
           final accountState = context.watch<AccountCubit>().state;
-          final accounts = accountState.accounts;
+          final ranker = PopularityRanker(transactions: state.allTransactions);
+          final accounts = ranker.sortAccounts(accountState.accounts);
           final selectedAccount = state.selectedAccountId == null
               ? null
               : accounts

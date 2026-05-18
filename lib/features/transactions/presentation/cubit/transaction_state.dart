@@ -6,6 +6,7 @@ import '../../domain/entities/transaction.dart';
 class TransactionState {
   TransactionState({
     required this.transactions,
+    required this.allTransactions,
     required this.sections,
     required this.selectedAccountId,
     required this.totalBalance,
@@ -18,6 +19,7 @@ class TransactionState {
   factory TransactionState.initial() {
     return TransactionState(
       transactions: [],
+      allTransactions: [],
       sections: [],
       selectedAccountId: null,
       totalBalance: 0,
@@ -29,6 +31,7 @@ class TransactionState {
   }
 
   final List<TransactionEntity> transactions;
+  final List<TransactionEntity> allTransactions;
   final List<TransactionSection> sections;
   final int? selectedAccountId;
   final double totalBalance;
@@ -39,6 +42,7 @@ class TransactionState {
 
   TransactionState copyWith({
     List<TransactionEntity>? transactions,
+    List<TransactionEntity>? allTransactions,
     List<TransactionSection>? sections,
     Object? selectedAccountId = _unset,
     double? totalBalance,
@@ -49,6 +53,7 @@ class TransactionState {
   }) {
     return TransactionState(
       transactions: transactions ?? this.transactions,
+      allTransactions: allTransactions ?? this.allTransactions,
       sections: sections ?? this.sections,
       selectedAccountId: identical(selectedAccountId, _unset)
           ? this.selectedAccountId

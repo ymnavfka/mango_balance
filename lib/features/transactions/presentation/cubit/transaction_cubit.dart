@@ -149,6 +149,7 @@ class TransactionCubit extends Cubit<TransactionState> {
     emit(
       state.copyWith(
         transactions: byDate,
+        allTransactions: _allTransactions,
         sections: sections,
         selectedAccountId: _selectedAccountId,
         totalBalance: totalBalance,

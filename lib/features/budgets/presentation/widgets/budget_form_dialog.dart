@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/enums/transaction_type.dart';
+import '../../../../core/utils/popularity_ranker.dart';
 import '../../../categories/domain/entities/category.dart';
 import '../../../categories/presentation/cubit/category_cubit.dart';
 import '../../../categories/presentation/cubit/category_state.dart';
+import '../../../transactions/presentation/cubit/transaction_cubit.dart';
 import '../../domain/entities/budget.dart';
 import '../../domain/entities/budget_period.dart';
 
@@ -146,9 +148,18 @@ class _BudgetFormDialogState extends State<BudgetFormDialog> {
               if (!_allCategories)
                 BlocBuilder<CategoryCubit, CategoryState>(
                   builder: (context, state) {
-                    final expenseCategories = state.categories
-                        .where((c) => c.type == TransactionType.expense)
-                        .toList();
+                    final allTransactions = context
+                        .watch<TransactionCubit>()
+                        .state
+                        .allTransactions;
+                    final ranker = PopularityRanker(
+                      transactions: allTransactions,
+                    );
+                    final expenseCategories = ranker.sortCategories(
+                      state.categories.where(
+                        (c) => c.type == TransactionType.expense,
+                      ),
+                    );
                     if (expenseCategories.isEmpty) {
                       return const Padding(
                         padding: EdgeInsets.symmetric(vertical: 8),

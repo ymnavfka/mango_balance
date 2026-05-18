@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/enums/transaction_type.dart';
+import '../../../../core/utils/popularity_ranker.dart';
 import '../../../accounts/domain/entities/account.dart';
 import '../../../accounts/presentation/cubit/account_cubit.dart';
 import '../../../categories/domain/entities/category.dart';
@@ -9,6 +10,7 @@ import '../../../categories/presentation/cubit/category_cubit.dart';
 import '../../domain/entities/transaction.dart';
 import '../../domain/value_objects/amount.dart';
 import '../../domain/value_objects/transaction_date.dart';
+import '../cubit/transaction_cubit.dart';
 
 class TransactionFormDialog extends StatefulWidget {
   const TransactionFormDialog({
@@ -169,10 +171,16 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
   @override
   Widget build(BuildContext context) {
     final categories = context.watch<CategoryCubit>().state.categories;
-    final accounts = context.watch<AccountCubit>().state.accounts;
-    final filteredCategories = categories
-        .where((category) => category.type == _type)
-        .toList();
+    final rawAccounts = context.watch<AccountCubit>().state.accounts;
+    final allTransactions = context
+        .watch<TransactionCubit>()
+        .state
+        .allTransactions;
+    final ranker = PopularityRanker(transactions: allTransactions);
+    final accounts = ranker.sortAccounts(rawAccounts);
+    final filteredCategories = ranker.sortCategories(
+      categories.where((category) => category.type == _type),
+    );
     final isTransfer = _type == TransactionType.transfer;
 
     final CategoryEntity? selectedCategory = filteredCategories.isNotEmpty
