@@ -91,7 +91,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -145,8 +145,72 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(budgets);
         await m.createTable(budgetCategories);
       }
+
+      if (from < 8) {
+        // Heal dangling foreign keys left over by earlier versions where
+        // replaceAccountForTransactions did not touch transactions.to_account_id.
+        await _healDanglingAccountReferences();
+        await _healDanglingCategoryReferences();
+      }
     },
   );
+
+  Future<void> _healDanglingAccountReferences() async {
+    // For every profile, pick its fallback account (or, if absent, any
+    // account belonging to that profile) and reassign every transaction whose
+    // accountId or toAccountId no longer points to an existing account of
+    // that profile.
+    final allProfiles = await select(profiles).get();
+    for (final profile in allProfiles) {
+      final fallback =
+          await fallbackAccount(profile.id) ??
+          await (select(
+            accounts,
+          )..where((a) => a.profileId.equals(profile.id))).getSingleOrNull();
+      if (fallback == null) continue;
+      await customStatement(
+        'UPDATE transactions '
+        'SET account_id = ? '
+        'WHERE profile_id = ? '
+        'AND account_id NOT IN ('
+        '  SELECT id FROM accounts WHERE profile_id = ?'
+        ')',
+        [fallback.id, profile.id, profile.id],
+      );
+      await customStatement(
+        'UPDATE transactions '
+        'SET to_account_id = ? '
+        'WHERE profile_id = ? '
+        'AND to_account_id NOT IN ('
+        '  SELECT id FROM accounts WHERE profile_id = ?'
+        ')',
+        [fallback.id, profile.id, profile.id],
+      );
+    }
+  }
+
+  Future<void> _healDanglingCategoryReferences() async {
+    // For every profile and every transaction type, pick the matching fallback
+    // category and reassign transactions whose categoryId no longer points to
+    // an existing category of the right type for that profile.
+    final allProfiles = await select(profiles).get();
+    for (final profile in allProfiles) {
+      for (final txType in ['income', 'expense', 'transfer']) {
+        final fb = await fallbackCategory(txType, profile.id);
+        if (fb == null) continue;
+        await customStatement(
+          'UPDATE transactions '
+          'SET category_id = ? '
+          'WHERE profile_id = ? '
+          'AND type = ? '
+          'AND category_id NOT IN ('
+          '  SELECT id FROM categories WHERE profile_id = ?'
+          ')',
+          [fb.id, profile.id, txType, profile.id],
+        );
+      }
+    }
+  }
 
   Future<void> _insertDefaultProfile() async {
     await into(profiles).insert(
@@ -517,10 +581,12 @@ class AppDatabase extends _$AppDatabase {
   Future<void> replaceAccountForTransactions(
     int oldAccountId,
     int fallbackAccountId,
-  ) {
-    return (update(transactions)
-          ..where((t) => t.accountId.equals(oldAccountId)))
+  ) async {
+    await (update(transactions)..where((t) => t.accountId.equals(oldAccountId)))
         .write(TransactionsCompanion(accountId: Value(fallbackAccountId)));
+    await (update(transactions)
+          ..where((t) => t.toAccountId.equals(oldAccountId)))
+        .write(TransactionsCompanion(toAccountId: Value(fallbackAccountId)));
   }
 
   // Transactions

@@ -43,9 +43,9 @@ class TransactionRepositoryImpl implements TransactionRepository {
     return query.watch().map(
       (rows) => rows.map((row) {
         final transaction = row.readTable(db.transactions);
-        final category = row.readTable(db.categories);
-        final account = row.readTable(db.accounts);
-        final toAccount = row.readTable(toAccounts);
+        final category = row.readTableOrNull(db.categories);
+        final account = row.readTableOrNull(db.accounts);
+        final toAccount = row.readTableOrNull(toAccounts);
         return _mapToEntity(transaction, category, account, toAccount);
       }).toList(),
     );
