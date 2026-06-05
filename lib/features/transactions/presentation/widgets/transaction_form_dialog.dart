@@ -7,6 +7,10 @@ import '../../../accounts/domain/entities/account.dart';
 import '../../../accounts/presentation/cubit/account_cubit.dart';
 import '../../../categories/domain/entities/category.dart';
 import '../../../categories/presentation/cubit/category_cubit.dart';
+import '../../../shared/theme/app_colors.dart';
+import '../../../shared/widgets/app_dialog.dart';
+import '../../../shared/widgets/app_dropdown_field.dart';
+import '../../../shared/widgets/form_field_label.dart';
 import '../../domain/entities/transaction.dart';
 import '../../domain/value_objects/amount.dart';
 import '../../domain/value_objects/transaction_date.dart';
@@ -251,195 +255,242 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
       });
     }
 
-    return AlertDialog(
-      title: Text(
-        widget.initial == null
-            ? 'Новая транзакция'
-            : 'Редактирование транзакции',
-      ),
-      content: SizedBox(
-        width: MediaQuery.of(context).size.width * 0.8,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            DropdownButton<TransactionType>(
-              isExpanded: true,
-              value: _type,
-              items: const [
-                DropdownMenuItem(
-                  value: TransactionType.income,
-                  child: Text('Доход'),
-                ),
-                DropdownMenuItem(
-                  value: TransactionType.expense,
-                  child: Text('Расход'),
-                ),
-                DropdownMenuItem(
-                  value: TransactionType.transfer,
-                  child: Text('Перевод'),
-                ),
-              ],
-              onChanged: (value) {
-                if (value != null) {
-                  final newCategories = categories
-                      .where((category) => category.type == value)
-                      .toList();
-                  setState(() {
-                    _type = value;
-                    if (newCategories.isNotEmpty) {
-                      _categoryId = newCategories.first.id;
-                      _categoryName = newCategories.first.name;
-                    } else {
-                      _categoryId = null;
-                      _categoryName = null;
-                    }
-                    if (value != TransactionType.transfer) {
-                      _toAccountId = null;
-                      _toAccountName = null;
-                    }
-                  });
+    return AppDialog(
+      title: widget.initial == null ? 'Новая транзакция' : 'Редактирование',
+      primaryLabel: widget.initial == null ? 'Добавить' : 'Сохранить',
+      onPrimary: _submit,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const FormFieldLabel('Тип операции', top: 0),
+          SegmentedButton<TransactionType>(
+            segments: const [
+              ButtonSegment(
+                value: TransactionType.income,
+                label: Text('Доход'),
+              ),
+              ButtonSegment(
+                value: TransactionType.expense,
+                label: Text('Расход'),
+              ),
+              ButtonSegment(
+                value: TransactionType.transfer,
+                label: Text('Перевод'),
+              ),
+            ],
+            selected: {_type},
+            showSelectedIcon: false,
+            onSelectionChanged: (selection) {
+              final value = selection.first;
+              final newCategories = categories
+                  .where((category) => category.type == value)
+                  .toList();
+              setState(() {
+                _type = value;
+                if (newCategories.isNotEmpty) {
+                  _categoryId = newCategories.first.id;
+                  _categoryName = newCategories.first.name;
+                } else {
+                  _categoryId = null;
+                  _categoryName = null;
                 }
-              },
-            ),
-            const SizedBox(height: 12),
-            if (_type != TransactionType.transfer)
-              if (filteredCategories.isNotEmpty)
-                DropdownButton<int>(
-                  value: selectedCategory?.id,
-                  isExpanded: true,
-                  items: filteredCategories.map((category) {
-                    return DropdownMenuItem(
-                      value: category.id,
-                      child: Text(category.name),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    if (value == null) return;
-
-                    final selected = filteredCategories.firstWhere(
-                      (category) => category.id == value,
-                      orElse: () => filteredCategories.first,
-                    );
-
-                    setState(() {
-                      _categoryId = selected.id;
-                      _categoryName = selected.name;
-                    });
-                  },
-                )
-              else
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  child: Text('Нет категорий для этого типа'),
-                ),
-            const SizedBox(height: 12),
-            if (accounts.isNotEmpty)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Text('Счёт-источник'),
-                  DropdownButton<int>(
-                    value: selectedAccount?.id,
-                    isExpanded: true,
-                    items: accounts.map((account) {
-                      return DropdownMenuItem(
-                        value: account.id,
-                        child: Text(account.name),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      if (value == null) return;
-
-                      final selected = accounts.firstWhere(
-                        (account) => account.id == value,
-                        orElse: () => accounts.first,
-                      );
-
-                      setState(() {
-                        _accountId = selected.id;
-                        _accountName = selected.name;
-                        if (_type == TransactionType.transfer &&
-                            _toAccountId == selected.id) {
-                          final nextAccount = accounts.firstWhere(
-                            (account) => account.id != selected.id,
-                            orElse: () => selected,
-                          );
-                          _toAccountId = nextAccount.id;
-                          _toAccountName = nextAccount.name;
-                        }
-                      });
-                    },
-                  ),
-                  if (_type == TransactionType.transfer) ...[
-                    const SizedBox(height: 12),
-                    const Text('Счёт-получатель'),
-                    DropdownButton<int>(
-                      value: selectedToAccount?.id,
-                      isExpanded: true,
-                      items: accounts.map((account) {
-                        return DropdownMenuItem(
-                          value: account.id,
-                          child: Text(account.name),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        if (value == null) return;
-
-                        final selected = accounts.firstWhere(
-                          (account) => account.id == value,
-                          orElse: () => accounts.first,
-                        );
-
-                        setState(() {
-                          _toAccountId = selected.id;
-                          _toAccountName = selected.name;
-                        });
-                      },
-                    ),
-                  ],
-                ],
+                if (value != TransactionType.transfer) {
+                  _toAccountId = null;
+                  _toAccountName = null;
+                }
+              });
+            },
+          ),
+          if (_type != TransactionType.transfer) ...[
+            const FormFieldLabel('Категория'),
+            if (filteredCategories.isNotEmpty)
+              AppDropdownField<int>(
+                value: selectedCategory?.id,
+                items: filteredCategories
+                    .map(
+                      (category) => DropdownMenuItem(
+                        value: category.id,
+                        child: Text(category.name),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) {
+                  if (value == null) return;
+                  final selected = filteredCategories.firstWhere(
+                    (category) => category.id == value,
+                    orElse: () => filteredCategories.first,
+                  );
+                  setState(() {
+                    _categoryId = selected.id;
+                    _categoryName = selected.name;
+                  });
+                },
               )
             else
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 16),
-                child: Text('Нет доступных счетов'),
-              ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _amountController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Сумма'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _commentController,
-              keyboardType: TextInputType.text,
-              maxLines: 2,
-              decoration: const InputDecoration(
-                labelText: 'Комментарий',
-                hintText: 'Необязательный комментарий',
-              ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(child: Text(_formatDate(_date))),
-                TextButton(
-                  onPressed: _pickDateTime,
-                  child: const Text('Выбрать дату'),
-                ),
-              ],
-            ),
+              const _InfoBox('Нет категорий для этого типа'),
           ],
+          if (accounts.isNotEmpty) ...[
+            FormFieldLabel(isTransfer ? 'Счёт-источник' : 'Счёт'),
+            AppDropdownField<int>(
+              value: selectedAccount?.id,
+              items: accounts
+                  .map(
+                    (account) => DropdownMenuItem(
+                      value: account.id,
+                      child: Text(account.name),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (value) {
+                if (value == null) return;
+                final selected = accounts.firstWhere(
+                  (account) => account.id == value,
+                  orElse: () => accounts.first,
+                );
+                setState(() {
+                  _accountId = selected.id;
+                  _accountName = selected.name;
+                  if (_type == TransactionType.transfer &&
+                      _toAccountId == selected.id) {
+                    final nextAccount = accounts.firstWhere(
+                      (account) => account.id != selected.id,
+                      orElse: () => selected,
+                    );
+                    _toAccountId = nextAccount.id;
+                    _toAccountName = nextAccount.name;
+                  }
+                });
+              },
+            ),
+            if (isTransfer) ...[
+              const FormFieldLabel('Счёт-получатель'),
+              AppDropdownField<int>(
+                value: selectedToAccount?.id,
+                items: accounts
+                    .map(
+                      (account) => DropdownMenuItem(
+                        value: account.id,
+                        child: Text(account.name),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) {
+                  if (value == null) return;
+                  final selected = accounts.firstWhere(
+                    (account) => account.id == value,
+                    orElse: () => accounts.first,
+                  );
+                  setState(() {
+                    _toAccountId = selected.id;
+                    _toAccountName = selected.name;
+                  });
+                },
+              ),
+            ],
+          ] else
+            const _InfoBox('Нет доступных счетов'),
+          const FormFieldLabel('Сумма'),
+          TextField(
+            controller: _amountController,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: const InputDecoration(
+              hintText: '0,00',
+              prefixIcon: Icon(Icons.payments_rounded),
+            ),
+          ),
+          const FormFieldLabel('Комментарий'),
+          TextField(
+            controller: _commentController,
+            keyboardType: TextInputType.text,
+            maxLines: 2,
+            decoration: const InputDecoration(
+              hintText: 'Необязательный комментарий',
+            ),
+          ),
+          const FormFieldLabel('Дата и время'),
+          _DateField(text: _formatDate(_date), onTap: _pickDateTime),
+        ],
+      ),
+    );
+  }
+}
+
+class _DateField extends StatelessWidget {
+  const _DateField({required this.text, required this.onTap});
+
+  final String text;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.surfaceAlt,
+      borderRadius: BorderRadius.circular(AppRadius.md),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.event_rounded,
+                size: 20,
+                color: AppColors.textSecondary,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  text,
+                  style: const TextStyle(color: AppColors.textPrimary),
+                ),
+              ),
+              const Icon(
+                Icons.edit_calendar_rounded,
+                size: 18,
+                color: AppColors.brand,
+              ),
+            ],
+          ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: _submit,
-          child: Text(widget.initial == null ? 'Добавить' : 'Сохранить'),
-        ),
-      ],
+    );
+  }
+}
+
+class _InfoBox extends StatelessWidget {
+  const _InfoBox(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(top: AppSpacing.sm),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      decoration: BoxDecoration(
+        color: AppColors.warning.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.info_outline_rounded,
+            size: 18,
+            color: AppColors.warning,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 13,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

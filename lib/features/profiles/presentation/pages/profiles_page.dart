@@ -1,13 +1,66 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../shared/theme/app_colors.dart';
 import '../../../shared/widgets/app_drawer.dart';
+import '../../../shared/widgets/empty_state.dart';
+import '../../domain/entities/profile.dart';
 import '../cubit/profile_cubit.dart';
 import '../cubit/profile_state.dart';
 import '../widgets/profile_form_dialog.dart';
 
 class ProfilesPage extends StatelessWidget {
   const ProfilesPage({super.key});
+
+  void _openEdit(BuildContext context, ProfileEntity profile) {
+    final cubit = context.read<ProfileCubit>();
+    showDialog(
+      context: context,
+      builder: (_) => ProfileFormDialog(
+        initialName: profile.name,
+        onSubmit: (result) => cubit.renameProfile(profile.id, result.name),
+      ),
+    );
+  }
+
+  Future<void> _confirmDelete(
+    BuildContext context,
+    ProfileEntity profile,
+  ) async {
+    final cubit = context.read<ProfileCubit>();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Удалить профиль?'),
+        content: Text(
+          'Все транзакции, категории и счета профиля «${profile.name}» '
+          'будут удалены.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Отмена'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.expense),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Удалить'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      try {
+        await cubit.deleteProfile(profile.id);
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(e.toString())));
+        }
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -17,103 +70,164 @@ class ProfilesPage extends StatelessWidget {
       body: BlocBuilder<ProfileCubit, ProfileState>(
         builder: (context, state) {
           if (state.profiles.isEmpty) {
-            return const Center(child: Text('Профилей ещё нет'));
+            return const EmptyState(
+              icon: Icons.people_alt_rounded,
+              title: 'Профилей ещё нет',
+              message:
+                  'Профиль — это изолированное пространство ваших финансов.',
+            );
           }
 
+          final canDelete = state.profiles.length > 1;
+
           return ListView.builder(
+            padding: const EdgeInsets.only(top: 8, bottom: 96),
             itemCount: state.profiles.length,
             itemBuilder: (context, index) {
               final profile = state.profiles[index];
               final isActive = profile.id == state.activeProfile?.id;
-              return ListTile(
-                leading: Icon(
-                  isActive
-                      ? Icons.radio_button_checked
-                      : Icons.radio_button_off,
+              return Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 5,
+                ),
+                child: Material(
                   color: isActive
-                      ? Theme.of(context).colorScheme.primary
-                      : null,
-                ),
-                title: Text(profile.name),
-                subtitle: Text(
-                  isActive ? 'Активный' : 'Нажмите для переключения',
-                ),
-                onTap: isActive
-                    ? null
-                    : () {
-                        context.read<ProfileCubit>().switchProfile(profile.id);
-                      },
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit),
-                      onPressed: () {
-                        final cubit = context.read<ProfileCubit>();
-                        showDialog(
-                          context: context,
-                          builder: (_) => ProfileFormDialog(
-                            initialName: profile.name,
-                            onSubmit: (result) {
-                              cubit.renameProfile(profile.id, result.name);
-                            },
+                      ? AppColors.brandContainer
+                      : AppColors.surface,
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                    onTap: isActive
+                        ? null
+                        : () => context.read<ProfileCubit>().switchProfile(
+                            profile.id,
                           ),
-                        );
-                      },
-                    ),
-                    IconButton(
-                      icon: Icon(
-                        isActive || state.profiles.length <= 1
-                            ? Icons.lock
-                            : Icons.delete,
+                    child: Ink(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                        border: Border.all(
+                          color: isActive ? AppColors.brand : AppColors.outline,
+                          width: isActive ? 1.5 : 1,
+                        ),
                       ),
-                      onPressed: isActive || state.profiles.length <= 1
-                          ? null
-                          : () async {
-                              final cubit = context.read<ProfileCubit>();
-                              final confirmed = await showDialog<bool>(
-                                context: context,
-                                builder: (dialogContext) => AlertDialog(
-                                  title: const Text('Удалить профиль?'),
-                                  content: Text(
-                                    'Все транзакции, категории и счета профиля «${profile.name}» будут удалены.',
+                      padding: const EdgeInsets.fromLTRB(14, 10, 6, 10),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: isActive
+                                  ? AppColors.brand
+                                  : AppColors.surfaceAlt,
+                              borderRadius: BorderRadius.circular(13),
+                            ),
+                            child: Icon(
+                              Icons.person_rounded,
+                              color: isActive
+                                  ? Colors.white
+                                  : AppColors.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  profile.name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 15,
+                                    color: AppColors.textPrimary,
                                   ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () => Navigator.of(
-                                        dialogContext,
-                                      ).pop(false),
-                                      child: const Text('Отмена'),
-                                    ),
-                                    TextButton(
-                                      onPressed: () =>
-                                          Navigator.of(dialogContext).pop(true),
-                                      child: const Text('Удалить'),
-                                    ),
-                                  ],
                                 ),
-                              );
-                              if (confirmed == true) {
-                                try {
-                                  await cubit.deleteProfile(profile.id);
-                                } catch (e) {
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text(e.toString())),
-                                    );
-                                  }
-                                }
+                                const SizedBox(height: 2),
+                                Text(
+                                  isActive
+                                      ? 'Активный профиль'
+                                      : 'Нажмите для переключения',
+                                  style: TextStyle(
+                                    color: isActive
+                                        ? AppColors.brandDark
+                                        : AppColors.textSecondary,
+                                    fontSize: 12.5,
+                                    fontWeight: isActive
+                                        ? FontWeight.w600
+                                        : FontWeight.w400,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (isActive)
+                            const Padding(
+                              padding: EdgeInsets.only(right: 4),
+                              child: Icon(
+                                Icons.check_circle_rounded,
+                                color: AppColors.brand,
+                                size: 22,
+                              ),
+                            ),
+                          PopupMenuButton<String>(
+                            icon: const Icon(
+                              Icons.more_vert_rounded,
+                              color: AppColors.textTertiary,
+                            ),
+                            onSelected: (value) {
+                              if (value == 'edit') {
+                                _openEdit(context, profile);
+                              } else if (value == 'delete') {
+                                _confirmDelete(context, profile);
                               }
                             },
+                            itemBuilder: (_) => [
+                              const PopupMenuItem(
+                                value: 'edit',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.edit_rounded, size: 18),
+                                    SizedBox(width: 10),
+                                    Text('Переименовать'),
+                                  ],
+                                ),
+                              ),
+                              if (!isActive && canDelete)
+                                const PopupMenuItem(
+                                  value: 'delete',
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.delete_outline_rounded,
+                                        size: 18,
+                                        color: AppColors.expense,
+                                      ),
+                                      SizedBox(width: 10),
+                                      Text(
+                                        'Удалить',
+                                        style: TextStyle(
+                                          color: AppColors.expense,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ],
+                  ),
                 ),
               );
             },
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           final cubit = context.read<ProfileCubit>();
           showDialog(
@@ -128,7 +242,8 @@ class ProfilesPage extends StatelessWidget {
             ),
           );
         },
-        child: const Icon(Icons.add),
+        icon: const Icon(Icons.add_rounded),
+        label: const Text('Профиль'),
       ),
     );
   }

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../profiles/presentation/cubit/profile_cubit.dart';
 import '../../profiles/presentation/cubit/profile_state.dart';
+import '../theme/app_colors.dart';
 
 enum AppRoute {
   transactions,
@@ -51,17 +52,17 @@ extension AppRouteX on AppRoute {
   IconData get icon {
     switch (this) {
       case AppRoute.transactions:
-        return Icons.list;
+        return Icons.receipt_long_rounded;
       case AppRoute.statistics:
-        return Icons.bar_chart;
+        return Icons.insights_rounded;
       case AppRoute.budgets:
-        return Icons.savings;
+        return Icons.savings_rounded;
       case AppRoute.categories:
-        return Icons.category;
+        return Icons.category_rounded;
       case AppRoute.accounts:
-        return Icons.account_balance_wallet;
+        return Icons.account_balance_wallet_rounded;
       case AppRoute.profiles:
-        return Icons.person;
+        return Icons.people_alt_rounded;
     }
   }
 }
@@ -73,57 +74,156 @@ class AppDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Drawer(
-      child: Column(
-        children: [
-          DrawerHeader(
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            child: Align(
-              alignment: Alignment.bottomLeft,
+      width: 300,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.horizontal(right: Radius.circular(28)),
+      ),
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Брендовая шапка.
+            Container(
+              margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [AppColors.brand, Color(0xFF7C6CF5)],
+                ),
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Text(
-                    'Mango Balance',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.titleLarge?.copyWith(color: Colors.white),
+                  Row(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Icon(
+                          Icons.account_balance_wallet_rounded,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Mango Balance',
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          color: Colors.white,
+                          fontSize: 19,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 16),
                   BlocBuilder<ProfileCubit, ProfileState>(
                     builder: (context, state) {
                       final name = state.activeProfile?.name ?? '—';
-                      return Text(
-                        'Профиль: $name',
-                        style: const TextStyle(color: Colors.white70),
+                      return Row(
+                        children: [
+                          const Icon(
+                            Icons.person_rounded,
+                            size: 16,
+                            color: Colors.white70,
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
                       );
                     },
                   ),
                 ],
               ),
             ),
-          ),
-          ...AppRoute.values.map((route) {
-            return ListTile(
-              leading: Icon(route.icon),
-              title: Text(route.title),
-              selected: route == currentRoute,
-              onTap: () {
-                Navigator.of(context).pop();
-                if (route == currentRoute) {
-                  return;
-                }
-
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  Navigator.of(context).pushReplacementNamed(route.routeName);
-                });
-              },
-            );
-          }),
-        ],
+            const SizedBox(height: 4),
+            // Навигация.
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                children: AppRoute.values.map((route) {
+                  final selected = route == currentRoute;
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 3),
+                    child: Material(
+                      color: selected
+                          ? AppColors.brandContainer
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                        onTap: () {
+                          Navigator.of(context).pop();
+                          if (route == currentRoute) return;
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            Navigator.of(
+                              context,
+                            ).pushReplacementNamed(route.routeName);
+                          });
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 13,
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                route.icon,
+                                size: 22,
+                                color: selected
+                                    ? AppColors.brand
+                                    : AppColors.textSecondary,
+                              ),
+                              const SizedBox(width: 14),
+                              Text(
+                                route.title,
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  color: selected
+                                      ? AppColors.brandDark
+                                      : AppColors.textPrimary,
+                                  fontWeight: selected
+                                      ? FontWeight.w700
+                                      : FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text(
+                'Mango Balance · v1.0',
+                style: TextStyle(color: AppColors.textTertiary, fontSize: 12),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../shared/theme/app_colors.dart';
+import '../../../shared/utils/money_format.dart';
 import '../../domain/entities/budget_period.dart';
 import '../../domain/entities/budget_progress.dart';
 
@@ -16,16 +18,12 @@ class BudgetProgressCard extends StatelessWidget {
   Color _statusColor(BudgetStatus status) {
     switch (status) {
       case BudgetStatus.under:
-        return Colors.green;
+        return AppColors.income;
       case BudgetStatus.warning:
-        return Colors.orange;
+        return AppColors.warning;
       case BudgetStatus.over:
-        return Colors.red;
+        return AppColors.expense;
     }
-  }
-
-  String _formatMoney(double value) {
-    return value.toStringAsFixed(2);
   }
 
   String _categoriesLabel() {
@@ -34,7 +32,8 @@ class BudgetProgressCard extends StatelessWidget {
     if (progress.categoryNames.length <= 3) {
       return progress.categoryNames.join(', ');
     }
-    return '${progress.categoryNames.take(2).join(', ')} +${progress.categoryNames.length - 2}';
+    return '${progress.categoryNames.take(2).join(', ')} '
+        '+${progress.categoryNames.length - 2}';
   }
 
   String _pluralDays(int days) {
@@ -57,92 +56,143 @@ class BudgetProgressCard extends StatelessWidget {
     final color = _statusColor(progress.status);
     final fill = progress.fillRatio.clamp(0.0, 1.0).toDouble();
     final overshoot = progress.fillRatio > 1.0;
-    final theme = Theme.of(context);
+    final percent = (progress.fillRatio * 100).round();
 
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      progress.budget.name,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      child: Material(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          child: Ink(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              border: Border.all(color: AppColors.outline),
+            ),
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        progress.budget.name,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
                     ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.brandContainer,
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
+                      ),
+                      child: Text(
+                        progress.budget.period.label,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.brandDark,
+                        ),
+                      ),
                     ),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      progress.budget.period.label,
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Text(
-                _categoriesLabel(),
-                style: TextStyle(
-                  color: theme.colorScheme.onSurfaceVariant,
-                  fontSize: 12,
+                  ],
                 ),
-              ),
-              const SizedBox(height: 12),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(6),
-                child: LinearProgressIndicator(
-                  value: fill,
-                  minHeight: 10,
-                  backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                  valueColor: AlwaysStoppedAnimation<Color>(color),
+                const SizedBox(height: 4),
+                Text(
+                  _categoriesLabel(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 13,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      '${_formatMoney(progress.spent)} / ${_formatMoney(progress.limit)}',
+                const SizedBox(height: 14),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      formatMoneyAbs(progress.spent),
                       style: TextStyle(
                         color: color,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 2),
+                      child: Text(
+                        '/ ${formatMoneyAbs(progress.limit)}',
+                        style: const TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      '$percent%',
+                      style: TextStyle(
+                        color: color,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                  child: LinearProgressIndicator(
+                    value: fill,
+                    minHeight: 9,
+                    backgroundColor: AppColors.surfaceAlt,
+                    valueColor: AlwaysStoppedAnimation<Color>(color),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.schedule_rounded,
+                      size: 14,
+                      color: AppColors.textTertiary,
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      _daysLabel(),
+                      style: const TextStyle(
+                        color: AppColors.textTertiary,
+                        fontSize: 12,
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      overshoot
+                          ? 'Превышение ${formatMoneyAbs(progress.spent - progress.limit)}'
+                          : 'Остаток ${formatMoneyAbs(progress.remaining)}',
+                      style: TextStyle(
+                        color: color,
+                        fontSize: 12.5,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                  ),
-                  Text(
-                    overshoot
-                        ? 'Превышение на ${_formatMoney(progress.spent - progress.limit)}'
-                        : 'Остаток ${_formatMoney(progress.remaining)}',
-                    style: TextStyle(color: color),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Text(
-                _daysLabel(),
-                style: TextStyle(
-                  color: theme.colorScheme.onSurfaceVariant,
-                  fontSize: 12,
+                  ],
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

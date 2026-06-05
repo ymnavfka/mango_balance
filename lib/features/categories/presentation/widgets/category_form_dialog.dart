@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/enums/transaction_type.dart';
+import '../../../shared/theme/app_colors.dart';
+import '../../../shared/widgets/app_dialog.dart';
+import '../../../shared/widgets/form_field_label.dart';
 import '../../domain/entities/category.dart';
 
 class CategoryFormDialog extends StatefulWidget {
@@ -56,55 +59,71 @@ class _CategoryFormDialogState extends State<CategoryFormDialog> {
   Widget build(BuildContext context) {
     final isFallback = widget.initial?.isFallback ?? false;
 
-    return AlertDialog(
-      title: Text(
-        widget.initial == null ? 'Новая категория' : 'Редактирование категории',
-      ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
+    return AppDialog(
+      title: widget.initial == null ? 'Новая категория' : 'Редактирование',
+      primaryLabel: widget.initial == null ? 'Добавить' : 'Сохранить',
+      onPrimary: isFallback ? null : _submit,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          const FormFieldLabel('Название категории', top: 0),
           TextField(
             controller: _nameController,
             enabled: !isFallback,
-            decoration: const InputDecoration(labelText: 'Название категории'),
+            autofocus: !isFallback,
+            decoration: const InputDecoration(
+              hintText: 'Например: Продукты',
+              prefixIcon: Icon(Icons.label_rounded),
+            ),
           ),
-          const SizedBox(height: 12),
-          DropdownButton<TransactionType>(
-            value: _type,
-            items: const [
-              DropdownMenuItem(
+          const FormFieldLabel('Тип'),
+          SegmentedButton<TransactionType>(
+            segments: const [
+              ButtonSegment(
                 value: TransactionType.income,
-                child: Text('Доход'),
+                label: Text('Доход'),
               ),
-              DropdownMenuItem(
+              ButtonSegment(
                 value: TransactionType.expense,
-                child: Text('Расход'),
+                label: Text('Расход'),
               ),
             ],
-            onChanged: isFallback
+            selected: {_type},
+            showSelectedIcon: false,
+            onSelectionChanged: isFallback
                 ? null
-                : (value) {
-                    if (value != null) {
-                      setState(() => _type = value);
-                    }
-                  },
+                : (selection) => setState(() => _type = selection.first),
           ),
           if (isFallback)
-            const Padding(
-              padding: EdgeInsets.only(top: 12.0),
-              child: Text(
-                'Базовые категории нельзя редактировать или удалить',
-                style: TextStyle(color: Colors.grey),
+            Container(
+              margin: const EdgeInsets.only(top: AppSpacing.lg),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceAlt,
+                borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
+              child: const Row(
+                children: [
+                  Icon(
+                    Icons.lock_rounded,
+                    size: 18,
+                    color: AppColors.textSecondary,
+                  ),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Базовые категории нельзя редактировать или удалить',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
         ],
       ),
-      actions: [
-        TextButton(
-          onPressed: isFallback ? null : _submit,
-          child: Text(widget.initial == null ? 'Добавить' : 'Сохранить'),
-        ),
-      ],
     );
   }
 }

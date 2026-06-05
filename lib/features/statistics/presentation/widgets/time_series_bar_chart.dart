@@ -1,6 +1,8 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
+import '../../../shared/theme/app_colors.dart';
+import '../../../shared/utils/money_format.dart';
 import '../../domain/entities/period_bucket.dart';
 import '../../domain/entities/period_type.dart';
 
@@ -49,16 +51,27 @@ class TimeSeriesBarChart extends StatelessWidget {
     }
   }
 
-  String _formatMoney(double value) {
-    return value.toStringAsFixed(2);
-  }
+  String _formatMoney(double value) => formatMoneyAbs(value);
 
   @override
   Widget build(BuildContext context) {
     if (buckets.isEmpty) {
-      return const Card(
-        margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: SizedBox(height: 220, child: Center(child: Text('Нет данных'))),
+      return Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(color: AppColors.outline),
+        ),
+        child: const SizedBox(
+          height: 200,
+          child: Center(
+            child: Text(
+              'Нет данных',
+              style: TextStyle(color: AppColors.textTertiary),
+            ),
+          ),
+        ),
       );
     }
 
@@ -74,24 +87,33 @@ class TimeSeriesBarChart extends StatelessWidget {
     const groupWidth = 64.0;
     final chartWidth = groupWidth * buckets.length;
 
-    return Card(
+    return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.outline),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
               'Доходы и расходы',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             const Wrap(
               spacing: 16,
               runSpacing: 4,
               children: [
-                _LegendDot(color: Colors.green, label: 'Доход'),
-                _LegendDot(color: Colors.red, label: 'Расход'),
+                _LegendDot(color: AppColors.income, label: 'Доход'),
+                _LegendDot(color: AppColors.expense, label: 'Расход'),
               ],
             ),
             const SizedBox(height: 12),
@@ -177,7 +199,7 @@ class TimeSeriesBarChart extends StatelessWidget {
                                 barRods: [
                                   BarChartRodData(
                                     toY: b.income,
-                                    color: Colors.green,
+                                    color: AppColors.income,
                                     width: 12,
                                     borderRadius: const BorderRadius.vertical(
                                       top: Radius.circular(2),
@@ -185,7 +207,7 @@ class TimeSeriesBarChart extends StatelessWidget {
                                   ),
                                   BarChartRodData(
                                     toY: b.expense,
-                                    color: Colors.red,
+                                    color: AppColors.expense,
                                     width: 12,
                                     borderRadius: const BorderRadius.vertical(
                                       top: Radius.circular(2),
@@ -209,7 +231,7 @@ class TimeSeriesBarChart extends StatelessWidget {
                   child: _SummaryLine(
                     label: 'Всего доходов',
                     value: _formatMoney(totalIncome),
-                    color: Colors.green,
+                    color: AppColors.income,
                   ),
                 ),
               ],
@@ -220,7 +242,7 @@ class TimeSeriesBarChart extends StatelessWidget {
                   child: _SummaryLine(
                     label: 'Всего расходов',
                     value: _formatMoney(totalExpense),
-                    color: Colors.red,
+                    color: AppColors.expense,
                   ),
                 ),
               ],
@@ -232,7 +254,7 @@ class TimeSeriesBarChart extends StatelessWidget {
                   child: _SummaryLine(
                     label: 'Итог',
                     value: _formatMoney(totalNet),
-                    color: totalNet < 0 ? Colors.red : Colors.green,
+                    color: totalNet < 0 ? AppColors.expense : AppColors.income,
                     bold: true,
                   ),
                 ),

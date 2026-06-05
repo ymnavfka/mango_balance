@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'core/di/injector.dart';
+import 'features/shared/theme/app_theme.dart';
 import 'features/accounts/presentation/cubit/account_cubit.dart';
 import 'features/accounts/presentation/pages/accounts_page.dart';
 import 'features/categories/presentation/cubit/category_cubit.dart';
@@ -42,6 +43,8 @@ class MyApp extends StatelessWidget {
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
+        title: 'Mango Balance',
+        theme: AppTheme.light(),
         locale: const Locale('ru'),
         supportedLocales: const [Locale('ru'), Locale('en')],
         localizationsDelegates: const [

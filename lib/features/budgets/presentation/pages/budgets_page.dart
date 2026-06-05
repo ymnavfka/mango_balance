@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../categories/presentation/cubit/category_cubit.dart';
+import '../../../shared/theme/app_colors.dart';
 import '../../../shared/widgets/app_drawer.dart';
+import '../../../shared/widgets/empty_state.dart';
 import '../cubit/budget_cubit.dart';
 import '../cubit/budget_state.dart';
 import '../widgets/budget_form_dialog.dart';
@@ -40,10 +42,16 @@ class BudgetsPage extends StatelessWidget {
       body: BlocBuilder<BudgetCubit, BudgetState>(
         builder: (context, state) {
           if (state.progresses.isEmpty) {
-            return const Center(child: Text('Бюджеты ещё не созданы'));
+            return const EmptyState(
+              icon: Icons.savings_rounded,
+              title: 'Бюджеты ещё не созданы',
+              message:
+                  'Задайте лимит трат на период, чтобы держать расходы '
+                  'под контролем.',
+            );
           }
           return ListView.builder(
-            padding: const EdgeInsets.symmetric(vertical: 8),
+            padding: const EdgeInsets.only(top: 8, bottom: 96),
             itemCount: state.progresses.length,
             itemBuilder: (context, index) {
               final progress = state.progresses[index];
@@ -58,10 +66,10 @@ class BudgetsPage extends StatelessWidget {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.red,
-                    borderRadius: BorderRadius.circular(12),
+                    color: AppColors.expense,
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
                   ),
-                  child: const Icon(Icons.delete, color: Colors.white),
+                  child: const Icon(Icons.delete_rounded, color: Colors.white),
                 ),
                 onDismissed: (_) {
                   final cubit = context.read<BudgetCubit>();
@@ -92,9 +100,10 @@ class BudgetsPage extends StatelessWidget {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openForm(context),
-        child: const Icon(Icons.add),
+        icon: const Icon(Icons.add_rounded),
+        label: const Text('Бюджет'),
       ),
     );
   }

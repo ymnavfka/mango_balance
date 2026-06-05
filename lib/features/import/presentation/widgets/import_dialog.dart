@@ -4,6 +4,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../profiles/domain/entities/profile.dart';
 import '../../../profiles/presentation/cubit/profile_cubit.dart';
+import '../../../shared/theme/app_colors.dart';
+import '../../../shared/widgets/app_dialog.dart';
+import '../../../shared/widgets/app_dropdown_field.dart';
+import '../../../shared/widgets/form_field_label.dart';
 import '../../domain/entities/parsed_import.dart';
 import '../cubit/import_cubit.dart';
 import '../cubit/import_state.dart';
@@ -116,133 +120,111 @@ class _ImportDialogState extends State<ImportDialog> {
             state.status == ImportStatus.parsing ||
             state.status == ImportStatus.importing;
 
-        return AlertDialog(
-          title: const Text('Импорт из XLSX'),
-          content: SizedBox(
-            width: MediaQuery.of(context).size.width * 0.85,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _FileSection(
-                  fileName: state.fileName,
-                  parsed: state.parsed,
-                  status: state.status,
-                  onPick: isBusy ? null : _pickFile,
+        return AppDialog(
+          title: 'Импорт из XLSX',
+          loading: isBusy,
+          primaryLabel: 'Импортировать',
+          onPrimary: (state.status == ImportStatus.ready && !isBusy)
+              ? _runImport
+              : null,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _FileSection(
+                fileName: state.fileName,
+                parsed: state.parsed,
+                status: state.status,
+                onPick: isBusy ? null : _pickFile,
+              ),
+              if (state.errorMessage != null) ...[
+                const SizedBox(height: 10),
+                _ErrorBox(state.errorMessage!),
+              ],
+              const FormFieldLabel('Куда импортировать'),
+              RadioGroup<_ImportTarget>(
+                groupValue: _target,
+                onChanged: isBusy
+                    ? (_) {}
+                    : (value) => setState(() => _target = value ?? _target),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const RadioListTile<_ImportTarget>(
+                      contentPadding: EdgeInsets.zero,
+                      visualDensity: VisualDensity.compact,
+                      value: _ImportTarget.existingProfile,
+                      title: Text('В существующий профиль'),
+                    ),
+                    if (_target == _ImportTarget.existingProfile)
+                      Padding(
+                        padding: const EdgeInsets.only(
+                          left: 8,
+                          top: 4,
+                          bottom: 8,
+                        ),
+                        child: AppDropdownField<int>(
+                          value: _selectedProfileId,
+                          isDense: true,
+                          items: profiles
+                              .map(
+                                (ProfileEntity p) => DropdownMenuItem<int>(
+                                  value: p.id,
+                                  child: Text(
+                                    p.name + (p.isActive ? ' (активный)' : ''),
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: isBusy
+                              ? null
+                              : (value) =>
+                                    setState(() => _selectedProfileId = value),
+                        ),
+                      ),
+                    const RadioListTile<_ImportTarget>(
+                      contentPadding: EdgeInsets.zero,
+                      visualDensity: VisualDensity.compact,
+                      value: _ImportTarget.newProfile,
+                      title: Text('Создать новый профиль'),
+                    ),
+                  ],
                 ),
-                if (state.errorMessage != null) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    state.errorMessage!,
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                ],
-                const Divider(height: 24),
-                const Text(
-                  'Куда импортировать',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                RadioGroup<_ImportTarget>(
-                  groupValue: _target,
-                  onChanged: isBusy
-                      ? (_) {}
-                      : (value) {
-                          setState(() {
-                            _target = value ?? _target;
-                          });
-                        },
+              ),
+              if (_target == _ImportTarget.newProfile)
+                Padding(
+                  padding: const EdgeInsets.only(left: 8, top: 4),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const RadioListTile<_ImportTarget>(
-                        contentPadding: EdgeInsets.zero,
-                        value: _ImportTarget.existingProfile,
-                        title: Text('В существующий профиль'),
-                      ),
-                      if (_target == _ImportTarget.existingProfile)
-                        Padding(
-                          padding: const EdgeInsets.only(left: 32),
-                          child: DropdownButton<int>(
-                            isExpanded: true,
-                            value: _selectedProfileId,
-                            items: profiles
-                                .map(
-                                  (ProfileEntity p) => DropdownMenuItem<int>(
-                                    value: p.id,
-                                    child: Text(
-                                      p.name +
-                                          (p.isActive ? ' (активный)' : ''),
-                                    ),
-                                  ),
-                                )
-                                .toList(),
-                            onChanged: isBusy
-                                ? null
-                                : (value) {
-                                    setState(() {
-                                      _selectedProfileId = value;
-                                    });
-                                  },
-                          ),
+                      TextField(
+                        controller: _newProfileNameController,
+                        enabled: !isBusy,
+                        decoration: const InputDecoration(
+                          hintText: 'Название нового профиля',
+                          isDense: true,
                         ),
-                      const RadioListTile<_ImportTarget>(
+                      ),
+                      const SizedBox(height: 6),
+                      CheckboxListTile(
                         contentPadding: EdgeInsets.zero,
-                        value: _ImportTarget.newProfile,
-                        title: Text('Создать новый профиль'),
+                        controlAffinity: ListTileControlAffinity.leading,
+                        visualDensity: VisualDensity.compact,
+                        value: _includeStandardData,
+                        onChanged: isBusy
+                            ? null
+                            : (value) => setState(
+                                () => _includeStandardData = value ?? false,
+                              ),
+                        title: const Text(
+                          'Добавить стандартные категории и счета',
+                          style: TextStyle(fontSize: 13.5),
+                        ),
                       ),
                     ],
                   ),
                 ),
-                if (_target == _ImportTarget.newProfile)
-                  Padding(
-                    padding: const EdgeInsets.only(left: 32),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        TextField(
-                          controller: _newProfileNameController,
-                          decoration: const InputDecoration(
-                            labelText: 'Название нового профиля',
-                          ),
-                          enabled: !isBusy,
-                        ),
-                        CheckboxListTile(
-                          contentPadding: EdgeInsets.zero,
-                          controlAffinity: ListTileControlAffinity.leading,
-                          value: _includeStandardData,
-                          onChanged: isBusy
-                              ? null
-                              : (value) {
-                                  setState(() {
-                                    _includeStandardData = value ?? false;
-                                  });
-                                },
-                          title: const Text(
-                            'Добавить стандартные категории и счета',
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                if (isBusy) ...[
-                  const SizedBox(height: 12),
-                  const LinearProgressIndicator(),
-                ],
-              ],
-            ),
+            ],
           ),
-          actions: [
-            TextButton(
-              onPressed: isBusy ? null : () => Navigator.of(context).pop(),
-              child: const Text('Отмена'),
-            ),
-            TextButton(
-              onPressed: (state.status == ImportStatus.ready && !isBusy)
-                  ? _runImport
-                  : null,
-              child: const Text('Импортировать'),
-            ),
-          ],
         );
       },
     );
@@ -264,42 +246,112 @@ class _FileSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                fileName ?? 'Файл не выбран',
-                style: const TextStyle(fontWeight: FontWeight.w500),
-                overflow: TextOverflow.ellipsis,
+    final hasFile = fileName != null;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceAlt,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: AppColors.outline),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.income.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(11),
+                ),
+                child: const Icon(
+                  Icons.description_rounded,
+                  color: AppColors.income,
+                  size: 20,
+                ),
               ),
-            ),
-            TextButton.icon(
-              onPressed: onPick,
-              icon: const Icon(Icons.attach_file),
-              label: const Text('Выбрать файл'),
-            ),
-          ],
-        ),
-        if (parsed != null && status == ImportStatus.ready)
-          Builder(
-            builder: (context) {
-              final p = parsed!;
-              return Padding(
-                padding: const EdgeInsets.only(top: 4),
+              const SizedBox(width: 12),
+              Expanded(
                 child: Text(
+                  fileName ?? 'Файл не выбран',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: hasFile
+                        ? AppColors.textPrimary
+                        : AppColors.textSecondary,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              FilledButton.tonal(
+                onPressed: onPick,
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size(0, 40),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  backgroundColor: AppColors.brandContainer,
+                  foregroundColor: AppColors.brandDark,
+                ),
+                child: const Text('Выбрать'),
+              ),
+            ],
+          ),
+          if (parsed != null && status == ImportStatus.ready) ...[
+            const SizedBox(height: 10),
+            Builder(
+              builder: (context) {
+                final p = parsed!;
+                return Text(
                   'Найдено: ${p.expenses.length} расходов, '
                   '${p.incomes.length} доходов, '
                   '${p.transfers.length} переводов'
                   '${p.skippedRows > 0 ? '. Пропущено ${p.skippedRows} строк.' : '.'}',
-                  style: TextStyle(color: Colors.grey[700]),
-                ),
-              );
-            },
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 12.5,
+                  ),
+                );
+              },
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ErrorBox extends StatelessWidget {
+  const _ErrorBox(this.message);
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.expenseSurface,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.error_outline_rounded,
+            color: AppColors.expense,
+            size: 18,
           ),
-      ],
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(color: AppColors.expense, fontSize: 13),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../shared/theme/app_colors.dart';
 import '../../../shared/widgets/app_drawer.dart';
+import '../../../shared/widgets/empty_state.dart';
 import '../../domain/entities/period_type.dart';
 import '../cubit/statistics_cubit.dart';
 import '../cubit/statistics_state.dart';
@@ -26,27 +28,33 @@ class StatisticsPage extends StatelessWidget {
           if (!snapshot.hasAnyTransactions) {
             return Column(
               children: [
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.lg),
                 PeriodSelector(
                   selected: snapshot.periodType,
                   onSelected: cubit.selectPeriodType,
                 ),
                 const Expanded(
-                  child: Center(child: Text('Транзакций ещё нет')),
+                  child: EmptyState(
+                    icon: Icons.insights_rounded,
+                    title: 'Пока нет данных',
+                    message:
+                        'Добавьте операции, чтобы увидеть статистику доходов '
+                        'и расходов.',
+                  ),
                 ),
               ],
             );
           }
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(vertical: 16),
+            padding: const EdgeInsets.only(top: AppSpacing.lg, bottom: 24),
             child: Column(
               children: [
                 PeriodSelector(
                   selected: snapshot.periodType,
                   onSelected: cubit.selectPeriodType,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.md),
                 if (snapshot.periodType != PeriodType.allTime)
                   PeriodNavigator(
                     label: snapshot.currentRange.label,
@@ -56,29 +64,21 @@ class StatisticsPage extends StatelessWidget {
                     onForward: () => cubit.shiftAnchor(1),
                   )
                 else
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    child: Center(
-                      child: Text(
-                        'За всё время',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
+                  const _AllTimeBadge(),
+                const SizedBox(height: AppSpacing.xs),
                 CategoryDonutChart(
                   title: 'Доходы по категориям',
                   total: snapshot.totalIncome,
                   breakdown: snapshot.incomeBreakdown,
-                  accentColor: Colors.green,
+                  accentColor: AppColors.income,
+                  icon: Icons.south_west_rounded,
                 ),
                 CategoryDonutChart(
                   title: 'Расходы по категориям',
                   total: snapshot.totalExpense,
                   breakdown: snapshot.expenseBreakdown,
-                  accentColor: Colors.red,
+                  accentColor: AppColors.expense,
+                  icon: Icons.north_east_rounded,
                 ),
                 TimeSeriesBarChart(
                   buckets: snapshot.timeSeries,
@@ -88,6 +88,33 @@ class StatisticsPage extends StatelessWidget {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _AllTimeBadge extends StatelessWidget {
+  const _AllTimeBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: AppColors.outline),
+      ),
+      child: const Center(
+        child: Text(
+          'За всё время',
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+        ),
       ),
     );
   }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../shared/widgets/app_dialog.dart';
+import '../../../shared/widgets/form_field_label.dart';
 import '../../domain/entities/account.dart';
 
 class AccountFormDialog extends StatefulWidget {
@@ -48,20 +50,24 @@ class _AccountFormDialogState extends State<AccountFormDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(
-        widget.initial == null ? 'Новый счёт' : 'Редактирование счёта',
+    return AppDialog(
+      title: widget.initial == null ? 'Новый счёт' : 'Редактирование счёта',
+      primaryLabel: widget.initial == null ? 'Добавить' : 'Сохранить',
+      onPrimary: _submit,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const FormFieldLabel('Название счёта', top: 0),
+          TextField(
+            controller: _nameController,
+            autofocus: true,
+            decoration: const InputDecoration(
+              hintText: 'Например: Дебетовая карта',
+              prefixIcon: Icon(Icons.credit_card_rounded),
+            ),
+          ),
+        ],
       ),
-      content: TextField(
-        controller: _nameController,
-        decoration: const InputDecoration(labelText: 'Название счёта'),
-      ),
-      actions: [
-        TextButton(
-          onPressed: _submit,
-          child: Text(widget.initial == null ? 'Добавить' : 'Сохранить'),
-        ),
-      ],
     );
   }
 }

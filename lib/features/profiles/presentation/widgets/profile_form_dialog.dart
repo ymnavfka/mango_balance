@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../../shared/theme/app_colors.dart';
+import '../../../shared/widgets/app_dialog.dart';
+import '../../../shared/widgets/form_field_label.dart';
+
 class ProfileFormResult {
   const ProfileFormResult({
     required this.name,
@@ -59,46 +63,66 @@ class _ProfileFormDialogState extends State<ProfileFormDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(widget.isEdit ? 'Переименовать профиль' : 'Новый профиль'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
+    return AppDialog(
+      title: widget.isEdit ? 'Переименовать профиль' : 'Новый профиль',
+      primaryLabel: widget.isEdit ? 'Сохранить' : 'Создать',
+      onPrimary: _submit,
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          const FormFieldLabel('Название профиля', top: 0),
           TextField(
             controller: _nameController,
-            decoration: const InputDecoration(labelText: 'Название профиля'),
             autofocus: true,
+            decoration: const InputDecoration(
+              hintText: 'Например: Личные финансы',
+              prefixIcon: Icon(Icons.person_rounded),
+            ),
           ),
           if (!widget.isEdit) ...[
-            const SizedBox(height: 8),
-            CheckboxListTile(
-              contentPadding: EdgeInsets.zero,
-              controlAffinity: ListTileControlAffinity.leading,
-              value: _includeStandardData,
-              onChanged: (value) {
-                setState(() {
-                  _includeStandardData = value ?? false;
-                });
-              },
-              title: const Text('Добавить стандартные категории и счета'),
-              subtitle: const Text(
-                'Если выключено, будут созданы только базовые категории и один счёт по умолчанию.',
+            const SizedBox(height: AppSpacing.lg),
+            Container(
+              padding: const EdgeInsets.fromLTRB(14, 6, 8, 6),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceAlt,
+                borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
+              child: Row(
+                children: [
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Стандартные категории и счета',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          'Иначе будут созданы только базовые сущности.',
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 12.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Switch(
+                    value: _includeStandardData,
+                    onChanged: (value) =>
+                        setState(() => _includeStandardData = value),
+                  ),
+                ],
               ),
             ),
           ],
         ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Отмена'),
-        ),
-        TextButton(
-          onPressed: _submit,
-          child: Text(widget.isEdit ? 'Сохранить' : 'Создать'),
-        ),
-      ],
     );
   }
 }
