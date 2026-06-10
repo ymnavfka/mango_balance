@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0+1
+version: 1.0.0+2
 
 environment:
   sdk: ^3.8.1
@@ -60,6 +60,7 @@ dev_dependencies:
   flutter_lints: ^5.0.0
   drift_dev: ^2.17.0
   build_runner: ^2.4.8
+  icons_launcher: ^3.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -71,6 +72,10 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  # Bundled so the Linux runner can set the window/taskbar icon at runtime.
+  assets:
+    - assets/icon/icon_rounded.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:
@@ -102,3 +107,28 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+# ---------------------------------------------------------------------------
+# App icon generation (run: dart run icons_launcher:create)
+# Источники в assets/icon/: icon.png (full-bleed, под мобильные/web),
+# icon_rounded.png (со скруглением, под desktop), foreground.png (Android adaptive).
+icons_launcher:
+  image_path: "assets/icon/icon.png"
+  platforms:
+    android:
+      enable: true
+      adaptive_background_color: "#FFF3DC"
+      adaptive_foreground_image: "assets/icon/foreground.png"
+    ios:
+      enable: true
+    web:
+      enable: true
+    macos:
+      enable: true
+      image_path: "assets/icon/icon_rounded.png"
+    windows:
+      enable: true
+      image_path: "assets/icon/icon_rounded.png"
+    linux:
+      enable: true
+      image_path: "assets/icon/icon_rounded.png"

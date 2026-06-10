@@ -51,7 +51,9 @@ class TimeSeriesBarChart extends StatelessWidget {
     }
   }
 
-  String _formatMoney(double value) => formatMoneyAbs(value);
+  // Знаковый формат: доходы и расходы здесь всегда ≥ 0, а «Итог» (net)
+  // может быть отрицательным — для него важно показать минус.
+  String _formatMoney(double value) => formatMoney(value);
 
   @override
   Widget build(BuildContext context) {
