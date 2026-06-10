@@ -282,18 +282,13 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
             showSelectedIcon: false,
             onSelectionChanged: (selection) {
               final value = selection.first;
-              final newCategories = categories
-                  .where((category) => category.type == value)
-                  .toList();
               setState(() {
                 _type = value;
-                if (newCategories.isNotEmpty) {
-                  _categoryId = newCategories.first.id;
-                  _categoryName = newCategories.first.name;
-                } else {
-                  _categoryId = null;
-                  _categoryName = null;
-                }
+                // Сбрасываем категорию: build() заново выберет самую
+                // популярную категорию нового типа (по PopularityRanker),
+                // как и при первичном открытии формы.
+                _categoryId = null;
+                _categoryName = null;
                 if (value != TransactionType.transfer) {
                   _toAccountId = null;
                   _toAccountName = null;
