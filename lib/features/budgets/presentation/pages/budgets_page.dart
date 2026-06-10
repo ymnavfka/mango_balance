@@ -5,6 +5,7 @@ import '../../../categories/presentation/cubit/category_cubit.dart';
 import '../../../shared/theme/app_colors.dart';
 import '../../../shared/widgets/app_drawer.dart';
 import '../../../shared/widgets/empty_state.dart';
+import '../../../shared/widgets/undo_snackbar.dart';
 import '../cubit/budget_cubit.dart';
 import '../cubit/budget_state.dart';
 import '../widgets/budget_form_dialog.dart';
@@ -75,17 +76,11 @@ class BudgetsPage extends StatelessWidget {
                   final cubit = context.read<BudgetCubit>();
                   final removed = progress.budget;
                   cubit.deleteBudget(removed.id);
-                  ScaffoldMessenger.of(context)
-                    ..clearSnackBars()
-                    ..showSnackBar(
-                      SnackBar(
-                        content: const Text('Бюджет удалён'),
-                        action: SnackBarAction(
-                          label: 'Отменить',
-                          onPressed: () => cubit.addBudget(removed),
-                        ),
-                      ),
-                    );
+                  showUndoSnackBar(
+                    context,
+                    message: 'Бюджет удалён',
+                    onUndo: () => cubit.addBudget(removed),
+                  );
                 },
                 child: BudgetProgressCard(
                   progress: progress,

@@ -15,6 +15,7 @@ import '../../../shared/theme/app_colors.dart';
 import '../../../shared/utils/money_format.dart';
 import '../../../shared/widgets/app_drawer.dart';
 import '../../../shared/widgets/empty_state.dart';
+import '../../../shared/widgets/undo_snackbar.dart';
 import '../../domain/entities/transaction.dart';
 import '../cubit/transaction_cubit.dart';
 import '../cubit/transaction_state.dart';
@@ -496,17 +497,11 @@ class _TransactionTile extends StatelessWidget {
         onDismissed: (_) {
           final cubit = context.read<TransactionCubit>();
           cubit.deleteTransaction(transaction.id);
-          ScaffoldMessenger.of(context)
-            ..clearSnackBars()
-            ..showSnackBar(
-              SnackBar(
-                content: const Text('Транзакция удалена'),
-                action: SnackBarAction(
-                  label: 'Отменить',
-                  onPressed: () => cubit.restoreTransaction(transaction, 0),
-                ),
-              ),
-            );
+          showUndoSnackBar(
+            context,
+            message: 'Транзакция удалена',
+            onUndo: () => cubit.restoreTransaction(transaction, 0),
+          );
         },
         background: Container(
           alignment: Alignment.centerRight,
