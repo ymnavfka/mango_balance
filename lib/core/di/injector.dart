@@ -35,6 +35,7 @@ import '../../../features/budgets/domain/usecases/update_budget.dart';
 import '../../../features/budgets/domain/usecases/watch_budgets.dart';
 import '../../../features/budgets/presentation/cubit/budget_cubit.dart';
 import '../../../features/statistics/domain/usecases/build_category_breakdown.dart';
+import '../../../features/statistics/domain/usecases/build_net_worth_series.dart';
 import '../../../features/statistics/domain/usecases/build_statistics_snapshot.dart';
 import '../../../features/statistics/domain/usecases/build_time_series.dart';
 import '../../../features/statistics/domain/usecases/compute_period_range.dart';
@@ -156,11 +157,13 @@ Future<void> setupDependencies() async {
   getIt.registerLazySingleton(() => ComputePeriodRange());
   getIt.registerLazySingleton(() => BuildCategoryBreakdown());
   getIt.registerLazySingleton(() => BuildTimeSeries(getIt()));
+  getIt.registerLazySingleton(() => BuildNetWorthSeries());
   getIt.registerLazySingleton(
     () => BuildStatisticsSnapshot(
       computePeriodRange: getIt(),
       buildCategoryBreakdown: getIt(),
       buildTimeSeries: getIt(),
+      buildNetWorthSeries: getIt(),
     ),
   );
 

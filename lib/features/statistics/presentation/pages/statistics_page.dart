@@ -8,6 +8,7 @@ import '../../domain/entities/period_type.dart';
 import '../cubit/statistics_cubit.dart';
 import '../cubit/statistics_state.dart';
 import '../widgets/category_donut_chart.dart';
+import '../widgets/net_worth_line_chart.dart';
 import '../widgets/period_navigator.dart';
 import '../widgets/period_selector.dart';
 import '../widgets/time_series_bar_chart.dart';
@@ -84,6 +85,7 @@ class StatisticsPage extends StatelessWidget {
                   buckets: snapshot.timeSeries,
                   periodType: snapshot.periodType,
                 ),
+                NetWorthLineChart(points: snapshot.netWorthSeries),
               ],
             ),
           );

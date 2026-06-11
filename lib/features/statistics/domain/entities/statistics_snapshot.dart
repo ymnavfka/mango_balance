@@ -1,4 +1,5 @@
 import 'category_breakdown.dart';
+import 'net_worth_point.dart';
 import 'period_bucket.dart';
 import 'period_range.dart';
 import 'period_type.dart';
@@ -13,6 +14,7 @@ class StatisticsSnapshot {
     required this.totalIncome,
     required this.totalExpense,
     required this.timeSeries,
+    required this.netWorthSeries,
     required this.canNavigateForward,
     required this.canNavigateBack,
     required this.hasAnyTransactions,
@@ -29,6 +31,7 @@ class StatisticsSnapshot {
       totalIncome: 0,
       totalExpense: 0,
       timeSeries: const [],
+      netWorthSeries: const [],
       canNavigateForward: false,
       canNavigateBack: false,
       hasAnyTransactions: false,
@@ -43,6 +46,7 @@ class StatisticsSnapshot {
   final double totalIncome;
   final double totalExpense;
   final List<PeriodBucket> timeSeries;
+  final List<NetWorthPoint> netWorthSeries;
   final bool canNavigateForward;
   final bool canNavigateBack;
   final bool hasAnyTransactions;
