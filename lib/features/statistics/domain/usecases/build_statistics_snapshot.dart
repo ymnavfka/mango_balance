@@ -3,6 +3,7 @@ import '../../../transactions/domain/entities/transaction.dart';
 import '../entities/period_type.dart';
 import '../entities/statistics_snapshot.dart';
 import 'build_category_breakdown.dart';
+import 'build_net_worth_series.dart';
 import 'build_time_series.dart';
 import 'compute_period_range.dart';
 
@@ -11,13 +12,16 @@ class BuildStatisticsSnapshot {
     required ComputePeriodRange computePeriodRange,
     required BuildCategoryBreakdown buildCategoryBreakdown,
     required BuildTimeSeries buildTimeSeries,
+    required BuildNetWorthSeries buildNetWorthSeries,
   }) : _computePeriodRange = computePeriodRange,
        _buildCategoryBreakdown = buildCategoryBreakdown,
-       _buildTimeSeries = buildTimeSeries;
+       _buildTimeSeries = buildTimeSeries,
+       _buildNetWorthSeries = buildNetWorthSeries;
 
   final ComputePeriodRange _computePeriodRange;
   final BuildCategoryBreakdown _buildCategoryBreakdown;
   final BuildTimeSeries _buildTimeSeries;
+  final BuildNetWorthSeries _buildNetWorthSeries;
 
   StatisticsSnapshot call({
     required List<TransactionEntity> transactions,
@@ -74,6 +78,11 @@ class BuildStatisticsSnapshot {
       now: now,
     );
 
+    final netWorthSeries = _buildNetWorthSeries(
+      transactions: transactions,
+      now: now,
+    );
+
     final canNavigateBack =
         periodType != PeriodType.allTime &&
         earliest != null &&
@@ -92,6 +101,7 @@ class BuildStatisticsSnapshot {
       totalIncome: totalIncome,
       totalExpense: totalExpense,
       timeSeries: timeSeries,
+      netWorthSeries: netWorthSeries,
       canNavigateForward: canNavigateForward,
       canNavigateBack: canNavigateBack,
       hasAnyTransactions: accountable.isNotEmpty,
@@ -113,6 +123,7 @@ extension on StatisticsSnapshot {
       totalIncome: totalIncome,
       totalExpense: totalExpense,
       timeSeries: timeSeries,
+      netWorthSeries: netWorthSeries,
       canNavigateForward: false,
       canNavigateBack: false,
       hasAnyTransactions: false,
