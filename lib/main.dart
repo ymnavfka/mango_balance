@@ -10,6 +10,8 @@ import 'features/categories/presentation/cubit/category_cubit.dart';
 import 'features/categories/presentation/pages/categories_page.dart';
 import 'features/budgets/presentation/cubit/budget_cubit.dart';
 import 'features/budgets/presentation/pages/budgets_page.dart';
+import 'features/recurring/presentation/cubit/recurring_cubit.dart';
+import 'features/recurring/presentation/pages/recurring_payments_page.dart';
 import 'features/profiles/presentation/cubit/profile_cubit.dart';
 import 'features/profiles/presentation/pages/profiles_page.dart';
 import 'features/statistics/presentation/cubit/statistics_cubit.dart';
@@ -40,6 +42,12 @@ class MyApp extends StatelessWidget {
         BlocProvider<AccountCubit>(create: (_) => getIt<AccountCubit>()),
         BlocProvider<StatisticsCubit>(create: (_) => getIt<StatisticsCubit>()),
         BlocProvider<BudgetCubit>(create: (_) => getIt<BudgetCubit>()),
+        // lazy: false — планировщик регулярных платежей должен запускаться при
+        // старте приложения и при смене профиля, даже если экран не открыт.
+        BlocProvider<RecurringCubit>(
+          create: (_) => getIt<RecurringCubit>(),
+          lazy: false,
+        ),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -57,6 +65,7 @@ class MyApp extends StatelessWidget {
           '/': (_) => const TransactionsPage(),
           '/statistics': (_) => const StatisticsPage(),
           '/budgets': (_) => const BudgetsPage(),
+          '/recurring': (_) => const RecurringPaymentsPage(),
           '/categories': (_) => const CategoriesPage(),
           '/accounts': (_) => const AccountsPage(),
           '/profiles': (_) => const ProfilesPage(),

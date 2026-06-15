@@ -72,6 +72,7 @@ class AccountRepositoryImpl implements AccountRepository {
     }
 
     await db.replaceAccountForTransactions(account.id, fallback.id);
+    await db.replaceAccountForRecurringPayments(account.id, fallback.id);
     await db.deleteAccount(id);
   }
 }

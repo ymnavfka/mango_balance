@@ -34,6 +34,15 @@ import '../../../features/budgets/domain/usecases/delete_budget.dart';
 import '../../../features/budgets/domain/usecases/update_budget.dart';
 import '../../../features/budgets/domain/usecases/watch_budgets.dart';
 import '../../../features/budgets/presentation/cubit/budget_cubit.dart';
+import '../../../features/recurring/data/repositories/recurring_repository_impl.dart';
+import '../../../features/recurring/domain/repositories/recurring_repository.dart';
+import '../../../features/recurring/domain/usecases/add_recurring_payment.dart';
+import '../../../features/recurring/domain/usecases/delete_recurring_payment.dart';
+import '../../../features/recurring/domain/usecases/run_due_recurring_payments.dart';
+import '../../../features/recurring/domain/usecases/set_recurring_active.dart';
+import '../../../features/recurring/domain/usecases/update_recurring_payment.dart';
+import '../../../features/recurring/domain/usecases/watch_recurring_payments.dart';
+import '../../../features/recurring/presentation/cubit/recurring_cubit.dart';
 import '../../../features/statistics/domain/usecases/build_category_breakdown.dart';
 import '../../../features/statistics/domain/usecases/build_net_worth_series.dart';
 import '../../../features/statistics/domain/usecases/build_statistics_snapshot.dart';
@@ -106,6 +115,9 @@ Future<void> setupDependencies() async {
   getIt.registerLazySingleton<BudgetRepository>(
     () => BudgetRepositoryImpl(getIt(), getIt()),
   );
+  getIt.registerLazySingleton<RecurringRepository>(
+    () => RecurringRepositoryImpl(getIt(), getIt()),
+  );
 
   // Transaction UseCases
   getIt.registerLazySingleton(() => AddTransaction(getIt()));
@@ -152,6 +164,14 @@ Future<void> setupDependencies() async {
   getIt.registerLazySingleton(() => UpdateBudget(getIt()));
   getIt.registerLazySingleton(() => DeleteBudget(getIt()));
   getIt.registerLazySingleton(() => BuildBudgetsProgress());
+
+  // Recurring payments
+  getIt.registerLazySingleton(() => WatchRecurringPayments(getIt()));
+  getIt.registerLazySingleton(() => AddRecurringPayment(getIt()));
+  getIt.registerLazySingleton(() => UpdateRecurringPayment(getIt()));
+  getIt.registerLazySingleton(() => DeleteRecurringPayment(getIt()));
+  getIt.registerLazySingleton(() => SetRecurringActive(getIt()));
+  getIt.registerLazySingleton(() => RunDueRecurringPayments(getIt(), getIt()));
 
   // Statistics
   getIt.registerLazySingleton(() => ComputePeriodRange());
@@ -249,6 +269,18 @@ Future<void> setupDependencies() async {
       updateBudgetUseCase: getIt(),
       deleteBudgetUseCase: getIt(),
       buildBudgetsProgressUseCase: getIt(),
+    ),
+  );
+
+  getIt.registerFactory(
+    () => RecurringCubit(
+      activeProfile: getIt(),
+      watchRecurringPaymentsUseCase: getIt(),
+      addRecurringPaymentUseCase: getIt(),
+      updateRecurringPaymentUseCase: getIt(),
+      deleteRecurringPaymentUseCase: getIt(),
+      setRecurringActiveUseCase: getIt(),
+      runDueRecurringPaymentsUseCase: getIt(),
     ),
   );
 }

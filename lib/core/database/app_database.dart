@@ -77,6 +77,27 @@ class BudgetCategories extends Table {
       integer().customConstraint('REFERENCES categories(id) NOT NULL')();
 }
 
+class RecurringPayments extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get profileId => integer().customConstraint(
+    'REFERENCES profiles(id) NOT NULL DEFAULT 1',
+  )();
+  TextColumn get name => text()();
+  TextColumn get type => text()(); // income | expense
+  RealColumn get amount => real()();
+  IntColumn get categoryId => integer().customConstraint(
+    'REFERENCES categories(id) NOT NULL DEFAULT 1',
+  )();
+  IntColumn get accountId => integer().customConstraint(
+    'REFERENCES accounts(id) NOT NULL DEFAULT 1',
+  )();
+  TextColumn get intervalUnit => text()(); // day | week | month | year
+  IntColumn get intervalCount => integer().withDefault(const Constant(1))();
+  DateTimeColumn get startDate => dateTime()();
+  DateTimeColumn get nextRunDate => dateTime()();
+  BoolColumn get isActive => boolean().withDefault(const Constant(true))();
+}
+
 @DriftDatabase(
   tables: [
     Transactions,
@@ -85,13 +106,14 @@ class BudgetCategories extends Table {
     Profiles,
     Budgets,
     BudgetCategories,
+    RecurringPayments,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -151,6 +173,10 @@ class AppDatabase extends _$AppDatabase {
         // replaceAccountForTransactions did not touch transactions.to_account_id.
         await _healDanglingAccountReferences();
         await _healDanglingCategoryReferences();
+      }
+
+      if (from < 9) {
+        await m.createTable(recurringPayments);
       }
     },
   );
@@ -487,6 +513,9 @@ class AppDatabase extends _$AppDatabase {
         )..where((bc) => bc.budgetId.isIn(profileBudgetIds))).go();
       }
       await (delete(budgets)..where((b) => b.profileId.equals(id))).go();
+      await (delete(
+        recurringPayments,
+      )..where((r) => r.profileId.equals(id))).go();
       await (delete(transactions)..where((t) => t.profileId.equals(id))).go();
       await (delete(accounts)..where((a) => a.profileId.equals(id))).go();
       await (delete(categories)..where((c) => c.profileId.equals(id))).go();
@@ -678,6 +707,131 @@ class AppDatabase extends _$AppDatabase {
       return grouped.values.toList();
     });
   }
+
+  // Recurring payments
+  Future<int> insertRecurringPayment(RecurringPaymentsCompanion entry) {
+    return into(recurringPayments).insert(entry);
+  }
+
+  Future<void> updateRecurringPaymentRow(RecurringPayment row) {
+    return update(recurringPayments).replace(row);
+  }
+
+  Future<void> deleteRecurringPayment(int id) {
+    return (delete(recurringPayments)..where((r) => r.id.equals(id))).go();
+  }
+
+  Future<RecurringPayment?> recurringPaymentById(int id) {
+    return (select(
+      recurringPayments,
+    )..where((r) => r.id.equals(id))).getSingleOrNull();
+  }
+
+  Future<void> setRecurringNextRunDate(int id, DateTime next) {
+    return (update(recurringPayments)..where((r) => r.id.equals(id))).write(
+      RecurringPaymentsCompanion(nextRunDate: Value(next)),
+    );
+  }
+
+  Future<void> setRecurringActive(int id, bool active) {
+    return (update(recurringPayments)..where((r) => r.id.equals(id))).write(
+      RecurringPaymentsCompanion(isActive: Value(active)),
+    );
+  }
+
+  Future<void> setRecurringActiveAndNext(int id, bool active, DateTime next) {
+    return (update(recurringPayments)..where((r) => r.id.equals(id))).write(
+      RecurringPaymentsCompanion(
+        isActive: Value(active),
+        nextRunDate: Value(next),
+      ),
+    );
+  }
+
+  Future<void> replaceCategoryForRecurringPayments(
+    int oldCategoryId,
+    int fallbackCategoryId,
+  ) {
+    return (update(
+      recurringPayments,
+    )..where((r) => r.categoryId.equals(oldCategoryId))).write(
+      RecurringPaymentsCompanion(categoryId: Value(fallbackCategoryId)),
+    );
+  }
+
+  Future<void> replaceAccountForRecurringPayments(
+    int oldAccountId,
+    int fallbackAccountId,
+  ) {
+    return (update(recurringPayments)
+          ..where((r) => r.accountId.equals(oldAccountId)))
+        .write(RecurringPaymentsCompanion(accountId: Value(fallbackAccountId)));
+  }
+
+  Stream<List<RecurringPaymentWithRefs>> watchRecurringPaymentsByProfile(
+    int profileId,
+  ) {
+    final query =
+        select(recurringPayments).join([
+            leftOuterJoin(
+              categories,
+              categories.id.equalsExp(recurringPayments.categoryId),
+            ),
+            leftOuterJoin(
+              accounts,
+              accounts.id.equalsExp(recurringPayments.accountId),
+            ),
+          ])
+          ..where(recurringPayments.profileId.equals(profileId))
+          ..orderBy([
+            OrderingTerm(
+              expression: recurringPayments.isActive,
+              mode: OrderingMode.desc,
+            ),
+            OrderingTerm(expression: recurringPayments.nextRunDate),
+          ]);
+
+    return query.watch().map(
+      (rows) => rows
+          .map(
+            (row) => RecurringPaymentWithRefs(
+              payment: row.readTable(recurringPayments),
+              category: row.readTableOrNull(categories),
+              account: row.readTableOrNull(accounts),
+            ),
+          )
+          .toList(),
+    );
+  }
+
+  Future<List<RecurringPaymentWithRefs>> activeRecurringPaymentsByProfile(
+    int profileId,
+  ) {
+    final query =
+        select(recurringPayments).join([
+          leftOuterJoin(
+            categories,
+            categories.id.equalsExp(recurringPayments.categoryId),
+          ),
+          leftOuterJoin(
+            accounts,
+            accounts.id.equalsExp(recurringPayments.accountId),
+          ),
+        ])..where(
+          recurringPayments.profileId.equals(profileId) &
+              recurringPayments.isActive.equals(true),
+        );
+
+    return query
+        .map(
+          (row) => RecurringPaymentWithRefs(
+            payment: row.readTable(recurringPayments),
+            category: row.readTableOrNull(categories),
+            account: row.readTableOrNull(accounts),
+          ),
+        )
+        .get();
+  }
 }
 
 class BudgetWithCategoryIds {
@@ -685,6 +839,18 @@ class BudgetWithCategoryIds {
 
   final Budget budget;
   final List<int> categoryIds;
+}
+
+class RecurringPaymentWithRefs {
+  RecurringPaymentWithRefs({
+    required this.payment,
+    this.category,
+    this.account,
+  });
+
+  final RecurringPayment payment;
+  final Category? category;
+  final Account? account;
 }
 
 LazyDatabase _openConnection() {

@@ -73,6 +73,7 @@ class CategoryRepositoryImpl implements CategoryRepository {
     }
 
     await db.replaceCategoryForTransactions(category.id, fallback.id);
+    await db.replaceCategoryForRecurringPayments(category.id, fallback.id);
     await db.deleteCategory(id);
   }
 
