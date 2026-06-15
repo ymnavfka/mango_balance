@@ -89,8 +89,15 @@ class NetWorthLineChart extends StatelessWidget {
 
     final maxX = spots.last.x;
     final spanDays = maxX.round();
-    final bottomInterval = math.max(1.0, maxX / 3.2);
-    final zeroFraction = ((0 - minY) / (maxY - minY)).clamp(0.0, 1.0);
+    final bottomInterval = math.max(1.0, maxX / 4);
+    // fl_chart накладывает градиент линии на bounding box самих точек
+    // (minBalance..maxBalance), а не на диапазон осей с паддингом. Поэтому
+    // долю нуля для границы цвета считаем именно от диапазона значений —
+    // иначе граница «зелёный/красный» не совпадёт с нулём (заметно на телефоне).
+    final dataRange = maxBalance - minBalance;
+    final zeroFraction = dataRange == 0
+        ? 0.0
+        : ((0 - minBalance) / dataRange).clamp(0.0, 1.0);
 
     final current = points.last.balance;
 
@@ -173,8 +180,11 @@ class NetWorthLineChart extends StatelessWidget {
                         showTitles: true,
                         reservedSize: 52,
                         interval: (maxY - minY) / 4,
-                        getTitlesWidget: (value, meta) => Padding(
-                          padding: const EdgeInsets.only(right: 4),
+                        minIncluded: false,
+                        maxIncluded: false,
+                        getTitlesWidget: (value, meta) => SideTitleWidget(
+                          axisSide: meta.axisSide,
+                          space: 4,
                           child: Text(
                             _compactMoney(value),
                             style: const TextStyle(
@@ -188,10 +198,13 @@ class NetWorthLineChart extends StatelessWidget {
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
-                        reservedSize: 24,
+                        reservedSize: 26,
                         interval: bottomInterval,
-                        getTitlesWidget: (value, meta) => Padding(
-                          padding: const EdgeInsets.only(top: 6),
+                        minIncluded: false,
+                        maxIncluded: false,
+                        getTitlesWidget: (value, meta) => SideTitleWidget(
+                          axisSide: meta.axisSide,
+                          space: 6,
                           child: Text(
                             _axisDateLabel(_dateForX(value), spanDays),
                             style: const TextStyle(
@@ -204,17 +217,51 @@ class NetWorthLineChart extends StatelessWidget {
                     ),
                   ),
                   lineTouchData: LineTouchData(
+                    getTouchedSpotIndicator: (barData, spotIndexes) =>
+                        spotIndexes.map((index) {
+                          final spot = barData.spots[index];
+                          final color = spot.y >= 0
+                              ? AppColors.income
+                              : AppColors.expense;
+                          return TouchedSpotIndicatorData(
+                            FlLine(
+                              color: color.withValues(alpha: 0.45),
+                              strokeWidth: 2,
+                            ),
+                            FlDotData(
+                              getDotPainter: (s, percent, bar, i) =>
+                                  FlDotCirclePainter(
+                                    radius: 5,
+                                    color: color,
+                                    strokeColor: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                            ),
+                          );
+                        }).toList(),
                     touchTooltipData: LineTouchTooltipData(
                       getTooltipColor: (_) => Colors.black87,
-                      getTooltipItems: (touchedSpots) => touchedSpots
-                          .map(
-                            (spot) => LineTooltipItem(
-                              '${_fullDateLabel(_dateForX(spot.x))}\n'
-                              '${formatMoney(spot.y)}',
-                              const TextStyle(color: Colors.white),
+                      getTooltipItems: (touchedSpots) => touchedSpots.map((
+                        spot,
+                      ) {
+                        final color = spot.y >= 0
+                            ? AppColors.income
+                            : AppColors.expense;
+                        return LineTooltipItem(
+                          '${_fullDateLabel(_dateForX(spot.x))}\n',
+                          const TextStyle(color: Colors.white, fontSize: 12),
+                          children: [
+                            TextSpan(
+                              text: formatMoney(spot.y),
+                              style: TextStyle(
+                                color: color,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                              ),
                             ),
-                          )
-                          .toList(),
+                          ],
+                        );
+                      }).toList(),
                     ),
                   ),
                   lineBarsData: [
