@@ -27,6 +27,11 @@ void main() async {
   runApp(const MyApp());
 }
 
+/// Штатный размер окна (см. gtk_window_set_default_size в linux/runner).
+/// Используется как размер раскладки на вырожденном первом кадре.
+const double _fallbackWindowWidth = 1280;
+const double _fallbackWindowHeight = 720;
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -60,6 +65,37 @@ class MyApp extends StatelessWidget {
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
+        builder: (context, child) {
+          final content = child ?? const SizedBox.shrink();
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              // На первом кадре под Linux/GTK (и при перерисовке в тайлинговых
+              // WM) окну кратко выдаётся вырожденный размер ~1×1 до того, как
+              // менеджер окон сообщит реальную геометрию. На таком кадре
+              // раскладываем интерфейс в штатном размере окна, иначе внутренние
+              // Row/Column переполняются. Реальные размеры окна не трогаем.
+              final degenerate =
+                  !constraints.maxWidth.isFinite ||
+                  !constraints.maxHeight.isFinite ||
+                  constraints.maxWidth < 50 ||
+                  constraints.maxHeight < 50;
+              final width = degenerate
+                  ? _fallbackWindowWidth
+                  : constraints.maxWidth;
+              final height = degenerate
+                  ? _fallbackWindowHeight
+                  : constraints.maxHeight;
+              return OverflowBox(
+                alignment: Alignment.topLeft,
+                minWidth: width,
+                maxWidth: width,
+                minHeight: height,
+                maxHeight: height,
+                child: content,
+              );
+            },
+          );
+        },
         initialRoute: '/',
         routes: {
           '/': (_) => const TransactionsPage(),
