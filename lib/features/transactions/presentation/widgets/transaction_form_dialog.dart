@@ -108,7 +108,9 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
   }
 
   void _submit() {
-    final amount = double.tryParse(_amountController.text) ?? 0.0;
+    final amount =
+        double.tryParse(_amountController.text.trim().replaceAll(',', '.')) ??
+        0.0;
 
     if (_type != TransactionType.transfer &&
         (_categoryId == null || _categoryName == null)) {
