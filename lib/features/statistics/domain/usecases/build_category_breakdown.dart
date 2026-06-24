@@ -55,12 +55,21 @@ class BuildCategoryBreakdown {
         0,
         (sum, entry) => sum + entry.value,
       );
+      final children = hidden.map((entry) {
+        return CategoryBreakdown(
+          categoryId: entry.key,
+          categoryName: namesByCategory[entry.key] ?? '',
+          amount: entry.value,
+          share: entry.value / total,
+        );
+      }).toList();
       result.add(
         CategoryBreakdown(
           categoryId: null,
           categoryName: 'Другое',
           amount: otherAmount,
           share: otherAmount / total,
+          children: children,
         ),
       );
     }
