@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -32,6 +33,22 @@ void main() async {
 const double _fallbackWindowWidth = 1280;
 const double _fallbackWindowHeight = 720;
 
+/// Разрешает прокрутку перетаскиванием мышью (и стилусом) — на десктопе Flutter
+/// по умолчанию её нет, поэтому горизонтальные графики и списки нельзя было
+/// «тянуть» мышью, как на телефоне. Колесо мыши и трекпад продолжают работать.
+class AppScrollBehavior extends MaterialScrollBehavior {
+  const AppScrollBehavior();
+
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+    PointerDeviceKind.touch,
+    PointerDeviceKind.mouse,
+    PointerDeviceKind.trackpad,
+    PointerDeviceKind.stylus,
+    PointerDeviceKind.unknown,
+  };
+}
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -57,6 +74,7 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Mango Balance',
+        scrollBehavior: const AppScrollBehavior(),
         theme: AppTheme.light(),
         locale: const Locale('ru'),
         supportedLocales: const [Locale('ru'), Locale('en')],
