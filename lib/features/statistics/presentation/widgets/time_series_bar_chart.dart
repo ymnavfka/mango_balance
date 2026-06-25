@@ -49,6 +49,10 @@ class _TimeSeriesBarChartState extends State<TimeSeriesBarChart> {
   double _viewportWidth = 0;
   double _yMax = 10;
 
+  // Средние доход/расход за период за всё время (для группы «Среднее»).
+  double _avgIncome = 0;
+  double _avgExpense = 0;
+
   @override
   void initState() {
     super.initState();
@@ -72,35 +76,69 @@ class _TimeSeriesBarChartState extends State<TimeSeriesBarChart> {
 
   double _yMaxFor(double maxValue) => maxValue <= 0 ? 10.0 : maxValue * 1.15;
 
+  // Число групп столбцов: периоды + завершающая группа «Среднее».
+  int get _groupCount => widget.buckets.length + 1;
+
+  // Доход/расход для группы по индексу. Последний индекс — группа «Среднее».
+  ({double income, double expense}) _groupValues(int index) {
+    final buckets = widget.buckets;
+    if (index >= buckets.length) {
+      return (income: _avgIncome, expense: _avgExpense);
+    }
+    return (income: buckets[index].income, expense: buckets[index].expense);
+  }
+
+  double _groupMax(int index) {
+    final v = _groupValues(index);
+    return v.income > v.expense ? v.income : v.expense;
+  }
+
   // Максимум среди столбцов, чьи ячейки пересекают видимую область прокрутки.
   // Прокрутка идёт в reverse: смещение 0 показывает правый край контента.
   double _visibleMaxValue(double offset) {
-    final buckets = widget.buckets;
-    if (buckets.isEmpty || _contentWidth <= 0) return 0;
+    if (widget.buckets.isEmpty || _contentWidth <= 0) return 0;
 
-    final perGroup = _contentWidth / buckets.length;
+    final perGroup = _contentWidth / _groupCount;
     final visibleRight = _contentWidth - offset;
     final visibleLeft = visibleRight - _viewportWidth;
 
     double maxVisible = 0;
     var found = false;
-    for (var i = 0; i < buckets.length; i++) {
+    for (var i = 0; i < _groupCount; i++) {
       final cellLeft = i * perGroup;
       final cellRight = cellLeft + perGroup;
       if (cellRight > visibleLeft && cellLeft < visibleRight) {
-        final b = buckets[i];
-        final v = b.income > b.expense ? b.income : b.expense;
+        final v = _groupMax(i);
         if (v > maxVisible) maxVisible = v;
         found = true;
       }
     }
     if (!found) {
-      for (final b in buckets) {
-        final v = b.income > b.expense ? b.income : b.expense;
+      for (var i = 0; i < _groupCount; i++) {
+        final v = _groupMax(i);
         if (v > maxVisible) maxVisible = v;
       }
     }
     return maxVisible;
+  }
+
+  // Слово для подписи периода в тултипе «Среднее за …».
+  String _avgPeriodWord() {
+    final granularity = widget.periodType == PeriodType.allTime
+        ? PeriodType.year
+        : widget.periodType;
+    switch (granularity) {
+      case PeriodType.day:
+        return 'день';
+      case PeriodType.week:
+        return 'неделю';
+      case PeriodType.month:
+        return 'месяц';
+      case PeriodType.year:
+        return 'год';
+      case PeriodType.allTime:
+        return 'год';
+    }
   }
 
   String _bucketLabel(PeriodBucket bucket) {
@@ -154,7 +192,11 @@ class _TimeSeriesBarChartState extends State<TimeSeriesBarChart> {
     final totalExpense = buckets.fold<double>(0, (s, b) => s + b.expense);
     final totalNet = totalIncome - totalExpense;
 
-    final chartWidth = _groupWidth * buckets.length;
+    // Среднее за период за всё время — по всем периодам, включая пустые.
+    _avgIncome = totalIncome / buckets.length;
+    _avgExpense = totalExpense / buckets.length;
+
+    final chartWidth = _groupWidth * _groupCount;
     final contentWidth = chartWidth < _minContentWidth
         ? _minContentWidth
         : chartWidth;
@@ -187,6 +229,15 @@ class _TimeSeriesBarChartState extends State<TimeSeriesBarChart> {
                 _LegendDot(color: AppColors.income, label: 'Доход'),
                 _LegendDot(color: AppColors.expense, label: 'Расход'),
               ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Крайняя группа «Среднее» — средние доход и расход '
+              'за ${_avgPeriodWord()} за всё время.',
+              style: const TextStyle(
+                fontSize: 11.5,
+                color: AppColors.textTertiary,
+              ),
             ),
             const SizedBox(height: 12),
             SizedBox(
@@ -251,18 +302,27 @@ class _TimeSeriesBarChartState extends State<TimeSeriesBarChart> {
                                       getTitlesWidget: (value, meta) {
                                         final index = value.toInt();
                                         if (index < 0 ||
-                                            index >= buckets.length) {
+                                            index > buckets.length) {
                                           return const SizedBox.shrink();
                                         }
+                                        final isAvg = index == buckets.length;
                                         return Padding(
                                           padding: const EdgeInsets.only(
                                             top: 4,
                                           ),
                                           child: Text(
-                                            _bucketLabel(buckets[index]),
+                                            isAvg
+                                                ? 'Среднее'
+                                                : _bucketLabel(buckets[index]),
                                             textAlign: TextAlign.center,
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontSize: 10,
+                                              fontWeight: isAvg
+                                                  ? FontWeight.w700
+                                                  : FontWeight.w400,
+                                              color: isAvg
+                                                  ? AppColors.textSecondary
+                                                  : null,
                                             ),
                                           ),
                                         );
@@ -277,14 +337,29 @@ class _TimeSeriesBarChartState extends State<TimeSeriesBarChart> {
                                     getTooltipColor: (_) => Colors.black87,
                                     getTooltipItem:
                                         (group, groupIndex, rod, rodIndex) {
-                                          final bucket = buckets[group.x];
                                           final isIncome = rodIndex == 0;
-                                          final value = isIncome
-                                              ? bucket.income
-                                              : bucket.expense;
                                           final label = isIncome
                                               ? 'Доход'
                                               : 'Расход';
+                                          if (group.x >= buckets.length) {
+                                            final value = isIncome
+                                                ? _avgIncome
+                                                : _avgExpense;
+                                            final avgNet =
+                                                _avgIncome - _avgExpense;
+                                            return BarTooltipItem(
+                                              'Среднее за ${_avgPeriodWord()}\n'
+                                              '$label: ${_formatMoney(value)}\n'
+                                              'Итог: ${_formatMoney(avgNet)}',
+                                              const TextStyle(
+                                                color: Colors.white,
+                                              ),
+                                            );
+                                          }
+                                          final bucket = buckets[group.x];
+                                          final value = isIncome
+                                              ? bucket.income
+                                              : bucket.expense;
                                           return BarTooltipItem(
                                             '$label\n${_formatMoney(value)}\nИтог: ${_formatMoney(bucket.net)}',
                                             const TextStyle(
@@ -294,15 +369,26 @@ class _TimeSeriesBarChartState extends State<TimeSeriesBarChart> {
                                         },
                                   ),
                                 ),
-                                barGroups: List.generate(buckets.length, (i) {
-                                  final b = buckets[i];
+                                barGroups: List.generate(_groupCount, (i) {
+                                  final values = _groupValues(i);
+                                  final isAvg = i >= buckets.length;
+                                  // Группа «Среднее» — те же цвета, но светлее,
+                                  // чтобы читалась как справочная, а не период.
+                                  final incomeColor = isAvg
+                                      ? AppColors.income.withValues(alpha: 0.45)
+                                      : AppColors.income;
+                                  final expenseColor = isAvg
+                                      ? AppColors.expense.withValues(
+                                          alpha: 0.45,
+                                        )
+                                      : AppColors.expense;
                                   return BarChartGroupData(
                                     x: i,
                                     barsSpace: 4,
                                     barRods: [
                                       BarChartRodData(
-                                        toY: b.income,
-                                        color: AppColors.income,
+                                        toY: values.income,
+                                        color: incomeColor,
                                         width: 12,
                                         borderRadius:
                                             const BorderRadius.vertical(
@@ -310,8 +396,8 @@ class _TimeSeriesBarChartState extends State<TimeSeriesBarChart> {
                                             ),
                                       ),
                                       BarChartRodData(
-                                        toY: b.expense,
-                                        color: AppColors.expense,
+                                        toY: values.expense,
+                                        color: expenseColor,
                                         width: 12,
                                         borderRadius:
                                             const BorderRadius.vertical(
