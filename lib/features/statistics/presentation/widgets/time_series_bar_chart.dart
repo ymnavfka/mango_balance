@@ -178,6 +178,8 @@ class TimeSeriesBarChart extends StatelessWidget {
                             ),
                             barTouchData: BarTouchData(
                               touchTooltipData: BarTouchTooltipData(
+                                fitInsideVertically: true,
+                                fitInsideHorizontally: true,
                                 getTooltipColor: (_) => Colors.black87,
                                 getTooltipItem: (group, groupIndex, rod, rodIndex) {
                                   final bucket = buckets[group.x];
