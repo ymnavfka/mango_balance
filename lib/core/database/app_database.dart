@@ -864,6 +864,9 @@ LazyDatabase _openConnection() {
   return LazyDatabase(() async {
     final dir = await getApplicationDocumentsDirectory();
     final file = File(p.join(dir.path, 'db.sqlite'));
-    return NativeDatabase(file);
+    // Выполняем все запросы в фоновом изоляте, чтобы работа с БД (миграции,
+    // массовые вставки, тяжёлые выборки) никогда не блокировала UI-поток и не
+    // приводила к «приложение не отвечает» при запуске.
+    return NativeDatabase.createInBackground(file);
   });
 }
