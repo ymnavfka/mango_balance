@@ -51,8 +51,8 @@ class CategoryCubit extends Cubit<CategoryState> {
     return super.close();
   }
 
-  Future<void> addCategory(CategoryEntity category) async {
-    await addCategoryUseCase(category);
+  Future<int> addCategory(CategoryEntity category) async {
+    return addCategoryUseCase(category);
   }
 
   Future<void> updateCategory(CategoryEntity category) async {

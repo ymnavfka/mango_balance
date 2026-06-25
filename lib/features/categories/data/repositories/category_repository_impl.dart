@@ -20,8 +20,8 @@ class CategoryRepositoryImpl implements CategoryRepository {
   }
 
   @override
-  Future<void> addCategory(CategoryEntity category) async {
-    await db.insertCategory(
+  Future<int> addCategory(CategoryEntity category) async {
+    return db.insertCategory(
       CategoriesCompanion.insert(
         name: category.name.trim(),
         type: _mapType(category.type),

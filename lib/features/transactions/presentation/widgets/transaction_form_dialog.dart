@@ -174,6 +174,41 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
     }
   }
 
+  // Создаёт категорию прямо из формы транзакции и сразу выбирает её. Тип
+  // фиксируется по текущему типу операции, чтобы категория гарантированно
+  // подходила к этой транзакции.
+  Future<void> _createCategory() async {
+    final cubit = context.read<CategoryCubit>();
+    final messenger = ScaffoldMessenger.of(context);
+    final type = _type;
+
+    final name = await showDialog<String>(
+      context: context,
+      builder: (_) => _NewCategoryDialog(type: type),
+    );
+    if (!mounted || name == null) return;
+
+    try {
+      final id = await cubit.addCategory(
+        CategoryEntity(id: 0, name: name, type: type, isFallback: false),
+      );
+      // Ждём, пока поток категорий обновится: иначе build() не найдёт новую
+      // категорию в списке и сбросит выбор на «популярную».
+      if (!cubit.state.categories.any((category) => category.id == id)) {
+        await cubit.stream.firstWhere(
+          (state) => state.categories.any((category) => category.id == id),
+        );
+      }
+      if (!mounted) return;
+      setState(() {
+        _categoryId = id;
+        _categoryName = name;
+      });
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(e.toString())));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final categories = context.watch<CategoryCubit>().state.categories;
@@ -300,31 +335,38 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
           ),
           if (_type != TransactionType.transfer) ...[
             const FormFieldLabel('Категория'),
-            if (filteredCategories.isNotEmpty)
-              AppDropdownField<int>(
-                value: selectedCategory?.id,
-                items: filteredCategories
-                    .map(
-                      (category) => DropdownMenuItem(
-                        value: category.id,
-                        child: Text(category.name),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (value) {
-                  if (value == null) return;
-                  final selected = filteredCategories.firstWhere(
-                    (category) => category.id == value,
-                    orElse: () => filteredCategories.first,
-                  );
-                  setState(() {
-                    _categoryId = selected.id;
-                    _categoryName = selected.name;
-                  });
-                },
-              )
-            else
-              const _InfoBox('Нет категорий для этого типа'),
+            Row(
+              children: [
+                Expanded(
+                  child: filteredCategories.isNotEmpty
+                      ? AppDropdownField<int>(
+                          value: selectedCategory?.id,
+                          items: filteredCategories
+                              .map(
+                                (category) => DropdownMenuItem(
+                                  value: category.id,
+                                  child: Text(category.name),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (value) {
+                            if (value == null) return;
+                            final selected = filteredCategories.firstWhere(
+                              (category) => category.id == value,
+                              orElse: () => filteredCategories.first,
+                            );
+                            setState(() {
+                              _categoryId = selected.id;
+                              _categoryName = selected.name;
+                            });
+                          },
+                        )
+                      : const _EmptyFieldBox('Категорий пока нет'),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                _AddCategoryButton(onTap: _createCategory),
+              ],
+            ),
           ],
           if (accounts.isNotEmpty) ...[
             FormFieldLabel(isTransfer ? 'Счёт-источник' : 'Счёт'),
@@ -484,6 +526,120 @@ class _InfoBox extends StatelessWidget {
                 color: AppColors.textSecondary,
                 fontSize: 13,
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Нейтральный «заполнитель» в стиле поля — показывается вместо выпадающего
+/// списка, когда категорий нужного типа ещё нет.
+class _EmptyFieldBox extends StatelessWidget {
+  const _EmptyFieldBox(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 52,
+      alignment: Alignment.centerLeft,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceAlt,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+      ),
+      child: Text(text, style: const TextStyle(color: AppColors.textTertiary)),
+    );
+  }
+}
+
+/// Квадратная кнопка «+» рядом со списком категорий для быстрого создания
+/// новой категории прямо из формы транзакции.
+class _AddCategoryButton extends StatelessWidget {
+  const _AddCategoryButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: 'Новая категория',
+      child: Material(
+        color: AppColors.brandContainer,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          onTap: onTap,
+          child: const SizedBox(
+            width: 52,
+            height: 52,
+            child: Icon(Icons.add_rounded, color: AppColors.brand),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Мини-диалог создания категории из формы транзакции: запрашивает только
+/// название, тип задаётся снаружи (совпадает с типом операции).
+class _NewCategoryDialog extends StatefulWidget {
+  const _NewCategoryDialog({required this.type});
+
+  final TransactionType type;
+
+  @override
+  State<_NewCategoryDialog> createState() => _NewCategoryDialogState();
+}
+
+class _NewCategoryDialogState extends State<_NewCategoryDialog> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final name = _controller.text.trim();
+    if (name.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Название категории не должно быть пустым'),
+        ),
+      );
+      return;
+    }
+    Navigator.pop(context, name);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final typeLabel = widget.type == TransactionType.income
+        ? 'Доход'
+        : 'Расход';
+
+    return AppDialog(
+      title: 'Новая категория',
+      subtitle: 'Тип: $typeLabel',
+      primaryLabel: 'Добавить',
+      onPrimary: _submit,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const FormFieldLabel('Название категории', top: 0),
+          TextField(
+            controller: _controller,
+            autofocus: true,
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => _submit(),
+            decoration: const InputDecoration(
+              hintText: 'Например: Продукты',
+              prefixIcon: Icon(Icons.label_rounded),
             ),
           ),
         ],

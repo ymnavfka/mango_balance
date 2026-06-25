@@ -6,11 +6,11 @@ class AddCategory {
 
   final CategoryRepository repository;
 
-  Future<void> call(CategoryEntity category) async {
+  Future<int> call(CategoryEntity category) async {
     if (category.name.trim().isEmpty) {
       throw Exception('Название категории не должно быть пустым');
     }
 
-    await repository.addCategory(category);
+    return repository.addCategory(category);
   }
 }
