@@ -6,7 +6,7 @@ import '../../../shared/utils/money_format.dart';
 import '../../domain/entities/period_bucket.dart';
 import '../../domain/entities/period_type.dart';
 
-class TimeSeriesBarChart extends StatelessWidget {
+class TimeSeriesBarChart extends StatefulWidget {
   const TimeSeriesBarChart({
     super.key,
     required this.buckets,
@@ -16,6 +16,11 @@ class TimeSeriesBarChart extends StatelessWidget {
   final List<PeriodBucket> buckets;
   final PeriodType periodType;
 
+  @override
+  State<TimeSeriesBarChart> createState() => _TimeSeriesBarChartState();
+}
+
+class _TimeSeriesBarChartState extends State<TimeSeriesBarChart> {
   static const _months = [
     'янв',
     'фев',
@@ -31,11 +36,78 @@ class TimeSeriesBarChart extends StatelessWidget {
     'дек',
   ];
 
+  // Ширина одной группы столбцов и колонки подписей оси Y.
+  static const double _groupWidth = 64;
+  static const double _yAxisWidth = 48;
+  static const double _minContentWidth = 200;
+
+  late final ScrollController _scrollController;
+
+  // Геометрия последней раскладки — нужна слушателю прокрутки, чтобы понять,
+  // какие столбцы сейчас видны, без повторного измерения вьюпорта.
+  double _contentWidth = 0;
+  double _viewportWidth = 0;
+  double _yMax = 10;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController()..addListener(_handleScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _handleScroll() {
+    if (!_scrollController.hasClients) return;
+    final newYMax = _yMaxFor(_visibleMaxValue(_scrollController.offset));
+    if ((newYMax - _yMax).abs() > 1e-6) {
+      // Видимый максимум изменился — пересчитываем шкалу и подписи оси Y.
+      setState(() {});
+    }
+  }
+
+  double _yMaxFor(double maxValue) => maxValue <= 0 ? 10.0 : maxValue * 1.15;
+
+  // Максимум среди столбцов, чьи ячейки пересекают видимую область прокрутки.
+  // Прокрутка идёт в reverse: смещение 0 показывает правый край контента.
+  double _visibleMaxValue(double offset) {
+    final buckets = widget.buckets;
+    if (buckets.isEmpty || _contentWidth <= 0) return 0;
+
+    final perGroup = _contentWidth / buckets.length;
+    final visibleRight = _contentWidth - offset;
+    final visibleLeft = visibleRight - _viewportWidth;
+
+    double maxVisible = 0;
+    var found = false;
+    for (var i = 0; i < buckets.length; i++) {
+      final cellLeft = i * perGroup;
+      final cellRight = cellLeft + perGroup;
+      if (cellRight > visibleLeft && cellLeft < visibleRight) {
+        final b = buckets[i];
+        final v = b.income > b.expense ? b.income : b.expense;
+        if (v > maxVisible) maxVisible = v;
+        found = true;
+      }
+    }
+    if (!found) {
+      for (final b in buckets) {
+        final v = b.income > b.expense ? b.income : b.expense;
+        if (v > maxVisible) maxVisible = v;
+      }
+    }
+    return maxVisible;
+  }
+
   String _bucketLabel(PeriodBucket bucket) {
     final start = bucket.range.start;
-    final granularity = periodType == PeriodType.allTime
+    final granularity = widget.periodType == PeriodType.allTime
         ? PeriodType.year
-        : periodType;
+        : widget.periodType;
     switch (granularity) {
       case PeriodType.day:
         return '${start.day}\n${_months[start.month - 1]}';
@@ -57,6 +129,7 @@ class TimeSeriesBarChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final buckets = widget.buckets;
     if (buckets.isEmpty) {
       return Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -77,17 +150,14 @@ class TimeSeriesBarChart extends StatelessWidget {
       );
     }
 
-    final maxValue = buckets
-        .map((b) => b.income > b.expense ? b.income : b.expense)
-        .fold<double>(0, (max, v) => v > max ? v : max);
-    final yMax = maxValue == 0 ? 10.0 : maxValue * 1.15;
-
     final totalIncome = buckets.fold<double>(0, (s, b) => s + b.income);
     final totalExpense = buckets.fold<double>(0, (s, b) => s + b.expense);
     final totalNet = totalIncome - totalExpense;
 
-    const groupWidth = 64.0;
-    final chartWidth = groupWidth * buckets.length;
+    final chartWidth = _groupWidth * buckets.length;
+    final contentWidth = chartWidth < _minContentWidth
+        ? _minContentWidth
+        : chartWidth;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -121,111 +191,144 @@ class TimeSeriesBarChart extends StatelessWidget {
             const SizedBox(height: 12),
             SizedBox(
               height: 260,
-              child: Row(
-                children: [
-                  SizedBox(width: 48, child: _YAxisLabels(maxValue: yMax)),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      reverse: true,
-                      child: SizedBox(
-                        width: chartWidth < 200 ? 200 : chartWidth,
-                        child: BarChart(
-                          BarChartData(
-                            maxY: yMax,
-                            minY: 0,
-                            alignment: BarChartAlignment.spaceAround,
-                            gridData: FlGridData(
-                              show: true,
-                              drawVerticalLine: false,
-                              horizontalInterval: yMax / 4,
-                              getDrawingHorizontalLine: (_) => FlLine(
-                                color: Colors.grey.withValues(alpha: 0.2),
-                                strokeWidth: 1,
-                              ),
-                            ),
-                            borderData: FlBorderData(show: false),
-                            titlesData: FlTitlesData(
-                              leftTitles: const AxisTitles(
-                                sideTitles: SideTitles(showTitles: false),
-                              ),
-                              rightTitles: const AxisTitles(
-                                sideTitles: SideTitles(showTitles: false),
-                              ),
-                              topTitles: const AxisTitles(
-                                sideTitles: SideTitles(showTitles: false),
-                              ),
-                              bottomTitles: AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  reservedSize: 36,
-                                  getTitlesWidget: (value, meta) {
-                                    final index = value.toInt();
-                                    if (index < 0 || index >= buckets.length) {
-                                      return const SizedBox.shrink();
-                                    }
-                                    return Padding(
-                                      padding: const EdgeInsets.only(top: 4),
-                                      child: Text(
-                                        _bucketLabel(buckets[index]),
-                                        textAlign: TextAlign.center,
-                                        style: const TextStyle(fontSize: 10),
-                                      ),
-                                    );
-                                  },
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  // Шкала Y подстраивается под столбцы, попадающие в видимую
+                  // область прокрутки, а не под все сразу — иначе одиночный
+                  // выброс за экраном сплющивал бы все видимые столбцы.
+                  _contentWidth = contentWidth;
+                  _viewportWidth = (constraints.maxWidth - _yAxisWidth).clamp(
+                    0.0,
+                    double.infinity,
+                  );
+                  final offset = _scrollController.hasClients
+                      ? _scrollController.offset
+                      : 0.0;
+                  final yMax = _yMaxFor(_visibleMaxValue(offset));
+                  _yMax = yMax;
+                  return Row(
+                    children: [
+                      SizedBox(
+                        width: _yAxisWidth,
+                        child: _YAxisLabels(maxValue: yMax),
+                      ),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          controller: _scrollController,
+                          scrollDirection: Axis.horizontal,
+                          reverse: true,
+                          child: SizedBox(
+                            width: contentWidth,
+                            child: BarChart(
+                              BarChartData(
+                                maxY: yMax,
+                                minY: 0,
+                                alignment: BarChartAlignment.spaceAround,
+                                gridData: FlGridData(
+                                  show: true,
+                                  drawVerticalLine: false,
+                                  horizontalInterval: yMax / 4,
+                                  getDrawingHorizontalLine: (_) => FlLine(
+                                    color: Colors.grey.withValues(alpha: 0.2),
+                                    strokeWidth: 1,
+                                  ),
                                 ),
-                              ),
-                            ),
-                            barTouchData: BarTouchData(
-                              touchTooltipData: BarTouchTooltipData(
-                                fitInsideVertically: true,
-                                fitInsideHorizontally: true,
-                                getTooltipColor: (_) => Colors.black87,
-                                getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                                  final bucket = buckets[group.x];
-                                  final isIncome = rodIndex == 0;
-                                  final value = isIncome
-                                      ? bucket.income
-                                      : bucket.expense;
-                                  final label = isIncome ? 'Доход' : 'Расход';
-                                  return BarTooltipItem(
-                                    '$label\n${_formatMoney(value)}\nИтог: ${_formatMoney(bucket.net)}',
-                                    const TextStyle(color: Colors.white),
+                                borderData: FlBorderData(show: false),
+                                titlesData: FlTitlesData(
+                                  leftTitles: const AxisTitles(
+                                    sideTitles: SideTitles(showTitles: false),
+                                  ),
+                                  rightTitles: const AxisTitles(
+                                    sideTitles: SideTitles(showTitles: false),
+                                  ),
+                                  topTitles: const AxisTitles(
+                                    sideTitles: SideTitles(showTitles: false),
+                                  ),
+                                  bottomTitles: AxisTitles(
+                                    sideTitles: SideTitles(
+                                      showTitles: true,
+                                      reservedSize: 36,
+                                      getTitlesWidget: (value, meta) {
+                                        final index = value.toInt();
+                                        if (index < 0 ||
+                                            index >= buckets.length) {
+                                          return const SizedBox.shrink();
+                                        }
+                                        return Padding(
+                                          padding: const EdgeInsets.only(
+                                            top: 4,
+                                          ),
+                                          child: Text(
+                                            _bucketLabel(buckets[index]),
+                                            textAlign: TextAlign.center,
+                                            style: const TextStyle(
+                                              fontSize: 10,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ),
+                                barTouchData: BarTouchData(
+                                  touchTooltipData: BarTouchTooltipData(
+                                    fitInsideVertically: true,
+                                    fitInsideHorizontally: true,
+                                    getTooltipColor: (_) => Colors.black87,
+                                    getTooltipItem:
+                                        (group, groupIndex, rod, rodIndex) {
+                                          final bucket = buckets[group.x];
+                                          final isIncome = rodIndex == 0;
+                                          final value = isIncome
+                                              ? bucket.income
+                                              : bucket.expense;
+                                          final label = isIncome
+                                              ? 'Доход'
+                                              : 'Расход';
+                                          return BarTooltipItem(
+                                            '$label\n${_formatMoney(value)}\nИтог: ${_formatMoney(bucket.net)}',
+                                            const TextStyle(
+                                              color: Colors.white,
+                                            ),
+                                          );
+                                        },
+                                  ),
+                                ),
+                                barGroups: List.generate(buckets.length, (i) {
+                                  final b = buckets[i];
+                                  return BarChartGroupData(
+                                    x: i,
+                                    barsSpace: 4,
+                                    barRods: [
+                                      BarChartRodData(
+                                        toY: b.income,
+                                        color: AppColors.income,
+                                        width: 12,
+                                        borderRadius:
+                                            const BorderRadius.vertical(
+                                              top: Radius.circular(2),
+                                            ),
+                                      ),
+                                      BarChartRodData(
+                                        toY: b.expense,
+                                        color: AppColors.expense,
+                                        width: 12,
+                                        borderRadius:
+                                            const BorderRadius.vertical(
+                                              top: Radius.circular(2),
+                                            ),
+                                      ),
+                                    ],
                                   );
-                                },
+                                }),
                               ),
                             ),
-                            barGroups: List.generate(buckets.length, (i) {
-                              final b = buckets[i];
-                              return BarChartGroupData(
-                                x: i,
-                                barsSpace: 4,
-                                barRods: [
-                                  BarChartRodData(
-                                    toY: b.income,
-                                    color: AppColors.income,
-                                    width: 12,
-                                    borderRadius: const BorderRadius.vertical(
-                                      top: Radius.circular(2),
-                                    ),
-                                  ),
-                                  BarChartRodData(
-                                    toY: b.expense,
-                                    color: AppColors.expense,
-                                    width: 12,
-                                    borderRadius: const BorderRadius.vertical(
-                                      top: Radius.circular(2),
-                                    ),
-                                  ),
-                                ],
-                              );
-                            }),
                           ),
                         ),
                       ),
-                    ),
-                  ),
-                ],
+                    ],
+                  );
+                },
               ),
             ),
             const SizedBox(height: 12),
