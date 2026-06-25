@@ -17,6 +17,7 @@ class AccountRepositoryImpl implements AccountRepository {
       AccountsCompanion.insert(
         name: account.name.trim(),
         isFallback: Value(account.isFallback),
+        initialBalance: Value(account.initialBalance),
         profileId: Value(activeProfile.id),
       ),
     );
@@ -33,6 +34,7 @@ class AccountRepositoryImpl implements AccountRepository {
                   id: account.id,
                   name: account.name,
                   isFallback: account.isFallback,
+                  initialBalance: account.initialBalance,
                 ),
               )
               .toList(),
@@ -50,6 +52,7 @@ class AccountRepositoryImpl implements AccountRepository {
         id: account.id,
         name: account.name.trim(),
         isFallback: account.isFallback,
+        initialBalance: account.initialBalance,
         profileId: existing.profileId,
       ),
     );

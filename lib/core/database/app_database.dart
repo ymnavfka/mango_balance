@@ -27,6 +27,9 @@ class Accounts extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text()();
   BoolColumn get isFallback => boolean().withDefault(const Constant(false))();
+  // Баланс счёта на момент начала учёта (до первой транзакции). Транзакции
+  // прибавляются/убавляются поверх него; в статистику доходов/расходов не входит.
+  RealColumn get initialBalance => real().withDefault(const Constant(0))();
   IntColumn get profileId => integer().customConstraint(
     'REFERENCES profiles(id) NOT NULL DEFAULT 1',
   )();
@@ -113,7 +116,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -177,6 +180,10 @@ class AppDatabase extends _$AppDatabase {
 
       if (from < 9) {
         await m.createTable(recurringPayments);
+      }
+
+      if (from < 10) {
+        await m.addColumn(accounts, accounts.initialBalance);
       }
     },
   );

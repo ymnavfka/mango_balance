@@ -195,6 +195,7 @@ Future<void> setupDependencies() async {
       updateTransactionUseCase: getIt(),
       deleteTransactionUseCase: getIt(),
       watchTransactionsUseCase: getIt(),
+      watchAccountsUseCase: getIt(),
       calculateAccountBalancesUseCase: getIt(),
       filterTransactionsUseCase: getIt(),
       filterTransactionsByTypeUseCase: getIt(),
@@ -254,6 +255,7 @@ Future<void> setupDependencies() async {
     () => StatisticsCubit(
       activeProfile: getIt(),
       watchTransactionsUseCase: getIt(),
+      watchAccountsUseCase: getIt(),
       buildStatisticsSnapshotUseCase: getIt(),
       computePeriodRangeUseCase: getIt(),
     ),

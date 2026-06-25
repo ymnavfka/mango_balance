@@ -5,6 +5,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/enums/transaction_type.dart';
 import '../../../../core/services/active_profile_holder.dart';
+import '../../../accounts/domain/entities/account.dart';
+import '../../../accounts/domain/usecases/watch_accounts.dart';
 import '../../data/datasources/date_range_filter_storage.dart';
 import '../../data/datasources/transaction_type_filter_storage.dart';
 import '../../domain/entities/transaction.dart';
@@ -26,6 +28,7 @@ class TransactionCubit extends Cubit<TransactionState> {
     required this.updateTransactionUseCase,
     required this.deleteTransactionUseCase,
     required this.watchTransactionsUseCase,
+    required this.watchAccountsUseCase,
     required this.calculateAccountBalancesUseCase,
     required this.filterTransactionsUseCase,
     required this.filterTransactionsByTypeUseCase,
@@ -43,6 +46,7 @@ class TransactionCubit extends Cubit<TransactionState> {
   final UpdateTransaction updateTransactionUseCase;
   final DeleteTransaction deleteTransactionUseCase;
   final WatchTransactions watchTransactionsUseCase;
+  final WatchAccounts watchAccountsUseCase;
   final CalculateAccountBalances calculateAccountBalancesUseCase;
   final FilterTransactionsByAccount filterTransactionsUseCase;
   final FilterTransactionsByType filterTransactionsByTypeUseCase;
@@ -51,8 +55,10 @@ class TransactionCubit extends Cubit<TransactionState> {
   final DateRangeFilterStorage dateRangeFilterStorage;
 
   StreamSubscription<List<TransactionEntity>>? _transactionsSubscription;
+  StreamSubscription<List<AccountEntity>>? _accountsSubscription;
   late final StreamSubscription<int> _profileSubscription;
   List<TransactionEntity> _allTransactions = [];
+  List<AccountEntity> _accounts = [];
   int? _selectedAccountId;
   late Set<TransactionType> _visibleTypes;
   late DateTimeRange? _dateRange;
@@ -64,8 +70,10 @@ class TransactionCubit extends Cubit<TransactionState> {
 
   void _resubscribe(int profileId) {
     _transactionsSubscription?.cancel();
+    _accountsSubscription?.cancel();
 
     _allTransactions = [];
+    _accounts = [];
     _selectedAccountId = null;
     emit(
       TransactionState.initial().copyWith(
@@ -80,11 +88,17 @@ class TransactionCubit extends Cubit<TransactionState> {
       _allTransactions = list;
       _updateState();
     });
+
+    _accountsSubscription = watchAccountsUseCase(profileId).listen((accounts) {
+      _accounts = accounts;
+      _updateState();
+    });
   }
 
   @override
   Future<void> close() async {
     await _transactionsSubscription?.cancel();
+    await _accountsSubscription?.cancel();
     await _profileSubscription.cancel();
     return super.close();
   }
@@ -130,7 +144,13 @@ class TransactionCubit extends Cubit<TransactionState> {
   }
 
   void _updateState() {
-    final accountBalances = calculateAccountBalancesUseCase(_allTransactions);
+    final initialBalances = {
+      for (final account in _accounts) account.id: account.initialBalance,
+    };
+    final accountBalances = calculateAccountBalancesUseCase(
+      _allTransactions,
+      initialBalances: initialBalances,
+    );
     final totalBalance = accountBalances.values.fold<double>(
       0,
       (sum, value) => sum + value,

@@ -38,6 +38,9 @@ class AccountCubit extends Cubit<AccountState> {
   StreamSubscription<List<TransactionEntity>>? _transactionsSubscription;
   late final StreamSubscription<int> _profileSubscription;
 
+  List<AccountEntity> _accounts = [];
+  List<TransactionEntity> _transactions = [];
+
   void _init() {
     _resubscribe(activeProfile.id);
     _profileSubscription = activeProfile.stream.listen(_resubscribe);
@@ -47,22 +50,42 @@ class AccountCubit extends Cubit<AccountState> {
     _accountsSubscription?.cancel();
     _transactionsSubscription?.cancel();
 
+    _accounts = [];
+    _transactions = [];
     emit(AccountState.initial());
 
     _accountsSubscription = watchAccountsUseCase(profileId).listen((accounts) {
-      emit(state.copyWith(accounts: accounts));
+      _accounts = accounts;
+      _emitState();
     });
 
     _transactionsSubscription = watchTransactionsUseCase(profileId).listen((
       transactions,
     ) {
-      final balances = calculateAccountBalancesUseCase(transactions);
-      final totalBalance = balances.values.fold<double>(
-        0,
-        (sum, value) => sum + value,
-      );
-      emit(state.copyWith(balances: balances, totalBalance: totalBalance));
+      _transactions = transactions;
+      _emitState();
     });
+  }
+
+  void _emitState() {
+    final initialBalances = {
+      for (final account in _accounts) account.id: account.initialBalance,
+    };
+    final balances = calculateAccountBalancesUseCase(
+      _transactions,
+      initialBalances: initialBalances,
+    );
+    final totalBalance = balances.values.fold<double>(
+      0,
+      (sum, value) => sum + value,
+    );
+    emit(
+      state.copyWith(
+        accounts: _accounts,
+        balances: balances,
+        totalBalance: totalBalance,
+      ),
+    );
   }
 
   @override

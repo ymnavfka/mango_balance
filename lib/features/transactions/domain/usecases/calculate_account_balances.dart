@@ -2,8 +2,14 @@ import '../../../../core/enums/transaction_type.dart';
 import '../entities/transaction.dart';
 
 class CalculateAccountBalances {
-  Map<int, double> call(List<TransactionEntity> transactions) {
-    final balances = <int, double>{};
+  /// Считает текущий баланс по каждому счёту: изначальный баланс счёта плюс
+  /// движения по транзакциям. [initialBalances] задаёт стартовые суммы по id
+  /// счёта (счета без транзакций тоже попадут в результат с их балансом).
+  Map<int, double> call(
+    List<TransactionEntity> transactions, {
+    Map<int, double> initialBalances = const {},
+  }) {
+    final balances = <int, double>{...initialBalances};
 
     for (final tx in transactions) {
       balances[tx.accountId] = balances[tx.accountId] ?? 0;

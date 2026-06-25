@@ -28,6 +28,7 @@ class BuildStatisticsSnapshot {
     required PeriodType periodType,
     required DateTime anchorDate,
     required DateTime now,
+    double initialBalanceTotal = 0,
   }) {
     if (transactions.isEmpty) {
       return StatisticsSnapshot.empty().copyWithBasics(
@@ -81,6 +82,7 @@ class BuildStatisticsSnapshot {
     final netWorthSeries = _buildNetWorthSeries(
       transactions: transactions,
       now: now,
+      startingBalance: initialBalanceTotal,
     );
 
     final canNavigateBack =

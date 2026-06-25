@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/services/active_profile_holder.dart';
+import '../../../accounts/domain/entities/account.dart';
+import '../../../accounts/domain/usecases/watch_accounts.dart';
 import '../../../transactions/domain/entities/transaction.dart';
 import '../../../transactions/domain/usecases/watch_transactions.dart';
 import '../../domain/entities/period_type.dart';
@@ -14,6 +16,7 @@ class StatisticsCubit extends Cubit<StatisticsState> {
   StatisticsCubit({
     required this.activeProfile,
     required this.watchTransactionsUseCase,
+    required this.watchAccountsUseCase,
     required this.buildStatisticsSnapshotUseCase,
     required this.computePeriodRangeUseCase,
   }) : super(StatisticsState.initial()) {
@@ -22,13 +25,16 @@ class StatisticsCubit extends Cubit<StatisticsState> {
 
   final ActiveProfileHolder activeProfile;
   final WatchTransactions watchTransactionsUseCase;
+  final WatchAccounts watchAccountsUseCase;
   final BuildStatisticsSnapshot buildStatisticsSnapshotUseCase;
   final ComputePeriodRange computePeriodRangeUseCase;
 
   StreamSubscription<List<TransactionEntity>>? _transactionsSubscription;
+  StreamSubscription<List<AccountEntity>>? _accountsSubscription;
   late final StreamSubscription<int> _profileSubscription;
 
   List<TransactionEntity> _transactions = [];
+  List<AccountEntity> _accounts = [];
   PeriodType _periodType = PeriodType.week;
   DateTime _anchorDate = DateTime.now();
 
@@ -39,7 +45,9 @@ class StatisticsCubit extends Cubit<StatisticsState> {
 
   void _resubscribe(int profileId) {
     _transactionsSubscription?.cancel();
+    _accountsSubscription?.cancel();
     _transactions = [];
+    _accounts = [];
     _periodType = PeriodType.week;
     _anchorDate = DateTime.now();
     emit(StatisticsState.initial());
@@ -50,11 +58,17 @@ class StatisticsCubit extends Cubit<StatisticsState> {
       _transactions = list;
       _recompute();
     });
+
+    _accountsSubscription = watchAccountsUseCase(profileId).listen((accounts) {
+      _accounts = accounts;
+      _recompute();
+    });
   }
 
   @override
   Future<void> close() async {
     await _transactionsSubscription?.cancel();
+    await _accountsSubscription?.cancel();
     await _profileSubscription.cancel();
     return super.close();
   }
@@ -81,11 +95,16 @@ class StatisticsCubit extends Cubit<StatisticsState> {
   }
 
   void _recompute() {
+    final initialBalanceTotal = _accounts.fold<double>(
+      0,
+      (sum, account) => sum + account.initialBalance,
+    );
     final snapshot = buildStatisticsSnapshotUseCase(
       transactions: _transactions,
       periodType: _periodType,
       anchorDate: _anchorDate,
       now: DateTime.now(),
+      initialBalanceTotal: initialBalanceTotal,
     );
     emit(state.copyWith(snapshot: snapshot));
   }
