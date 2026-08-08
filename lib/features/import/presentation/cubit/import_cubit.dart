@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../profiles/domain/usecases/create_profile.dart';
 import '../../domain/usecases/import_to_profile.dart';
 import '../../domain/usecases/parse_xlsx_file.dart';
+import '../../domain/usecases/restore_backup.dart';
 import 'import_state.dart';
 
 class ImportCubit extends Cubit<ImportState> {
@@ -12,11 +13,13 @@ class ImportCubit extends Cubit<ImportState> {
     required this.parseXlsxFileUseCase,
     required this.importToProfileUseCase,
     required this.createProfileUseCase,
+    required this.restoreBackupUseCase,
   }) : super(ImportState.initial());
 
   final ParseXlsxFile parseXlsxFileUseCase;
   final ImportToProfile importToProfileUseCase;
   final CreateProfile createProfileUseCase;
+  final RestoreBackup restoreBackupUseCase;
 
   Future<void> loadFile({
     required String fileName,
@@ -31,7 +34,17 @@ class ImportCubit extends Cubit<ImportState> {
     );
     try {
       final parsed = parseXlsxFileUseCase(bytes);
-      if (parsed.totalTransactions == 0) {
+      if (parsed.isBackup) {
+        if (parsed.backup!.profilesCount == 0) {
+          emit(
+            state.copyWith(
+              status: ImportStatus.failure,
+              errorMessage: 'В файле не найдено профилей',
+            ),
+          );
+          return;
+        }
+      } else if (parsed.legacy!.totalTransactions == 0) {
         emit(
           state.copyWith(
             status: ImportStatus.failure,
@@ -52,14 +65,14 @@ class ImportCubit extends Cubit<ImportState> {
   }
 
   Future<void> importIntoExisting(int profileId) async {
-    final parsed = state.parsed;
-    if (parsed == null) return;
+    final legacy = state.parsed?.legacy;
+    if (legacy == null) return;
 
     emit(state.copyWith(status: ImportStatus.importing, clearError: true));
     try {
       final result = await importToProfileUseCase(
         profileId: profileId,
-        data: parsed,
+        data: legacy,
       );
       emit(state.copyWith(status: ImportStatus.success, result: result));
     } catch (e) {
@@ -76,8 +89,8 @@ class ImportCubit extends Cubit<ImportState> {
     required String name,
     required bool includeStandardData,
   }) async {
-    final parsed = state.parsed;
-    if (parsed == null) return;
+    final legacy = state.parsed?.legacy;
+    if (legacy == null) return;
 
     emit(state.copyWith(status: ImportStatus.importing, clearError: true));
     try {
@@ -87,7 +100,7 @@ class ImportCubit extends Cubit<ImportState> {
       );
       final result = await importToProfileUseCase(
         profileId: newProfileId,
-        data: parsed,
+        data: legacy,
       );
       emit(state.copyWith(status: ImportStatus.success, result: result));
     } catch (e) {
@@ -95,6 +108,24 @@ class ImportCubit extends Cubit<ImportState> {
         state.copyWith(
           status: ImportStatus.failure,
           errorMessage: 'Ошибка импорта: $e',
+        ),
+      );
+    }
+  }
+
+  Future<void> restoreBackup() async {
+    final backup = state.parsed?.backup;
+    if (backup == null) return;
+
+    emit(state.copyWith(status: ImportStatus.importing, clearError: true));
+    try {
+      final result = await restoreBackupUseCase(backup);
+      emit(state.copyWith(status: ImportStatus.success, restoreResult: result));
+    } catch (e) {
+      emit(
+        state.copyWith(
+          status: ImportStatus.failure,
+          errorMessage: 'Ошибка восстановления: $e',
         ),
       );
     }

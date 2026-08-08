@@ -5,7 +5,6 @@ import '../../../profiles/domain/entities/profile.dart';
 import '../../../profiles/presentation/cubit/profile_cubit.dart';
 import '../../../shared/theme/app_colors.dart';
 import '../../../shared/widgets/app_dialog.dart';
-import '../../../shared/widgets/app_dropdown_field.dart';
 import '../../../shared/widgets/form_field_label.dart';
 import '../cubit/export_cubit.dart';
 import '../cubit/export_state.dart';
@@ -18,15 +17,15 @@ class ExportDialog extends StatefulWidget {
 }
 
 class _ExportDialogState extends State<ExportDialog> {
-  int? _selectedProfileId;
+  final Set<int> _selected = {};
   DateTime? _dateFrom;
   DateTime? _dateTo;
 
   @override
   void initState() {
     super.initState();
-    final profileState = context.read<ProfileCubit>().state;
-    _selectedProfileId = profileState.activeProfile?.id;
+    final activeId = context.read<ProfileCubit>().state.activeProfile?.id;
+    if (activeId != null) _selected.add(activeId);
   }
 
   Future<void> _pickDate({required bool from}) async {
@@ -51,12 +50,11 @@ class _ExportDialogState extends State<ExportDialog> {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
 
-  void _runExport() {
-    final id = _selectedProfileId;
-    if (id == null) {
+  void _export(List<int> ids) {
+    if (ids.isEmpty) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Выберите профиль')));
+      ).showSnackBar(const SnackBar(content: Text('Выберите хотя бы профиль')));
       return;
     }
     if (_dateFrom != null && _dateTo != null && _dateFrom!.isAfter(_dateTo!)) {
@@ -65,12 +63,37 @@ class _ExportDialogState extends State<ExportDialog> {
       );
       return;
     }
-
     context.read<ExportCubit>().exportToXlsx(
-      profileId: id,
+      profileIds: ids,
       dateFrom: _dateFrom,
       dateTo: _dateTo,
     );
+  }
+
+  void _exportCurrent() {
+    final activeId = context.read<ProfileCubit>().state.activeProfile?.id;
+    if (activeId == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Нет активного профиля')));
+      return;
+    }
+    setState(() {
+      _selected
+        ..clear()
+        ..add(activeId);
+    });
+    _export([activeId]);
+  }
+
+  void _exportAll(List<ProfileEntity> profiles) {
+    final ids = profiles.map((p) => p.id).toList();
+    setState(() {
+      _selected
+        ..clear()
+        ..addAll(ids);
+    });
+    _export(ids);
   }
 
   @override
@@ -80,12 +103,15 @@ class _ExportDialogState extends State<ExportDialog> {
         if (state.status == ExportStatus.success && state.result != null) {
           final r = state.result!;
           Navigator.of(context).pop();
+          final where = r.profilesCount == 1
+              ? 'профиля «${r.profileNames.first}»'
+              : 'профилей: ${r.profilesCount}';
           ScaffoldMessenger.of(context)
             ..clearSnackBars()
             ..showSnackBar(
               SnackBar(
                 content: Text(
-                  'Экспортировано ${r.exportedTransactions} транзакций из профиля «${r.profileName}»'
+                  'Экспортировано ${r.transactionsCount} операций из $where'
                   '${r.savedPath != null ? ' в ${r.savedPath}' : ''}',
                 ),
               ),
@@ -101,28 +127,60 @@ class _ExportDialogState extends State<ExportDialog> {
 
         return AppDialog(
           title: 'Экспорт в XLSX',
+          subtitle:
+              'Полный бэкап: счета, категории, операции, бюджеты '
+              'и регулярные платежи',
           loading: isBusy,
-          primaryLabel: 'Экспортировать',
-          onPrimary: isBusy ? null : _runExport,
+          primaryLabel: 'Экспортировать выбранные',
+          onPrimary: isBusy ? null : () => _export(_selected.toList()),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const FormFieldLabel('Профиль', top: 0),
-              AppDropdownField<int>(
-                value: _selectedProfileId,
-                items: profiles
-                    .map(
-                      (ProfileEntity p) => DropdownMenuItem<int>(
-                        value: p.id,
-                        child: Text(p.name + (p.isActive ? ' (активный)' : '')),
+              Row(
+                children: [
+                  Expanded(
+                    child: FilledButton.tonal(
+                      onPressed: isBusy ? null : _exportCurrent,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.brandContainer,
+                        foregroundColor: AppColors.brandDark,
                       ),
-                    )
-                    .toList(),
-                onChanged: isBusy
-                    ? null
-                    : (value) => setState(() => _selectedProfileId = value),
+                      child: const Text('Текущий профиль'),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: FilledButton.tonal(
+                      onPressed: isBusy ? null : () => _exportAll(profiles),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.brandContainer,
+                        foregroundColor: AppColors.brandDark,
+                      ),
+                      child: const Text('Все профили'),
+                    ),
+                  ),
+                ],
               ),
-              const FormFieldLabel('Диапазон дат (необязательно)'),
+              const FormFieldLabel('Профили в бэкап'),
+              ...profiles.map(
+                (ProfileEntity p) => CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  visualDensity: VisualDensity.compact,
+                  value: _selected.contains(p.id),
+                  onChanged: isBusy
+                      ? null
+                      : (checked) => setState(() {
+                          if (checked ?? false) {
+                            _selected.add(p.id);
+                          } else {
+                            _selected.remove(p.id);
+                          }
+                        }),
+                  title: Text(p.name + (p.isActive ? ' (активный)' : '')),
+                ),
+              ),
+              const FormFieldLabel('Диапазон дат операций (необязательно)'),
               _DateRow(
                 label: 'С',
                 value: _dateFrom,
@@ -144,8 +202,8 @@ class _ExportDialogState extends State<ExportDialog> {
               ),
               const SizedBox(height: 10),
               const Text(
-                'Оставьте поля пустыми, чтобы экспортировать все операции '
-                'профиля.',
+                'Диапазон дат ограничивает только операции. Счета, категории, '
+                'бюджеты и регулярные платежи выгружаются полностью.',
                 style: TextStyle(color: AppColors.textTertiary, fontSize: 12),
               ),
               if (state.errorMessage != null) ...[

@@ -5,13 +5,15 @@ import '../entities/export_options.dart';
 class ExportPayload {
   const ExportPayload({
     required this.bytes,
-    required this.profileName,
-    required this.exportedTransactions,
+    required this.profileNames,
+    required this.transactionsCount,
   });
 
   final Uint8List bytes;
-  final String profileName;
-  final int exportedTransactions;
+  final List<String> profileNames;
+  final int transactionsCount;
+
+  int get profilesCount => profileNames.length;
 }
 
 abstract class ExportRepository {

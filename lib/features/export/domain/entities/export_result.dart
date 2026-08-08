@@ -1,11 +1,13 @@
 class ExportResult {
   const ExportResult({
-    required this.profileName,
-    required this.exportedTransactions,
+    required this.profileNames,
+    required this.transactionsCount,
     required this.savedPath,
   });
 
-  final String profileName;
-  final int exportedTransactions;
+  final List<String> profileNames;
+  final int transactionsCount;
   final String? savedPath;
+
+  int get profilesCount => profileNames.length;
 }

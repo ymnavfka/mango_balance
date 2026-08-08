@@ -59,6 +59,7 @@ import '../../../features/import/data/repositories/import_repository_impl.dart';
 import '../../../features/import/domain/repositories/import_repository.dart';
 import '../../../features/import/domain/usecases/import_to_profile.dart';
 import '../../../features/import/domain/usecases/parse_xlsx_file.dart';
+import '../../../features/import/domain/usecases/restore_backup.dart';
 import '../../../features/import/presentation/cubit/import_cubit.dart';
 import '../../../features/transactions/data/datasources/date_range_filter_storage.dart';
 import '../../../features/transactions/data/datasources/transaction_type_filter_storage.dart';
@@ -153,6 +154,7 @@ Future<void> setupDependencies() async {
   getIt.registerLazySingleton(() => XlsxImportParser());
   getIt.registerLazySingleton(() => ParseXlsxFile(getIt()));
   getIt.registerLazySingleton(() => ImportToProfile(getIt()));
+  getIt.registerLazySingleton(() => RestoreBackup(getIt()));
 
   // Export
   getIt.registerLazySingleton(() => XlsxFileSaver());
@@ -244,6 +246,7 @@ Future<void> setupDependencies() async {
       parseXlsxFileUseCase: getIt(),
       importToProfileUseCase: getIt(),
       createProfileUseCase: getIt(),
+      restoreBackupUseCase: getIt(),
     ),
   );
 

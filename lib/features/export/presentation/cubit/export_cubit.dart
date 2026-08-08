@@ -14,10 +14,20 @@ class ExportCubit extends Cubit<ExportState> {
   final XlsxFileSaver fileSaver;
 
   Future<void> exportToXlsx({
-    required int profileId,
+    required List<int> profileIds,
     required DateTime? dateFrom,
     required DateTime? dateTo,
   }) async {
+    if (profileIds.isEmpty) {
+      emit(
+        state.copyWith(
+          status: ExportStatus.failure,
+          errorMessage: 'Выберите хотя бы один профиль',
+        ),
+      );
+      return;
+    }
+
     emit(
       state.copyWith(
         status: ExportStatus.working,
@@ -36,23 +46,13 @@ class ExportCubit extends Cubit<ExportState> {
 
       final payload = await buildXlsxExportUseCase(
         ExportOptions(
-          profileId: profileId,
+          profileIds: profileIds,
           dateFrom: adjustedFrom,
           dateTo: adjustedTo,
         ),
       );
 
-      if (payload.exportedTransactions == 0) {
-        emit(
-          state.copyWith(
-            status: ExportStatus.failure,
-            errorMessage: 'Нет транзакций в выбранном диапазоне',
-          ),
-        );
-        return;
-      }
-
-      final fileName = _buildFileName(payload.profileName);
+      final fileName = _buildFileName(payload.profileNames);
       final savedPath = await fileSaver.save(
         fileName: fileName,
         bytes: payload.bytes,
@@ -67,8 +67,8 @@ class ExportCubit extends Cubit<ExportState> {
         state.copyWith(
           status: ExportStatus.success,
           result: ExportResult(
-            profileName: payload.profileName,
-            exportedTransactions: payload.exportedTransactions,
+            profileNames: payload.profileNames,
+            transactionsCount: payload.transactionsCount,
             savedPath: savedPath,
           ),
         ),
@@ -83,12 +83,14 @@ class ExportCubit extends Cubit<ExportState> {
     }
   }
 
-  String _buildFileName(String profileName) {
+  String _buildFileName(List<String> profileNames) {
     final now = DateTime.now();
     final date =
         '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-    final safeProfile = _sanitizeFileSegment(profileName);
-    return 'mango_balance_${safeProfile}_$date.xlsx';
+    final segment = profileNames.length == 1
+        ? _sanitizeFileSegment(profileNames.first)
+        : 'backup';
+    return 'mango_balance_${segment}_$date.xlsx';
   }
 
   String _sanitizeFileSegment(String value) {

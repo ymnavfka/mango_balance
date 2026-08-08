@@ -8,7 +8,7 @@ import '../../../shared/theme/app_colors.dart';
 import '../../../shared/widgets/app_dialog.dart';
 import '../../../shared/widgets/app_dropdown_field.dart';
 import '../../../shared/widgets/form_field_label.dart';
-import '../../domain/entities/parsed_import.dart';
+import '../../domain/entities/parsed_file.dart';
 import '../cubit/import_cubit.dart';
 import '../cubit/import_state.dart';
 
@@ -98,20 +98,38 @@ class _ImportDialogState extends State<ImportDialog> {
   Widget build(BuildContext context) {
     return BlocConsumer<ImportCubit, ImportState>(
       listener: (context, state) {
-        if (state.status == ImportStatus.success && state.result != null) {
-          final r = state.result!;
-          Navigator.of(context).pop();
-          ScaffoldMessenger.of(context)
-            ..clearSnackBars()
-            ..showSnackBar(
-              SnackBar(
-                content: Text(
-                  'Импортировано ${r.importedTransactions} транзакций в профиль «${r.profileName}». '
-                  '+${r.createdCategories} категорий, +${r.createdAccounts} счетов.'
-                  '${r.skippedRows > 0 ? ' Пропущено ${r.skippedRows} строк.' : ''}',
-                ),
+        if (state.status != ImportStatus.success) return;
+        Navigator.of(context).pop();
+        final messenger = ScaffoldMessenger.of(context)..clearSnackBars();
+
+        final restore = state.restoreResult;
+        if (restore != null) {
+          messenger.showSnackBar(
+            SnackBar(
+              content: Text(
+                'Восстановлено профилей: ${restore.createdProfiles} '
+                '(${restore.profileNames.join(', ')}). '
+                '${restore.importedTransactions} операций, '
+                '${restore.createdBudgets} бюджетов, '
+                '${restore.createdRecurring} регулярных.',
               ),
-            );
+            ),
+          );
+          return;
+        }
+
+        final r = state.result;
+        if (r != null) {
+          messenger.showSnackBar(
+            SnackBar(
+              content: Text(
+                'Импортировано ${r.importedTransactions} транзакций в профиль '
+                '«${r.profileName}». +${r.createdCategories} категорий, '
+                '+${r.createdAccounts} счетов.'
+                '${r.skippedRows > 0 ? ' Пропущено ${r.skippedRows} строк.' : ''}',
+              ),
+            ),
+          );
         }
       },
       builder: (context, state) {
@@ -119,13 +137,17 @@ class _ImportDialogState extends State<ImportDialog> {
         final isBusy =
             state.status == ImportStatus.parsing ||
             state.status == ImportStatus.importing;
+        final isBackup = state.isBackup;
+        final canRun = state.status == ImportStatus.ready && !isBusy;
 
         return AppDialog(
-          title: 'Импорт из XLSX',
+          title: isBackup ? 'Восстановление из бэкапа' : 'Импорт из XLSX',
           loading: isBusy,
-          primaryLabel: 'Импортировать',
-          onPrimary: (state.status == ImportStatus.ready && !isBusy)
-              ? _runImport
+          primaryLabel: isBackup ? 'Восстановить' : 'Импортировать',
+          onPrimary: canRun
+              ? (isBackup
+                    ? () => context.read<ImportCubit>().restoreBackup()
+                    : _runImport)
               : null,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -140,93 +162,195 @@ class _ImportDialogState extends State<ImportDialog> {
                 const SizedBox(height: 10),
                 _ErrorBox(state.errorMessage!),
               ],
-              const FormFieldLabel('Куда импортировать'),
-              RadioGroup<_ImportTarget>(
-                groupValue: _target,
-                onChanged: isBusy
-                    ? (_) {}
-                    : (value) => setState(() => _target = value ?? _target),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const RadioListTile<_ImportTarget>(
-                      contentPadding: EdgeInsets.zero,
-                      visualDensity: VisualDensity.compact,
-                      value: _ImportTarget.existingProfile,
-                      title: Text('В существующий профиль'),
-                    ),
-                    if (_target == _ImportTarget.existingProfile)
-                      Padding(
-                        padding: const EdgeInsets.only(
-                          left: 8,
-                          top: 4,
-                          bottom: 8,
-                        ),
-                        child: AppDropdownField<int>(
-                          value: _selectedProfileId,
-                          isDense: true,
-                          items: profiles
-                              .map(
-                                (ProfileEntity p) => DropdownMenuItem<int>(
-                                  value: p.id,
-                                  child: Text(
-                                    p.name + (p.isActive ? ' (активный)' : ''),
-                                  ),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: isBusy
-                              ? null
-                              : (value) =>
-                                    setState(() => _selectedProfileId = value),
-                        ),
-                      ),
-                    const RadioListTile<_ImportTarget>(
-                      contentPadding: EdgeInsets.zero,
-                      visualDensity: VisualDensity.compact,
-                      value: _ImportTarget.newProfile,
-                      title: Text('Создать новый профиль'),
-                    ),
-                  ],
-                ),
-              ),
-              if (_target == _ImportTarget.newProfile)
-                Padding(
-                  padding: const EdgeInsets.only(left: 8, top: 4),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      TextField(
-                        controller: _newProfileNameController,
-                        enabled: !isBusy,
-                        decoration: const InputDecoration(
-                          hintText: 'Название нового профиля',
-                          isDense: true,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      CheckboxListTile(
-                        contentPadding: EdgeInsets.zero,
-                        controlAffinity: ListTileControlAffinity.leading,
-                        visualDensity: VisualDensity.compact,
-                        value: _includeStandardData,
-                        onChanged: isBusy
-                            ? null
-                            : (value) => setState(
-                                () => _includeStandardData = value ?? false,
-                              ),
-                        title: const Text(
-                          'Добавить стандартные категории и счета',
-                          style: TextStyle(fontSize: 13.5),
-                        ),
-                      ),
-                    ],
-                  ),
+              if (isBackup)
+                _BackupTargetInfo(
+                  count: state.parsed?.backup?.profilesCount ?? 0,
+                )
+              else
+                _LegacyTargetSection(
+                  target: _target,
+                  onTargetChanged: isBusy
+                      ? null
+                      : (value) => setState(() => _target = value),
+                  profiles: profiles,
+                  selectedProfileId: _selectedProfileId,
+                  onProfileChanged: isBusy
+                      ? null
+                      : (value) => setState(() => _selectedProfileId = value),
+                  newProfileNameController: _newProfileNameController,
+                  includeStandardData: _includeStandardData,
+                  onIncludeStandardChanged: isBusy
+                      ? null
+                      : (value) => setState(() => _includeStandardData = value),
+                  isBusy: isBusy,
                 ),
             ],
           ),
         );
       },
+    );
+  }
+}
+
+class _BackupTargetInfo extends StatelessWidget {
+  const _BackupTargetInfo({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const FormFieldLabel('Что произойдёт'),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: AppColors.brandContainer,
+            borderRadius: BorderRadius.circular(AppRadius.md),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(
+                Icons.restore_rounded,
+                color: AppColors.brandDark,
+                size: 20,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  '$count ${_profilesWord(count)} будут добавлены как новые — '
+                  'существующие данные не затрагиваются. При совпадении названий '
+                  'к имени добавится номер (личный → личный2).',
+                  style: const TextStyle(
+                    color: AppColors.brandDark,
+                    fontSize: 13,
+                    height: 1.35,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _profilesWord(int n) {
+    final mod10 = n % 10;
+    final mod100 = n % 100;
+    if (mod10 == 1 && mod100 != 11) return 'профиль';
+    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) {
+      return 'профиля';
+    }
+    return 'профилей';
+  }
+}
+
+class _LegacyTargetSection extends StatelessWidget {
+  const _LegacyTargetSection({
+    required this.target,
+    required this.onTargetChanged,
+    required this.profiles,
+    required this.selectedProfileId,
+    required this.onProfileChanged,
+    required this.newProfileNameController,
+    required this.includeStandardData,
+    required this.onIncludeStandardChanged,
+    required this.isBusy,
+  });
+
+  final _ImportTarget target;
+  final ValueChanged<_ImportTarget>? onTargetChanged;
+  final List<ProfileEntity> profiles;
+  final int? selectedProfileId;
+  final ValueChanged<int?>? onProfileChanged;
+  final TextEditingController newProfileNameController;
+  final bool includeStandardData;
+  final ValueChanged<bool>? onIncludeStandardChanged;
+  final bool isBusy;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const FormFieldLabel('Куда импортировать'),
+        RadioGroup<_ImportTarget>(
+          groupValue: target,
+          onChanged: onTargetChanged == null
+              ? (_) {}
+              : (value) => onTargetChanged!(value ?? target),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const RadioListTile<_ImportTarget>(
+                contentPadding: EdgeInsets.zero,
+                visualDensity: VisualDensity.compact,
+                value: _ImportTarget.existingProfile,
+                title: Text('В существующий профиль'),
+              ),
+              if (target == _ImportTarget.existingProfile)
+                Padding(
+                  padding: const EdgeInsets.only(left: 8, top: 4, bottom: 8),
+                  child: AppDropdownField<int>(
+                    value: selectedProfileId,
+                    isDense: true,
+                    items: profiles
+                        .map(
+                          (ProfileEntity p) => DropdownMenuItem<int>(
+                            value: p.id,
+                            child: Text(
+                              p.name + (p.isActive ? ' (активный)' : ''),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: onProfileChanged,
+                  ),
+                ),
+              const RadioListTile<_ImportTarget>(
+                contentPadding: EdgeInsets.zero,
+                visualDensity: VisualDensity.compact,
+                value: _ImportTarget.newProfile,
+                title: Text('Создать новый профиль'),
+              ),
+            ],
+          ),
+        ),
+        if (target == _ImportTarget.newProfile)
+          Padding(
+            padding: const EdgeInsets.only(left: 8, top: 4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextField(
+                  controller: newProfileNameController,
+                  enabled: !isBusy,
+                  decoration: const InputDecoration(
+                    hintText: 'Название нового профиля',
+                    isDense: true,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  visualDensity: VisualDensity.compact,
+                  value: includeStandardData,
+                  onChanged: onIncludeStandardChanged == null
+                      ? null
+                      : (value) => onIncludeStandardChanged!(value ?? false),
+                  title: const Text(
+                    'Добавить стандартные категории и счета',
+                    style: TextStyle(fontSize: 13.5),
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 }
@@ -240,7 +364,7 @@ class _FileSection extends StatelessWidget {
   });
 
   final String? fileName;
-  final ParsedImport? parsed;
+  final ParsedFile? parsed;
   final ImportStatus status;
   final VoidCallback? onPick;
 
@@ -301,25 +425,32 @@ class _FileSection extends StatelessWidget {
           ),
           if (parsed != null && status == ImportStatus.ready) ...[
             const SizedBox(height: 10),
-            Builder(
-              builder: (context) {
-                final p = parsed!;
-                return Text(
-                  'Найдено: ${p.expenses.length} расходов, '
-                  '${p.incomes.length} доходов, '
-                  '${p.transfers.length} переводов'
-                  '${p.skippedRows > 0 ? '. Пропущено ${p.skippedRows} строк.' : '.'}',
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 12.5,
-                  ),
-                );
-              },
+            Text(
+              _summary(parsed!),
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 12.5,
+              ),
             ),
           ],
         ],
       ),
     );
+  }
+
+  String _summary(ParsedFile parsed) {
+    final backup = parsed.backup;
+    if (backup != null) {
+      return 'Полный бэкап: ${backup.profilesCount} профилей, '
+          '${backup.transactionsCount} операций, '
+          '${backup.budgetsCount} бюджетов, '
+          '${backup.recurringCount} регулярных.';
+    }
+    final p = parsed.legacy!;
+    return 'Найдено: ${p.expenses.length} расходов, '
+        '${p.incomes.length} доходов, '
+        '${p.transfers.length} переводов'
+        '${p.skippedRows > 0 ? '. Пропущено ${p.skippedRows} строк.' : '.'}';
   }
 }
 
