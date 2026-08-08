@@ -9,6 +9,7 @@ import '../../../categories/domain/entities/category.dart';
 import '../../../categories/presentation/cubit/category_cubit.dart';
 import '../../../shared/theme/app_colors.dart';
 import '../../../shared/widgets/app_dialog.dart';
+import '../../../shared/widgets/calculator_sheet.dart';
 import '../../../shared/widgets/app_dropdown_field.dart';
 import '../../../shared/widgets/form_field_label.dart';
 import '../../domain/entities/transaction.dart';
@@ -100,6 +101,24 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
     setState(() {
       _date = newDate;
     });
+  }
+
+  Future<void> _openCalculator() async {
+    FocusScope.of(context).unfocus();
+    final initial = double.tryParse(
+      _amountController.text.trim().replaceAll(',', '.'),
+    );
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => CalculatorSheet(
+        initialValue: initial,
+        onChanged: (value) {
+          _amountController.text = formatAmountForField(value);
+        },
+      ),
+    );
   }
 
   String _formatDate(DateTime date) {
@@ -432,9 +451,15 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
           TextField(
             controller: _amountController,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               hintText: '0,00',
-              prefixIcon: Icon(Icons.payments_rounded),
+              prefixIcon: const Icon(Icons.payments_rounded),
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.calculate_rounded),
+                color: AppColors.brand,
+                tooltip: 'Калькулятор',
+                onPressed: _openCalculator,
+              ),
             ),
           ),
           const FormFieldLabel('Комментарий'),
