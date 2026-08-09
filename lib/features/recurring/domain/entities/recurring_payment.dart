@@ -1,4 +1,5 @@
 import '../../../../core/enums/transaction_type.dart';
+import 'notify_lead.dart';
 import 'recurring_interval.dart';
 
 /// Регулярный платёж — шаблон, по которому при наступлении даты автоматически
@@ -19,6 +20,8 @@ class RecurringPaymentEntity {
     required this.startDate,
     required this.nextRunDate,
     required this.isActive,
+    required this.notifyValue,
+    required this.notifyUnit,
   });
 
   final int id;
@@ -39,6 +42,11 @@ class RecurringPaymentEntity {
   final DateTime nextRunDate;
   final bool isActive;
 
+  /// Упреждение оповещения: за сколько [notifyUnit] до платежа напомнить.
+  /// null — оповещение отключено.
+  final int? notifyValue;
+  final NotifyLeadUnit? notifyUnit;
+
   RecurringPaymentEntity copyWith({
     int? id,
     String? name,
@@ -53,6 +61,8 @@ class RecurringPaymentEntity {
     DateTime? startDate,
     DateTime? nextRunDate,
     bool? isActive,
+    int? notifyValue,
+    NotifyLeadUnit? notifyUnit,
   }) {
     return RecurringPaymentEntity(
       id: id ?? this.id,
@@ -68,6 +78,8 @@ class RecurringPaymentEntity {
       startDate: startDate ?? this.startDate,
       nextRunDate: nextRunDate ?? this.nextRunDate,
       isActive: isActive ?? this.isActive,
+      notifyValue: notifyValue ?? this.notifyValue,
+      notifyUnit: notifyUnit ?? this.notifyUnit,
     );
   }
 }

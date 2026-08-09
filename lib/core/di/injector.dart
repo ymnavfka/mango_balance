@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../database/app_database.dart';
 import '../services/active_profile_holder.dart';
+import '../services/notification_service.dart';
 import '../../../features/accounts/data/repositories/account_repository_impl.dart';
 import '../../../features/accounts/domain/repositories/account_repository.dart';
 import '../../../features/accounts/domain/usecases/add_account.dart';
@@ -93,6 +94,7 @@ Future<void> setupDependencies() async {
   getIt.registerSingleton<ActiveProfileHolder>(
     ActiveProfileHolder(initialId: initialActive?.id ?? 1),
   );
+  getIt.registerSingleton<NotificationService>(NotificationService());
 
   // Repositories
   getIt.registerLazySingleton<TransactionRepository>(
@@ -286,6 +288,7 @@ Future<void> setupDependencies() async {
       deleteRecurringPaymentUseCase: getIt(),
       setRecurringActiveUseCase: getIt(),
       runDueRecurringPaymentsUseCase: getIt(),
+      notificationService: getIt(),
     ),
   );
 }

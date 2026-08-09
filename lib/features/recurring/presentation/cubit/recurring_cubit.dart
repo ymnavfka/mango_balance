@@ -2,8 +2,12 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/enums/transaction_type.dart';
 import '../../../../core/services/active_profile_holder.dart';
+import '../../../../core/services/notification_service.dart';
+import '../../../shared/utils/money_format.dart';
 import '../../domain/entities/recurring_payment.dart';
+import '../../domain/reminder_time.dart';
 import '../../domain/usecases/add_recurring_payment.dart';
 import '../../domain/usecases/delete_recurring_payment.dart';
 import '../../domain/usecases/run_due_recurring_payments.dart';
@@ -21,11 +25,13 @@ class RecurringCubit extends Cubit<RecurringState> {
     required this.deleteRecurringPaymentUseCase,
     required this.setRecurringActiveUseCase,
     required this.runDueRecurringPaymentsUseCase,
+    required this.notificationService,
   }) : super(RecurringState.initial()) {
     _init();
   }
 
   final ActiveProfileHolder activeProfile;
+  final NotificationService notificationService;
   final WatchRecurringPayments watchRecurringPaymentsUseCase;
   final AddRecurringPayment addRecurringPaymentUseCase;
   final UpdateRecurringPayment updateRecurringPaymentUseCase;
@@ -51,7 +57,42 @@ class RecurringCubit extends Cubit<RecurringState> {
 
     _subscription = watchRecurringPaymentsUseCase(profileId).listen((list) {
       emit(state.copyWith(payments: list));
+      unawaited(_syncNotifications(list));
     });
+  }
+
+  /// Перепланирует локальные оповещения под текущий список платежей активного
+  /// профиля: снимает старые и ставит новые для активных платежей с настроенным
+  /// упреждением. Вызывается при любом изменении списка (добавление, правка,
+  /// удаление, включение/выключение, материализация наступивших дат).
+  Future<void> _syncNotifications(List<RecurringPaymentEntity> payments) async {
+    try {
+      await notificationService.cancelAll();
+      for (final payment in payments) {
+        if (!payment.isActive) continue;
+        final when = reminderTimeFor(payment);
+        if (when == null) continue;
+        await notificationService.schedule(
+          id: payment.id,
+          title: payment.name,
+          body: _reminderBody(payment),
+          when: when,
+        );
+      }
+    } catch (_) {
+      // Сбой планировщика уведомлений не должен ломать работу экрана.
+    }
+  }
+
+  String _reminderBody(RecurringPaymentEntity payment) {
+    final verb = payment.type == TransactionType.expense
+        ? 'Списание'
+        : 'Пополнение';
+    final d = payment.nextRunDate;
+    final date =
+        '${d.day.toString().padLeft(2, '0')}.'
+        '${d.month.toString().padLeft(2, '0')}.${d.year}';
+    return '$verb ${formatMoneyAbs(payment.amount)} — $date';
   }
 
   /// Планировщик — лучшая попытка: его сбой не должен ломать загрузку экрана.

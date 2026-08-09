@@ -2303,6 +2303,28 @@ class $RecurringPaymentsTable extends RecurringPayments
     ),
     defaultValue: const Constant(true),
   );
+  static const VerificationMeta _notifyValueMeta = const VerificationMeta(
+    'notifyValue',
+  );
+  @override
+  late final GeneratedColumn<int> notifyValue = GeneratedColumn<int>(
+    'notify_value',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _notifyUnitMeta = const VerificationMeta(
+    'notifyUnit',
+  );
+  @override
+  late final GeneratedColumn<String> notifyUnit = GeneratedColumn<String>(
+    'notify_unit',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -2317,6 +2339,8 @@ class $RecurringPaymentsTable extends RecurringPayments
     startDate,
     nextRunDate,
     isActive,
+    notifyValue,
+    notifyUnit,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -2420,6 +2444,21 @@ class $RecurringPaymentsTable extends RecurringPayments
         isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta),
       );
     }
+    if (data.containsKey('notify_value')) {
+      context.handle(
+        _notifyValueMeta,
+        notifyValue.isAcceptableOrUnknown(
+          data['notify_value']!,
+          _notifyValueMeta,
+        ),
+      );
+    }
+    if (data.containsKey('notify_unit')) {
+      context.handle(
+        _notifyUnitMeta,
+        notifyUnit.isAcceptableOrUnknown(data['notify_unit']!, _notifyUnitMeta),
+      );
+    }
     return context;
   }
 
@@ -2477,6 +2516,14 @@ class $RecurringPaymentsTable extends RecurringPayments
         DriftSqlType.bool,
         data['${effectivePrefix}is_active'],
       )!,
+      notifyValue: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}notify_value'],
+      ),
+      notifyUnit: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notify_unit'],
+      ),
     );
   }
 
@@ -2500,6 +2547,8 @@ class RecurringPayment extends DataClass
   final DateTime startDate;
   final DateTime nextRunDate;
   final bool isActive;
+  final int? notifyValue;
+  final String? notifyUnit;
   const RecurringPayment({
     required this.id,
     required this.profileId,
@@ -2513,6 +2562,8 @@ class RecurringPayment extends DataClass
     required this.startDate,
     required this.nextRunDate,
     required this.isActive,
+    this.notifyValue,
+    this.notifyUnit,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -2529,6 +2580,12 @@ class RecurringPayment extends DataClass
     map['start_date'] = Variable<DateTime>(startDate);
     map['next_run_date'] = Variable<DateTime>(nextRunDate);
     map['is_active'] = Variable<bool>(isActive);
+    if (!nullToAbsent || notifyValue != null) {
+      map['notify_value'] = Variable<int>(notifyValue);
+    }
+    if (!nullToAbsent || notifyUnit != null) {
+      map['notify_unit'] = Variable<String>(notifyUnit);
+    }
     return map;
   }
 
@@ -2546,6 +2603,12 @@ class RecurringPayment extends DataClass
       startDate: Value(startDate),
       nextRunDate: Value(nextRunDate),
       isActive: Value(isActive),
+      notifyValue: notifyValue == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notifyValue),
+      notifyUnit: notifyUnit == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notifyUnit),
     );
   }
 
@@ -2567,6 +2630,8 @@ class RecurringPayment extends DataClass
       startDate: serializer.fromJson<DateTime>(json['startDate']),
       nextRunDate: serializer.fromJson<DateTime>(json['nextRunDate']),
       isActive: serializer.fromJson<bool>(json['isActive']),
+      notifyValue: serializer.fromJson<int?>(json['notifyValue']),
+      notifyUnit: serializer.fromJson<String?>(json['notifyUnit']),
     );
   }
   @override
@@ -2585,6 +2650,8 @@ class RecurringPayment extends DataClass
       'startDate': serializer.toJson<DateTime>(startDate),
       'nextRunDate': serializer.toJson<DateTime>(nextRunDate),
       'isActive': serializer.toJson<bool>(isActive),
+      'notifyValue': serializer.toJson<int?>(notifyValue),
+      'notifyUnit': serializer.toJson<String?>(notifyUnit),
     };
   }
 
@@ -2601,6 +2668,8 @@ class RecurringPayment extends DataClass
     DateTime? startDate,
     DateTime? nextRunDate,
     bool? isActive,
+    Value<int?> notifyValue = const Value.absent(),
+    Value<String?> notifyUnit = const Value.absent(),
   }) => RecurringPayment(
     id: id ?? this.id,
     profileId: profileId ?? this.profileId,
@@ -2614,6 +2683,8 @@ class RecurringPayment extends DataClass
     startDate: startDate ?? this.startDate,
     nextRunDate: nextRunDate ?? this.nextRunDate,
     isActive: isActive ?? this.isActive,
+    notifyValue: notifyValue.present ? notifyValue.value : this.notifyValue,
+    notifyUnit: notifyUnit.present ? notifyUnit.value : this.notifyUnit,
   );
   RecurringPayment copyWithCompanion(RecurringPaymentsCompanion data) {
     return RecurringPayment(
@@ -2637,6 +2708,12 @@ class RecurringPayment extends DataClass
           ? data.nextRunDate.value
           : this.nextRunDate,
       isActive: data.isActive.present ? data.isActive.value : this.isActive,
+      notifyValue: data.notifyValue.present
+          ? data.notifyValue.value
+          : this.notifyValue,
+      notifyUnit: data.notifyUnit.present
+          ? data.notifyUnit.value
+          : this.notifyUnit,
     );
   }
 
@@ -2654,7 +2731,9 @@ class RecurringPayment extends DataClass
           ..write('intervalCount: $intervalCount, ')
           ..write('startDate: $startDate, ')
           ..write('nextRunDate: $nextRunDate, ')
-          ..write('isActive: $isActive')
+          ..write('isActive: $isActive, ')
+          ..write('notifyValue: $notifyValue, ')
+          ..write('notifyUnit: $notifyUnit')
           ..write(')'))
         .toString();
   }
@@ -2673,6 +2752,8 @@ class RecurringPayment extends DataClass
     startDate,
     nextRunDate,
     isActive,
+    notifyValue,
+    notifyUnit,
   );
   @override
   bool operator ==(Object other) =>
@@ -2689,7 +2770,9 @@ class RecurringPayment extends DataClass
           other.intervalCount == this.intervalCount &&
           other.startDate == this.startDate &&
           other.nextRunDate == this.nextRunDate &&
-          other.isActive == this.isActive);
+          other.isActive == this.isActive &&
+          other.notifyValue == this.notifyValue &&
+          other.notifyUnit == this.notifyUnit);
 }
 
 class RecurringPaymentsCompanion extends UpdateCompanion<RecurringPayment> {
@@ -2705,6 +2788,8 @@ class RecurringPaymentsCompanion extends UpdateCompanion<RecurringPayment> {
   final Value<DateTime> startDate;
   final Value<DateTime> nextRunDate;
   final Value<bool> isActive;
+  final Value<int?> notifyValue;
+  final Value<String?> notifyUnit;
   const RecurringPaymentsCompanion({
     this.id = const Value.absent(),
     this.profileId = const Value.absent(),
@@ -2718,6 +2803,8 @@ class RecurringPaymentsCompanion extends UpdateCompanion<RecurringPayment> {
     this.startDate = const Value.absent(),
     this.nextRunDate = const Value.absent(),
     this.isActive = const Value.absent(),
+    this.notifyValue = const Value.absent(),
+    this.notifyUnit = const Value.absent(),
   });
   RecurringPaymentsCompanion.insert({
     this.id = const Value.absent(),
@@ -2732,6 +2819,8 @@ class RecurringPaymentsCompanion extends UpdateCompanion<RecurringPayment> {
     required DateTime startDate,
     required DateTime nextRunDate,
     this.isActive = const Value.absent(),
+    this.notifyValue = const Value.absent(),
+    this.notifyUnit = const Value.absent(),
   }) : name = Value(name),
        type = Value(type),
        amount = Value(amount),
@@ -2751,6 +2840,8 @@ class RecurringPaymentsCompanion extends UpdateCompanion<RecurringPayment> {
     Expression<DateTime>? startDate,
     Expression<DateTime>? nextRunDate,
     Expression<bool>? isActive,
+    Expression<int>? notifyValue,
+    Expression<String>? notifyUnit,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -2765,6 +2856,8 @@ class RecurringPaymentsCompanion extends UpdateCompanion<RecurringPayment> {
       if (startDate != null) 'start_date': startDate,
       if (nextRunDate != null) 'next_run_date': nextRunDate,
       if (isActive != null) 'is_active': isActive,
+      if (notifyValue != null) 'notify_value': notifyValue,
+      if (notifyUnit != null) 'notify_unit': notifyUnit,
     });
   }
 
@@ -2781,6 +2874,8 @@ class RecurringPaymentsCompanion extends UpdateCompanion<RecurringPayment> {
     Value<DateTime>? startDate,
     Value<DateTime>? nextRunDate,
     Value<bool>? isActive,
+    Value<int?>? notifyValue,
+    Value<String?>? notifyUnit,
   }) {
     return RecurringPaymentsCompanion(
       id: id ?? this.id,
@@ -2795,6 +2890,8 @@ class RecurringPaymentsCompanion extends UpdateCompanion<RecurringPayment> {
       startDate: startDate ?? this.startDate,
       nextRunDate: nextRunDate ?? this.nextRunDate,
       isActive: isActive ?? this.isActive,
+      notifyValue: notifyValue ?? this.notifyValue,
+      notifyUnit: notifyUnit ?? this.notifyUnit,
     );
   }
 
@@ -2837,6 +2934,12 @@ class RecurringPaymentsCompanion extends UpdateCompanion<RecurringPayment> {
     if (isActive.present) {
       map['is_active'] = Variable<bool>(isActive.value);
     }
+    if (notifyValue.present) {
+      map['notify_value'] = Variable<int>(notifyValue.value);
+    }
+    if (notifyUnit.present) {
+      map['notify_unit'] = Variable<String>(notifyUnit.value);
+    }
     return map;
   }
 
@@ -2854,7 +2957,9 @@ class RecurringPaymentsCompanion extends UpdateCompanion<RecurringPayment> {
           ..write('intervalCount: $intervalCount, ')
           ..write('startDate: $startDate, ')
           ..write('nextRunDate: $nextRunDate, ')
-          ..write('isActive: $isActive')
+          ..write('isActive: $isActive, ')
+          ..write('notifyValue: $notifyValue, ')
+          ..write('notifyUnit: $notifyUnit')
           ..write(')'))
         .toString();
   }
@@ -6264,6 +6369,8 @@ typedef $$RecurringPaymentsTableCreateCompanionBuilder =
       required DateTime startDate,
       required DateTime nextRunDate,
       Value<bool> isActive,
+      Value<int?> notifyValue,
+      Value<String?> notifyUnit,
     });
 typedef $$RecurringPaymentsTableUpdateCompanionBuilder =
     RecurringPaymentsCompanion Function({
@@ -6279,6 +6386,8 @@ typedef $$RecurringPaymentsTableUpdateCompanionBuilder =
       Value<DateTime> startDate,
       Value<DateTime> nextRunDate,
       Value<bool> isActive,
+      Value<int?> notifyValue,
+      Value<String?> notifyUnit,
     });
 
 final class $$RecurringPaymentsTableReferences
@@ -6406,6 +6515,16 @@ class $$RecurringPaymentsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<int> get notifyValue => $composableBuilder(
+    column: $table.notifyValue,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notifyUnit => $composableBuilder(
+    column: $table.notifyUnit,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$ProfilesTableFilterComposer get profileId {
     final $$ProfilesTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -6530,6 +6649,16 @@ class $$RecurringPaymentsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get notifyValue => $composableBuilder(
+    column: $table.notifyValue,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notifyUnit => $composableBuilder(
+    column: $table.notifyUnit,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$ProfilesTableOrderingComposer get profileId {
     final $$ProfilesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -6641,6 +6770,16 @@ class $$RecurringPaymentsTableAnnotationComposer
 
   GeneratedColumn<bool> get isActive =>
       $composableBuilder(column: $table.isActive, builder: (column) => column);
+
+  GeneratedColumn<int> get notifyValue => $composableBuilder(
+    column: $table.notifyValue,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get notifyUnit => $composableBuilder(
+    column: $table.notifyUnit,
+    builder: (column) => column,
+  );
 
   $$ProfilesTableAnnotationComposer get profileId {
     final $$ProfilesTableAnnotationComposer composer = $composerBuilder(
@@ -6761,6 +6900,8 @@ class $$RecurringPaymentsTableTableManager
                 Value<DateTime> startDate = const Value.absent(),
                 Value<DateTime> nextRunDate = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
+                Value<int?> notifyValue = const Value.absent(),
+                Value<String?> notifyUnit = const Value.absent(),
               }) => RecurringPaymentsCompanion(
                 id: id,
                 profileId: profileId,
@@ -6774,6 +6915,8 @@ class $$RecurringPaymentsTableTableManager
                 startDate: startDate,
                 nextRunDate: nextRunDate,
                 isActive: isActive,
+                notifyValue: notifyValue,
+                notifyUnit: notifyUnit,
               ),
           createCompanionCallback:
               ({
@@ -6789,6 +6932,8 @@ class $$RecurringPaymentsTableTableManager
                 required DateTime startDate,
                 required DateTime nextRunDate,
                 Value<bool> isActive = const Value.absent(),
+                Value<int?> notifyValue = const Value.absent(),
+                Value<String?> notifyUnit = const Value.absent(),
               }) => RecurringPaymentsCompanion.insert(
                 id: id,
                 profileId: profileId,
@@ -6802,6 +6947,8 @@ class $$RecurringPaymentsTableTableManager
                 startDate: startDate,
                 nextRunDate: nextRunDate,
                 isActive: isActive,
+                notifyValue: notifyValue,
+                notifyUnit: notifyUnit,
               ),
           withReferenceMapper: (p0) => p0
               .map(

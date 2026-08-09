@@ -13,6 +13,7 @@ import '../../../shared/widgets/app_dialog.dart';
 import '../../../shared/widgets/app_dropdown_field.dart';
 import '../../../shared/widgets/form_field_label.dart';
 import '../../../transactions/presentation/cubit/transaction_cubit.dart';
+import '../../domain/entities/notify_lead.dart';
 import '../../domain/entities/recurring_interval.dart';
 import '../../domain/entities/recurring_payment.dart';
 
@@ -36,10 +37,13 @@ class _RecurringPaymentFormDialogState
   late TextEditingController _nameController;
   late TextEditingController _amountController;
   late TextEditingController _intervalCountController;
+  late TextEditingController _notifyValueController;
   late TransactionType _type;
   late RecurringInterval _intervalUnit;
+  late NotifyLeadUnit _notifyUnit;
   late DateTime _startDate;
   late bool _isActive;
+  late bool _notifyEnabled;
   int? _categoryId;
   String? _categoryName;
   int? _accountId;
@@ -71,6 +75,11 @@ class _RecurringPaymentFormDialogState
     _intervalCountController = TextEditingController(
       text: (initial?.intervalCount ?? 1).toString(),
     );
+    _notifyValueController = TextEditingController(
+      text: (initial?.notifyValue ?? 1).toString(),
+    );
+    _notifyEnabled = initial == null ? true : initial.notifyValue != null;
+    _notifyUnit = initial?.notifyUnit ?? NotifyLeadUnit.day;
     _type = initial?.type ?? TransactionType.expense;
     _intervalUnit = initial?.intervalUnit ?? RecurringInterval.month;
     final now = DateTime.now();
@@ -87,11 +96,17 @@ class _RecurringPaymentFormDialogState
     _nameController.dispose();
     _amountController.dispose();
     _intervalCountController.dispose();
+    _notifyValueController.dispose();
     super.dispose();
   }
 
   int get _intervalCount {
     final parsed = int.tryParse(_intervalCountController.text.trim()) ?? 1;
+    return parsed < 1 ? 1 : parsed;
+  }
+
+  int get _notifyValue {
+    final parsed = int.tryParse(_notifyValueController.text.trim()) ?? 1;
     return parsed < 1 ? 1 : parsed;
   }
 
@@ -154,6 +169,8 @@ class _RecurringPaymentFormDialogState
         startDate: _startDate,
         nextRunDate: _startDate,
         isActive: _isActive,
+        notifyValue: _notifyEnabled ? _notifyValue : null,
+        notifyUnit: _notifyEnabled ? _notifyUnit : null,
       ),
     );
     Navigator.pop(context);
@@ -366,6 +383,69 @@ class _RecurringPaymentFormDialogState
           ),
           const FormFieldLabel('Дата первого платежа'),
           _DateField(text: _formatDate(_startDate), onTap: _pickStartDate),
+          const FormFieldLabel('Оповещение'),
+          Row(
+            children: [
+              Checkbox(
+                value: _notifyEnabled,
+                visualDensity: VisualDensity.compact,
+                onChanged: (value) =>
+                    setState(() => _notifyEnabled = value ?? false),
+              ),
+              const Expanded(child: Text('Напоминать заранее')),
+            ],
+          ),
+          if (_notifyEnabled) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 96,
+                  child: TextField(
+                    controller: _notifyValueController,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    textAlign: TextAlign.center,
+                    onChanged: (_) => setState(() {}),
+                    decoration: const InputDecoration(
+                      prefixText: 'за ',
+                      hintText: '1',
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: AppDropdownField<NotifyLeadUnit>(
+                    value: _notifyUnit,
+                    items: NotifyLeadUnit.values
+                        .map(
+                          (unit) => DropdownMenuItem(
+                            value: unit,
+                            child: Text(unit.singularLabel),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      if (value == null) return;
+                      setState(() => _notifyUnit = value);
+                    },
+                  ),
+                ),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: AppSpacing.sm),
+              child: Text(
+                notifyLeadLabel(_notifyUnit, _notifyValue),
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

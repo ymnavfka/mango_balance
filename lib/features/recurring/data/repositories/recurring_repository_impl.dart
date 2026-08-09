@@ -3,6 +3,7 @@ import 'package:drift/drift.dart';
 import '../../../../core/database/app_database.dart';
 import '../../../../core/enums/transaction_type.dart';
 import '../../../../core/services/active_profile_holder.dart';
+import '../../domain/entities/notify_lead.dart';
 import '../../domain/entities/recurring_interval.dart';
 import '../../domain/entities/recurring_payment.dart';
 import '../../domain/repositories/recurring_repository.dart';
@@ -49,6 +50,8 @@ class RecurringRepositoryImpl implements RecurringRepository {
         accountId: Value(payment.accountId),
         intervalCount: Value(payment.intervalCount),
         isActive: Value(payment.isActive),
+        notifyValue: Value(payment.notifyValue),
+        notifyUnit: Value(payment.notifyUnit?.storageKey),
       ),
     );
   }
@@ -78,6 +81,8 @@ class RecurringRepositoryImpl implements RecurringRepository {
         startDate: start,
         nextRunDate: next,
         isActive: payment.isActive,
+        notifyValue: payment.notifyValue,
+        notifyUnit: payment.notifyUnit?.storageKey,
       ),
     );
   }
@@ -153,6 +158,10 @@ class RecurringRepositoryImpl implements RecurringRepository {
       startDate: payment.startDate,
       nextRunDate: payment.nextRunDate,
       isActive: payment.isActive,
+      notifyValue: payment.notifyValue,
+      notifyUnit: payment.notifyUnit == null
+          ? null
+          : NotifyLeadUnitX.fromStorage(payment.notifyUnit!),
     );
   }
 }

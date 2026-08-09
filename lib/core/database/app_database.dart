@@ -99,6 +99,10 @@ class RecurringPayments extends Table {
   DateTimeColumn get startDate => dateTime()();
   DateTimeColumn get nextRunDate => dateTime()();
   BoolColumn get isActive => boolean().withDefault(const Constant(true))();
+  // Упреждение оповещения: за сколько единиц (notifyUnit: hour|day|week|month)
+  // до платежа показать напоминание. null — оповещение отключено.
+  IntColumn get notifyValue => integer().nullable()();
+  TextColumn get notifyUnit => text().nullable()();
 }
 
 @DriftDatabase(
@@ -116,7 +120,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -184,6 +188,15 @@ class AppDatabase extends _$AppDatabase {
 
       if (from < 10) {
         await m.addColumn(accounts, accounts.initialBalance);
+      }
+
+      if (from < 11) {
+        await m.addColumn(recurringPayments, recurringPayments.notifyValue);
+        await m.addColumn(recurringPayments, recurringPayments.notifyUnit);
+        // Существующим платежам ставим оповещение по умолчанию — за 1 день.
+        await customStatement(
+          "UPDATE recurring_payments SET notify_value = 1, notify_unit = 'day'",
+        );
       }
     },
   );
