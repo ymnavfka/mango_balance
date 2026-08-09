@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/utils/popularity_ranker.dart';
 import '../../../shared/theme/app_colors.dart';
 import '../../../shared/utils/money_format.dart';
 import '../../../shared/widgets/app_drawer.dart';
 import '../../../shared/widgets/empty_state.dart';
+import '../../../transactions/presentation/cubit/transaction_cubit.dart';
 import '../../domain/entities/account.dart';
 import '../cubit/account_cubit.dart';
 import '../cubit/account_state.dart';
@@ -28,12 +30,21 @@ class AccountsPage extends StatelessWidget {
             );
           }
 
+          // Сортируем счета по популярности так же, как на экране транзакций.
+          final allTransactions = context
+              .watch<TransactionCubit>()
+              .state
+              .allTransactions;
+          final sortedAccounts = PopularityRanker(
+            transactions: allTransactions,
+          ).sortAccounts(state.accounts);
+
           return ListView(
             padding: const EdgeInsets.only(top: 12, bottom: 96),
             children: [
               _TotalCard(total: state.totalBalance),
               const SizedBox(height: 6),
-              ...state.accounts.map((account) {
+              ...sortedAccounts.map((account) {
                 final balance = state.balances[account.id] ?? 0;
                 return _AccountTile(account: account, balance: balance);
               }),
