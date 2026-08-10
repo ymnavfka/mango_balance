@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/services/app_error_notifier.dart';
 import '../../../shared/theme/app_colors.dart';
 import '../../../shared/widgets/app_drawer.dart';
 import '../../../shared/widgets/empty_state.dart';
@@ -53,11 +54,7 @@ class ProfilesPage extends StatelessWidget {
       try {
         await cubit.deleteProfile(profile.id);
       } catch (e) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(e.toString())));
-        }
+        showAppError(e);
       }
     }
   }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/services/app_error_notifier.dart';
+
 import '../../../shared/widgets/app_dialog.dart';
 import '../../../shared/widgets/form_field_label.dart';
 import '../../domain/entities/account.dart';
@@ -47,9 +49,7 @@ class _AccountFormDialogState extends State<AccountFormDialog> {
   void _submit() {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Введите название счёта')));
+      showAppNotice('Введите название счёта');
       return;
     }
 

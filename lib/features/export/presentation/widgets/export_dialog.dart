@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../../../core/services/app_error_notifier.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../profiles/domain/entities/profile.dart';
@@ -52,15 +54,11 @@ class _ExportDialogState extends State<ExportDialog> {
 
   void _export(List<int> ids) {
     if (ids.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Выберите хотя бы профиль')));
+      showAppNotice('Выберите хотя бы профиль');
       return;
     }
     if (_dateFrom != null && _dateTo != null && _dateFrom!.isAfter(_dateTo!)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Дата «С» не может быть позже даты «По»')),
-      );
+      showAppNotice('Дата «С» не может быть позже даты «По»');
       return;
     }
     context.read<ExportCubit>().exportToXlsx(
@@ -73,9 +71,7 @@ class _ExportDialogState extends State<ExportDialog> {
   void _exportCurrent() {
     final activeId = context.read<ProfileCubit>().state.activeProfile?.id;
     if (activeId == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Нет активного профиля')));
+      showAppNotice('Нет активного профиля');
       return;
     }
     setState(() {

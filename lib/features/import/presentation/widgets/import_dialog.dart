@@ -8,6 +8,7 @@ import '../../../shared/theme/app_colors.dart';
 import '../../../shared/widgets/app_dialog.dart';
 import '../../../shared/widgets/app_dropdown_field.dart';
 import '../../../shared/widgets/form_field_label.dart';
+import '../../../../core/services/app_error_notifier.dart';
 import '../../domain/entities/parsed_file.dart';
 import '../cubit/import_cubit.dart';
 import '../cubit/import_state.dart';
@@ -55,9 +56,7 @@ class _ImportDialogState extends State<ImportDialog> {
     final bytes = file.bytes;
     if (bytes == null) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Не удалось прочитать содержимое файла')),
-      );
+      showAppNotice('Не удалось прочитать содержимое файла');
       return;
     }
 
@@ -73,18 +72,14 @@ class _ImportDialogState extends State<ImportDialog> {
     if (_target == _ImportTarget.existingProfile) {
       final id = _selectedProfileId;
       if (id == null) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Выберите профиль')));
+        showAppNotice('Выберите профиль');
         return;
       }
       cubit.importIntoExisting(id);
     } else {
       final name = _newProfileNameController.text.trim();
       if (name.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Введите название профиля')),
-        );
+        showAppNotice('Введите название профиля');
         return;
       }
       cubit.importIntoNewProfile(

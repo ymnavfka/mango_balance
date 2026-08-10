@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/services/app_error_notifier.dart';
+
 import '../../../shared/theme/app_colors.dart';
 import '../../../shared/widgets/app_dialog.dart';
 import '../../../shared/widgets/form_field_label.dart';
@@ -49,9 +51,7 @@ class _ProfileFormDialogState extends State<ProfileFormDialog> {
   void _submit() {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Введите название профиля')));
+      showAppNotice('Введите название профиля');
       return;
     }
 

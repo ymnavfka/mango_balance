@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/enums/transaction_type.dart';
+import '../../../../core/services/app_error_notifier.dart';
 import '../../../../core/utils/popularity_ranker.dart';
 import '../../../accounts/domain/entities/account.dart';
 import '../../../accounts/presentation/cubit/account_cubit.dart';
@@ -133,33 +134,23 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
 
     if (_type != TransactionType.transfer &&
         (_categoryId == null || _categoryName == null)) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Выберите категорию')));
+      showAppNotice('Выберите категорию');
       return;
     }
 
     if (_accountId == null || _accountName == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Выберите счёт-источник')));
+      showAppNotice('Выберите счёт-источник');
       return;
     }
 
     if (_type == TransactionType.transfer) {
       if (_toAccountId == null || _toAccountName == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Выберите счёт-получатель')),
-        );
+        showAppNotice('Выберите счёт-получатель');
         return;
       }
 
       if (_toAccountId == _accountId) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Счёт-источник и счёт-получатель должны отличаться'),
-          ),
-        );
+        showAppNotice('Счёт-источник и счёт-получатель должны отличаться');
         return;
       }
     }
@@ -187,9 +178,7 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
       );
       Navigator.pop(context);
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.toString())));
+      showAppError(e);
     }
   }
 
@@ -198,7 +187,6 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
   // подходила к этой транзакции.
   Future<void> _createCategory() async {
     final cubit = context.read<CategoryCubit>();
-    final messenger = ScaffoldMessenger.of(context);
     final type = _type;
 
     final name = await showDialog<String>(
@@ -224,7 +212,7 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
         _categoryName = name;
       });
     } catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text(e.toString())));
+      showAppError(e);
     }
   }
 
@@ -632,11 +620,7 @@ class _NewCategoryDialogState extends State<_NewCategoryDialog> {
   void _submit() {
     final name = _controller.text.trim();
     if (name.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Название категории не должно быть пустым'),
-        ),
-      );
+      showAppNotice('Название категории не должно быть пустым');
       return;
     }
     Navigator.pop(context, name);

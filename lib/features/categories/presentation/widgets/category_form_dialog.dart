@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/services/app_error_notifier.dart';
+
 import '../../../../core/enums/transaction_type.dart';
 import '../../../shared/theme/app_colors.dart';
 import '../../../shared/widgets/app_dialog.dart';
@@ -36,11 +38,7 @@ class _CategoryFormDialogState extends State<CategoryFormDialog> {
   void _submit() {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Название категории не должно быть пустым'),
-        ),
-      );
+      showAppNotice('Название категории не должно быть пустым');
       return;
     }
 

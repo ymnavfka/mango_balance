@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'core/di/injector.dart';
+import 'core/services/app_error_notifier.dart';
 import 'core/services/notification_service.dart';
 import 'features/shared/theme/app_theme.dart';
 import 'features/accounts/presentation/cubit/account_cubit.dart';
@@ -23,6 +24,17 @@ import 'features/transactions/presentation/pages/transactions_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Ни одно действие не должно завершаться «молча»: любые необработанные ошибки
+  // (в т.ч. из обработчиков нажатий) показываем пользователю с причиной.
+  FlutterError.onError = (details) {
+    FlutterError.presentError(details);
+    showAppError(details.exception);
+  };
+  WidgetsBinding.instance.platformDispatcher.onError = (error, stack) {
+    showAppError(error);
+    return true;
+  };
 
   await setupDependencies();
   await getIt<NotificationService>().init();
@@ -74,6 +86,8 @@ class MyApp extends StatelessWidget {
         ),
       ],
       child: MaterialApp(
+        navigatorKey: rootNavigatorKey,
+        scaffoldMessengerKey: rootScaffoldMessengerKey,
         debugShowCheckedModeBanner: false,
         title: 'Mango Balance',
         scrollBehavior: const AppScrollBehavior(),
