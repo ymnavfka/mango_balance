@@ -44,3 +44,6 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 2026_05_06.xlsx
+
+# Демо-данные для скриншотов в сторе (генерируются tool/gen_demo_backup.dart).
+demo_data.xlsx
