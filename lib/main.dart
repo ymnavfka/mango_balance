@@ -89,7 +89,7 @@ class MyApp extends StatelessWidget {
         navigatorKey: rootNavigatorKey,
         scaffoldMessengerKey: rootScaffoldMessengerKey,
         debugShowCheckedModeBanner: false,
-        title: 'Mango Balance',
+        title: 'Манго Баланс',
         scrollBehavior: const AppScrollBehavior(),
         theme: AppTheme.light(),
         locale: const Locale('ru'),

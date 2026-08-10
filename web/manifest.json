@@ -1,11 +1,11 @@
 {
-    "name": "mango_balance",
-    "short_name": "mango_balance",
+    "name": "Манго Баланс",
+    "short_name": "Манго Баланс",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Личный учёт финансов: счета, доходы и расходы, регулярные платежи с напоминаниями, аналитика и экспорт в XLSX.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

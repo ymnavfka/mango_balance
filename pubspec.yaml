@@ -1,5 +1,5 @@
 name: mango_balance
-description: "A new Flutter project."
+description: "Манго Баланс — личный учёт финансов: счета, доходы и расходы, регулярные платежи с напоминаниями, аналитика и экспорт в XLSX. Данные хранятся только на устройстве."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev

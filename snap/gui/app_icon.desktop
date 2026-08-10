@@ -1,8 +1,8 @@
 [Desktop Entry]
-Name=Flutter Linux App
-Comment=Flutter Linux launcher icon
+Name=Манго Баланс
+Comment=Личный учёт финансов: счета, доходы и расходы, регулярные платежи с напоминаниями, аналитика и экспорт в XLSX.
 Exec=app_icon
 Icon=app_icon.png
 Terminal=false
 Type=Application
-Categories=Entertainment;
+Categories=Office;Finance;

@@ -27,7 +27,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   FlutterWindow window(project);
   Win32Window::Point origin(10, 10);
   Win32Window::Size size(1280, 720);
-  if (!window.Create(L"mango_balance", origin, size)) {
+  if (!window.Create(L"\u041c\u0430\u043d\u0433\u043e \u0411\u0430\u043b\u0430\u043d\u0441", origin, size)) {
     return EXIT_FAILURE;
   }
   window.SetQuitOnClose(true);

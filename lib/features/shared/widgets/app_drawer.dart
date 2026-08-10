@@ -124,7 +124,7 @@ class AppDrawer extends StatelessWidget {
                       ),
                       const SizedBox(width: 12),
                       Text(
-                        'Mango Balance',
+                        'Манго Баланс',
                         style: theme.textTheme.titleLarge?.copyWith(
                           color: Colors.white,
                           fontSize: 19,
@@ -225,7 +225,7 @@ class AppDrawer extends StatelessWidget {
             const Padding(
               padding: EdgeInsets.all(16),
               child: Text(
-                'Mango Balance · v1.0',
+                'Манго Баланс · v1.0',
                 style: TextStyle(color: AppColors.textTertiary, fontSize: 12),
               ),
             ),

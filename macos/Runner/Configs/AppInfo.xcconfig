@@ -5,10 +5,10 @@
 // 'flutter create' template.
 
 // The application's name. By default this is also the title of the Flutter window.
-PRODUCT_NAME = mango_balance
+PRODUCT_NAME = Mango Balance
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.example.mangoBalance
+PRODUCT_BUNDLE_IDENTIFIER = io.github.ymnavfka.mangobalance
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2025 com.example. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2026 ymnavfka. All rights reserved.
