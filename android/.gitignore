@@ -12,3 +12,8 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
+
+# Артефакты регистрации подписи в RuStore Консоли.
+upload_cert.pem
+pepk_out.zip
+pepk.jar
