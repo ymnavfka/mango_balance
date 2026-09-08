@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/services/app_error_notifier.dart';
+import '../../../../core/services/notification_service.dart';
+import '../cubit/recurring_cubit.dart';
+import 'notification_access_hint.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -27,7 +30,7 @@ class RecurringPaymentFormDialog extends StatefulWidget {
   });
 
   final RecurringPaymentEntity? initial;
-  final void Function(RecurringPaymentEntity payment) onSubmit;
+  final Future<void> Function(RecurringPaymentEntity payment) onSubmit;
 
   @override
   State<RecurringPaymentFormDialog> createState() =>
@@ -46,6 +49,7 @@ class _RecurringPaymentFormDialogState
   late DateTime _startDate;
   late bool _isActive;
   late bool _notifyEnabled;
+  bool _saving = false;
   int? _categoryId;
   String? _categoryName;
   int? _accountId;
@@ -132,7 +136,8 @@ class _RecurringPaymentFormDialogState
     showAppNotice(message);
   }
 
-  void _submit() {
+  Future<void> _submit() async {
+    if (_saving) return;
     final name = _nameController.text.trim();
     if (name.isEmpty) {
       _showError('Введите название платежа');
@@ -154,30 +159,64 @@ class _RecurringPaymentFormDialogState
       return;
     }
 
-    widget.onSubmit(
-      RecurringPaymentEntity(
-        id: widget.initial?.id ?? 0,
-        name: name,
-        type: _type,
-        amount: amount,
-        categoryId: _categoryId!,
-        categoryName: _categoryName!,
-        accountId: _accountId!,
-        accountName: _accountName!,
-        intervalUnit: _intervalUnit,
-        intervalCount: _intervalCount,
-        startDate: _startDate,
-        nextRunDate: _startDate,
-        isActive: _isActive,
-        notifyValue: _notifyEnabled ? _notifyValue : null,
-        notifyUnit: _notifyEnabled ? _notifyUnit : null,
-      ),
+    final payment = RecurringPaymentEntity(
+      id: widget.initial?.id ?? 0,
+      name: name,
+      type: _type,
+      amount: amount,
+      categoryId: _categoryId!,
+      categoryName: _categoryName!,
+      accountId: _accountId!,
+      accountName: _accountName!,
+      intervalUnit: _intervalUnit,
+      intervalCount: _intervalCount,
+      startDate: _startDate,
+      nextRunDate: _startDate,
+      isActive: _isActive,
+      notifyValue: _notifyEnabled ? _notifyValue : null,
+      notifyUnit: _notifyEnabled ? _notifyUnit : null,
     );
-    Navigator.pop(context);
+    setState(() => _saving = true);
+    try {
+      await widget.onSubmit(payment);
+      if (mounted) {
+        setState(() => _saving = false);
+        final access = context.read<RecurringCubit>().state.notificationAccess;
+        Navigator.pop(context);
+        if (widget.initial == null &&
+            payment.isActive &&
+            payment.notifyValue != null) {
+          switch (access) {
+            case NotificationAccess.disabled:
+              showAppNotice(
+                'Платёж сохранён. Для напоминаний нужно разрешение',
+              );
+            case NotificationAccess.unavailable:
+              showAppNotice(
+                'Платёж сохранён. Не удалось подготовить напоминания',
+              );
+            case NotificationAccess.unsupported:
+              showAppNotice(
+                'Платёж сохранён. Напоминания на этой платформе недоступны',
+              );
+            case NotificationAccess.enabled:
+              break;
+          }
+        }
+      }
+    } catch (error) {
+      showAppError(error);
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final notificationAccess = context
+        .watch<RecurringCubit>()
+        .state
+        .notificationAccess;
     final categories = context.watch<CategoryCubit>().state.categories;
     final rawAccounts = context.watch<AccountCubit>().state.accounts;
     final allTransactions = context
@@ -230,223 +269,239 @@ class _RecurringPaymentFormDialogState
       });
     }
 
-    return AppDialog(
-      title: widget.initial == null
-          ? 'Новый регулярный платёж'
-          : 'Редактирование',
-      primaryLabel: widget.initial == null ? 'Добавить' : 'Сохранить',
-      onPrimary: _submit,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const FormFieldLabel('Название', top: 0),
-          TextField(
-            controller: _nameController,
-            decoration: const InputDecoration(
-              hintText: 'Например: Зарплата, Подписка',
-              prefixIcon: Icon(Icons.event_repeat_rounded),
-            ),
-          ),
-          const FormFieldLabel('Тип операции'),
-          SegmentedButton<TransactionType>(
-            segments: const [
-              ButtonSegment(
-                value: TransactionType.income,
-                label: Text('Пополнение'),
-              ),
-              ButtonSegment(
-                value: TransactionType.expense,
-                label: Text('Списание'),
-              ),
-            ],
-            selected: {_type},
-            showSelectedIcon: false,
-            onSelectionChanged: (selection) {
-              setState(() {
-                _type = selection.first;
-                // Сбрасываем категорию: build() заново выберет самую популярную
-                // категорию нового типа.
-                _categoryId = null;
-                _categoryName = null;
-              });
-            },
-          ),
-          const FormFieldLabel('Категория'),
-          if (filteredCategories.isNotEmpty)
-            AppDropdownField<int>(
-              value: selectedCategory?.id,
-              items: filteredCategories
-                  .map(
-                    (category) => DropdownMenuItem(
-                      value: category.id,
-                      child: Text(category.name),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (value) {
-                if (value == null) return;
-                final selected = filteredCategories.firstWhere(
-                  (category) => category.id == value,
-                  orElse: () => filteredCategories.first,
-                );
-                setState(() {
-                  _categoryId = selected.id;
-                  _categoryName = selected.name;
-                });
-              },
-            )
-          else
-            const _InfoBox('Нет категорий для этого типа'),
-          const FormFieldLabel('Счёт'),
-          if (accounts.isNotEmpty)
-            AppDropdownField<int>(
-              value: selectedAccount?.id,
-              items: accounts
-                  .map(
-                    (account) => DropdownMenuItem(
-                      value: account.id,
-                      child: Text(account.name),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (value) {
-                if (value == null) return;
-                final selected = accounts.firstWhere(
-                  (account) => account.id == value,
-                  orElse: () => accounts.first,
-                );
-                setState(() {
-                  _accountId = selected.id;
-                  _accountName = selected.name;
-                });
-              },
-            )
-          else
-            const _InfoBox('Нет доступных счетов'),
-          const FormFieldLabel('Сумма'),
-          TextField(
-            controller: _amountController,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: const InputDecoration(
-              hintText: '0,00',
-              prefixIcon: Icon(Icons.payments_rounded),
-            ),
-          ),
-          const FormFieldLabel('Период повторения'),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return PopScope(
+      canPop: !_saving,
+      child: AppDialog(
+        loading: _saving,
+        title: widget.initial == null
+            ? 'Новый регулярный платёж'
+            : 'Редактирование',
+        primaryLabel: widget.initial == null ? 'Добавить' : 'Сохранить',
+        onPrimary: _submit,
+        child: AbsorbPointer(
+          absorbing: _saving,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              SizedBox(
-                width: 96,
-                child: TextField(
-                  controller: _intervalCountController,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  textAlign: TextAlign.center,
-                  onChanged: (_) => setState(() {}),
-                  decoration: const InputDecoration(
-                    prefixText: 'кажд. ',
-                    hintText: '1',
-                  ),
+              const FormFieldLabel('Название', top: 0),
+              TextField(
+                controller: _nameController,
+                decoration: const InputDecoration(
+                  hintText: 'Например: Зарплата, Подписка',
+                  prefixIcon: Icon(Icons.event_repeat_rounded),
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: AppDropdownField<RecurringInterval>(
-                  value: _intervalUnit,
-                  items: RecurringInterval.values
+              const FormFieldLabel('Тип операции'),
+              SegmentedButton<TransactionType>(
+                segments: const [
+                  ButtonSegment(
+                    value: TransactionType.income,
+                    label: Text('Пополнение'),
+                  ),
+                  ButtonSegment(
+                    value: TransactionType.expense,
+                    label: Text('Списание'),
+                  ),
+                ],
+                selected: {_type},
+                showSelectedIcon: false,
+                onSelectionChanged: (selection) {
+                  setState(() {
+                    _type = selection.first;
+                    // Сбрасываем категорию: build() заново выберет самую популярную
+                    // категорию нового типа.
+                    _categoryId = null;
+                    _categoryName = null;
+                  });
+                },
+              ),
+              const FormFieldLabel('Категория'),
+              if (filteredCategories.isNotEmpty)
+                AppDropdownField<int>(
+                  value: selectedCategory?.id,
+                  items: filteredCategories
                       .map(
-                        (unit) => DropdownMenuItem(
-                          value: unit,
-                          child: Text(unit.singularLabel),
+                        (category) => DropdownMenuItem(
+                          value: category.id,
+                          child: Text(category.name),
                         ),
                       )
                       .toList(),
                   onChanged: (value) {
                     if (value == null) return;
-                    setState(() => _intervalUnit = value);
+                    final selected = filteredCategories.firstWhere(
+                      (category) => category.id == value,
+                      orElse: () => filteredCategories.first,
+                    );
+                    setState(() {
+                      _categoryId = selected.id;
+                      _categoryName = selected.name;
+                    });
                   },
+                )
+              else
+                const _InfoBox('Нет категорий для этого типа'),
+              const FormFieldLabel('Счёт'),
+              if (accounts.isNotEmpty)
+                AppDropdownField<int>(
+                  value: selectedAccount?.id,
+                  items: accounts
+                      .map(
+                        (account) => DropdownMenuItem(
+                          value: account.id,
+                          child: Text(account.name),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    if (value == null) return;
+                    final selected = accounts.firstWhere(
+                      (account) => account.id == value,
+                      orElse: () => accounts.first,
+                    );
+                    setState(() {
+                      _accountId = selected.id;
+                      _accountName = selected.name;
+                    });
+                  },
+                )
+              else
+                const _InfoBox('Нет доступных счетов'),
+              const FormFieldLabel('Сумма'),
+              TextField(
+                controller: _amountController,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                decoration: const InputDecoration(
+                  hintText: '0,00',
+                  prefixIcon: Icon(Icons.payments_rounded),
                 ),
               ),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.only(top: AppSpacing.sm),
-            child: Text(
-              recurrenceLabel(_intervalUnit, _intervalCount),
-              style: const TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
+              const FormFieldLabel('Период повторения'),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    width: 96,
+                    child: TextField(
+                      controller: _intervalCountController,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      textAlign: TextAlign.center,
+                      onChanged: (_) => setState(() {}),
+                      decoration: const InputDecoration(
+                        prefixText: 'кажд. ',
+                        hintText: '1',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: AppDropdownField<RecurringInterval>(
+                      value: _intervalUnit,
+                      items: RecurringInterval.values
+                          .map(
+                            (unit) => DropdownMenuItem(
+                              value: unit,
+                              child: Text(unit.singularLabel),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        if (value == null) return;
+                        setState(() => _intervalUnit = value);
+                      },
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ),
-          const FormFieldLabel('Дата первого платежа'),
-          _DateField(text: _formatDate(_startDate), onTap: _pickStartDate),
-          const FormFieldLabel('Оповещение'),
-          Row(
-            children: [
-              Checkbox(
-                value: _notifyEnabled,
-                visualDensity: VisualDensity.compact,
-                onChanged: (value) =>
-                    setState(() => _notifyEnabled = value ?? false),
+              Padding(
+                padding: const EdgeInsets.only(top: AppSpacing.sm),
+                child: Text(
+                  recurrenceLabel(_intervalUnit, _intervalCount),
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
-              const Expanded(child: Text('Напоминать заранее')),
-            ],
-          ),
-          if (_notifyEnabled) ...[
-            const SizedBox(height: AppSpacing.sm),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(
-                  width: 96,
-                  child: TextField(
-                    controller: _notifyValueController,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    textAlign: TextAlign.center,
-                    onChanged: (_) => setState(() {}),
-                    decoration: const InputDecoration(
-                      prefixText: 'за ',
-                      hintText: '1',
+              const FormFieldLabel('Дата первого платежа'),
+              _DateField(text: _formatDate(_startDate), onTap: _pickStartDate),
+              const FormFieldLabel('Оповещение'),
+              Row(
+                children: [
+                  Checkbox(
+                    value: _notifyEnabled,
+                    visualDensity: VisualDensity.compact,
+                    onChanged: (value) =>
+                        setState(() => _notifyEnabled = value ?? false),
+                  ),
+                  const Expanded(child: Text('Напоминать заранее')),
+                ],
+              ),
+              if (_notifyEnabled) ...[
+                if (widget.initial != null)
+                  NotificationAccessHint(
+                    access: notificationAccess,
+                    inForm: true,
+                  ),
+                const SizedBox(height: AppSpacing.sm),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      width: 96,
+                      child: TextField(
+                        controller: _notifyValueController,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
+                        textAlign: TextAlign.center,
+                        onChanged: (_) => setState(() {}),
+                        decoration: const InputDecoration(
+                          prefixText: 'за ',
+                          hintText: '1',
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: AppDropdownField<NotifyLeadUnit>(
+                        value: _notifyUnit,
+                        items: NotifyLeadUnit.values
+                            .map(
+                              (unit) => DropdownMenuItem(
+                                value: unit,
+                                child: Text(unit.singularLabel),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (value) {
+                          if (value == null) return;
+                          setState(() => _notifyUnit = value);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: AppSpacing.sm),
+                  child: Text(
+                    notifyLeadLabel(_notifyUnit, _notifyValue),
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: AppDropdownField<NotifyLeadUnit>(
-                    value: _notifyUnit,
-                    items: NotifyLeadUnit.values
-                        .map(
-                          (unit) => DropdownMenuItem(
-                            value: unit,
-                            child: Text(unit.singularLabel),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (value) {
-                      if (value == null) return;
-                      setState(() => _notifyUnit = value);
-                    },
-                  ),
-                ),
               ],
-            ),
-            Padding(
-              padding: const EdgeInsets.only(top: AppSpacing.sm),
-              child: Text(
-                notifyLeadLabel(_notifyUnit, _notifyValue),
-                style: const TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        ],
+            ],
+          ),
+        ),
       ),
     );
   }

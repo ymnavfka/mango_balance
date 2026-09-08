@@ -37,7 +37,7 @@ void main() async {
   };
 
   await setupDependencies();
-  await getIt<NotificationService>().init();
+  await getIt<NotificationService>().access();
 
   runApp(const MyApp());
 }

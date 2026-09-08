@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/enums/transaction_type.dart';
+import '../../../../core/services/notification_service.dart';
 import '../../../shared/theme/app_colors.dart';
 import '../../../shared/utils/money_format.dart';
 import '../../domain/entities/recurring_interval.dart';
@@ -12,11 +13,15 @@ class RecurringPaymentCard extends StatelessWidget {
     required this.payment,
     required this.onTap,
     required this.onToggleActive,
+    required this.notificationAccess,
+    required this.onNotificationBlocked,
   });
 
   final RecurringPaymentEntity payment;
   final VoidCallback onTap;
   final ValueChanged<bool> onToggleActive;
+  final NotificationAccess notificationAccess;
+  final VoidCallback onNotificationBlocked;
 
   static const _months = [
     'янв',
@@ -42,6 +47,28 @@ class RecurringPaymentCard extends StatelessWidget {
     final accent = isIncome ? AppColors.income : AppColors.expense;
     final active = payment.isActive;
     final sign = isIncome ? '+' : '−';
+    final reminderSelected = payment.notifyValue != null;
+    final blocked =
+        active &&
+        reminderSelected &&
+        notificationAccess == NotificationAccess.disabled;
+    final available =
+        active &&
+        reminderSelected &&
+        notificationAccess == NotificationAccess.enabled;
+    final reminderLabel = !reminderSelected
+        ? 'Напоминание выключено'
+        : !active
+        ? 'Напоминание приостановлено вместе с платежом'
+        : switch (notificationAccess) {
+            NotificationAccess.enabled => 'Напоминание включено',
+            NotificationAccess.disabled =>
+              'Напоминание заблокировано. Открыть настройки',
+            NotificationAccess.unsupported =>
+              'Напоминания на этой платформе недоступны',
+            NotificationAccess.unavailable =>
+              'Не удалось проверить напоминание',
+          };
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -157,13 +184,55 @@ class RecurringPaymentCard extends StatelessWidget {
                         color: AppColors.textTertiary,
                       ),
                       const SizedBox(width: 5),
-                      Text(
-                        active
-                            ? 'Следующий: ${_formatDate(payment.nextRunDate)}'
-                            : 'Платёж приостановлен',
-                        style: const TextStyle(
-                          color: AppColors.textTertiary,
-                          fontSize: 12,
+                      Expanded(
+                        child: Text(
+                          active
+                              ? 'Следующий: ${_formatDate(payment.nextRunDate)}'
+                              : 'Платёж приостановлен',
+                          style: const TextStyle(
+                            color: AppColors.textTertiary,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: reminderLabel,
+                        onPressed: blocked
+                            ? onNotificationBlocked
+                            : () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(reminderLabel)),
+                                );
+                              },
+                        iconSize: 20,
+                        icon: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Icon(
+                              available
+                                  ? Icons.notifications_active_outlined
+                                  : active && reminderSelected
+                                  ? Icons.notifications_none_rounded
+                                  : Icons.notifications_off_outlined,
+                              color: available
+                                  ? AppColors.brand
+                                  : active && reminderSelected
+                                  ? AppColors.warning
+                                  : AppColors.textTertiary,
+                            ),
+                            if (active && reminderSelected && !available)
+                              Positioned(
+                                right: -4,
+                                top: -4,
+                                child: Icon(
+                                  blocked
+                                      ? Icons.error_rounded
+                                      : Icons.help_rounded,
+                                  size: 12,
+                                  color: AppColors.warning,
+                                ),
+                              ),
+                          ],
                         ),
                       ),
                     ],

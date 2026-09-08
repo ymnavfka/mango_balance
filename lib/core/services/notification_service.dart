@@ -1,6 +1,5 @@
-import 'dart:async';
-
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
@@ -9,10 +8,16 @@ import 'package:timezone/timezone.dart' as tz;
 /// Обёртка над локальными уведомлениями: инициализация, разрешения и
 /// планирование/отмена. Работает на Android, iOS и macOS; на остальных
 /// платформах методы — no-op.
+enum NotificationAccess { enabled, disabled, unavailable, unsupported }
+
 class NotificationService {
+  static const _settingsChannel = MethodChannel(
+    'mango_balance/notification_settings',
+  );
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
   bool _ready = false;
+  Future<void>? _initializing;
 
   static const _channelId = 'recurring_reminders';
   static const _channelName = 'Напоминания о платежах';
@@ -26,7 +31,17 @@ class NotificationService {
           defaultTargetPlatform == TargetPlatform.macOS);
 
   Future<void> init() async {
-    if (!_supported) return;
+    if (!_supported || _ready) return;
+    final pending = _initializing ??= _initialize();
+    try {
+      await pending;
+    } finally {
+      if (identical(_initializing, pending)) _initializing = null;
+    }
+  }
+
+  Future<void> _initialize() async {
+    if (!_supported || _ready) return;
 
     tzdata.initializeTimeZones();
     try {
@@ -69,33 +84,96 @@ class NotificationService {
         );
 
     _ready = true;
-    // Запрос разрешения не блокирует старт: планирование уже доступно, а
-    // системный диалог показывается поверх приложения.
-    unawaited(requestPermissions());
   }
 
-  Future<void> requestPermissions() async {
-    if (!_ready) return;
-    await _plugin
-        .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin
-        >()
-        ?.requestNotificationsPermission();
-    await _plugin
-        .resolvePlatformSpecificImplementation<
-          IOSFlutterLocalNotificationsPlugin
-        >()
-        ?.requestPermissions(alert: true, badge: true, sound: true);
-    await _plugin
-        .resolvePlatformSpecificImplementation<
-          MacOSFlutterLocalNotificationsPlugin
-        >()
-        ?.requestPermissions(alert: true, badge: true, sound: true);
+  /// Всегда читаем системные настройки: сохранённый флаг устаревает после
+  /// ручного отзыва разрешения. Проверка сама не показывает диалог.
+  Future<NotificationAccess> access() async {
+    if (!_supported) return NotificationAccess.unsupported;
+    try {
+      await init();
+      final android = _plugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
+      if (android != null) {
+        final enabled = await android.areNotificationsEnabled();
+        if (enabled == null) return NotificationAccess.unavailable;
+        if (!enabled) return NotificationAccess.disabled;
+        final channels = await android.getNotificationChannels();
+        if (channels != null &&
+            channels.any(
+              (c) => c.id == _channelId && c.importance == Importance.none,
+            )) {
+          return NotificationAccess.disabled;
+        }
+        return NotificationAccess.enabled;
+      }
+      final options =
+          await _plugin
+              .resolvePlatformSpecificImplementation<
+                IOSFlutterLocalNotificationsPlugin
+              >()
+              ?.checkPermissions() ??
+          await _plugin
+              .resolvePlatformSpecificImplementation<
+                MacOSFlutterLocalNotificationsPlugin
+              >()
+              ?.checkPermissions();
+      if (options == null) return NotificationAccess.unavailable;
+      return options.isEnabled || options.isProvisionalEnabled
+          ? NotificationAccess.enabled
+          : NotificationAccess.disabled;
+    } catch (_) {
+      return NotificationAccess.unavailable;
+    }
+  }
+
+  /// Вызывать только после явного создания платежа с оповещением.
+  /// Отказ/закрытие диалога не считаются ошибкой сохранения платежа.
+  Future<NotificationAccess> requestPermissions() async {
+    final current = await access();
+    if (current != NotificationAccess.disabled) return current;
+    try {
+      await _plugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >()
+          ?.requestNotificationsPermission();
+      await _plugin
+          .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin
+          >()
+          ?.requestPermissions(alert: true, badge: true, sound: true);
+      await _plugin
+          .resolvePlatformSpecificImplementation<
+            MacOSFlutterLocalNotificationsPlugin
+          >()
+          ?.requestPermissions(alert: true, badge: true, sound: true);
+      return await access();
+    } catch (_) {
+      return NotificationAccess.unavailable;
+    }
   }
 
   Future<void> cancelAll() async {
     if (!_ready) return;
     await _plugin.cancelAll();
+  }
+
+  Future<bool> openSettings() async {
+    if (!_supported) return false;
+    try {
+      return await _settingsChannel.invokeMethod<bool>(
+            'openNotificationSettings',
+            {'channelId': _channelId},
+          ) ??
+          false;
+    } on PlatformException {
+      return false;
+    } on MissingPluginException {
+      return false;
+    }
   }
 
   Future<void> cancel(int id) async {

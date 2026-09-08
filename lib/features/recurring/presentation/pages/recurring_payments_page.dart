@@ -1,3 +1,4 @@
+import '../../../../core/services/notification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -11,6 +12,7 @@ import '../cubit/recurring_state.dart';
 import '../widgets/recurring_payment_card.dart';
 import '../widgets/recurring_payment_form_dialog.dart';
 import '../widgets/recurring_summary_card.dart';
+import '../widgets/notification_access_hint.dart';
 
 class RecurringPaymentsPage extends StatelessWidget {
   const RecurringPaymentsPage({super.key});
@@ -19,13 +21,14 @@ class RecurringPaymentsPage extends StatelessWidget {
     final cubit = context.read<RecurringCubit>();
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (_) => RecurringPaymentFormDialog(
         initial: initial,
-        onSubmit: (payment) {
+        onSubmit: (payment) async {
           if (initial == null) {
-            cubit.addRecurringPayment(payment);
+            await cubit.createRecurringPayment(payment);
           } else {
-            cubit.updateRecurringPayment(payment);
+            await cubit.updateRecurringPayment(payment);
           }
         },
       ),
@@ -50,6 +53,16 @@ class RecurringPaymentsPage extends StatelessWidget {
           }
           return Column(
             children: [
+              if (state.payments.any(
+                    (p) => p.isActive && p.notifyValue != null,
+                  ) &&
+                  state.notificationAccess != NotificationAccess.enabled)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  child: NotificationAccessHint(
+                    access: state.notificationAccess,
+                  ),
+                ),
               RecurringSummaryCard(payments: state.payments),
               Expanded(
                 child: ListView.builder(
@@ -87,6 +100,9 @@ class RecurringPaymentsPage extends StatelessWidget {
                       },
                       child: RecurringPaymentCard(
                         payment: payment,
+                        notificationAccess: state.notificationAccess,
+                        onNotificationBlocked: () =>
+                            showNotificationHelp(context),
                         onTap: () => _openForm(context, initial: payment),
                         onToggleActive: (value) => context
                             .read<RecurringCubit>()
