@@ -47,3 +47,6 @@ app.*.map.json
 
 # Демо-данные для скриншотов в сторе (генерируются tool/gen_demo_backup.dart).
 demo_data.xlsx
+
+# Private academic materials must stay out of the repository.
+/docs/
