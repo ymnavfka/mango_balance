@@ -91,18 +91,20 @@ class TransactionsPage extends StatelessWidget {
                 label: selectedAccount?.name ?? 'Все счета',
                 balance: state.selectedBalance,
               ),
-              _AccountChips(
-                accounts: accounts,
-                selectedId: state.selectedAccountId,
+              Row(
+                children: [
+                  Expanded(
+                    child: _AccountChips(
+                      accounts: accounts,
+                      selectedId: state.selectedAccountId,
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(right: AppSpacing.sm),
+                    child: _FilterButton(state: state),
+                  ),
+                ],
               ),
-              const SizedBox(height: AppSpacing.sm),
-              _TypeFilters(visibleTypes: state.visibleTypes),
-              const SizedBox(height: AppSpacing.sm),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                child: _DateRangeFilter(range: state.dateRange),
-              ),
-              const SizedBox(height: AppSpacing.sm),
               Expanded(
                 child: state.sections.isEmpty
                     ? const EmptyState(
@@ -123,7 +125,7 @@ class TransactionsPage extends StatelessWidget {
                               Padding(
                                 padding: const EdgeInsets.fromLTRB(
                                   20,
-                                  16,
+                                  10,
                                   20,
                                   8,
                                 ),
@@ -174,8 +176,9 @@ class _BalanceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      width: double.infinity,
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
@@ -194,35 +197,16 @@ class _BalanceCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.3,
-                  ),
-                ),
-              ),
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.account_balance_wallet_rounded,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
-            ],
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.3,
+            ),
           ),
           const SizedBox(height: 10),
           FittedBox(
@@ -240,6 +224,91 @@ class _BalanceCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _FilterButton extends StatelessWidget {
+  const _FilterButton({required this.state});
+
+  final TransactionState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final activeCount =
+        (state.dateRange == null ? 0 : 1) +
+        (state.visibleTypes.length == TransactionType.values.length ? 0 : 1);
+    return IconButton(
+      tooltip: activeCount == 0 ? 'Фильтры' : 'Фильтры: активно $activeCount',
+      color: activeCount == 0 ? AppColors.textSecondary : AppColors.brand,
+      icon: Badge(
+        isLabelVisible: activeCount > 0,
+        label: Text('$activeCount'),
+        child: const Icon(Icons.tune_rounded),
+      ),
+      onPressed: () {
+        final cubit = context.read<TransactionCubit>();
+        showModalBottomSheet<void>(
+          context: context,
+          isScrollControlled: true,
+          showDragHandle: true,
+          builder: (_) => BlocProvider.value(
+            value: cubit,
+            child: BlocBuilder<TransactionCubit, TransactionState>(
+              builder: (context, state) => SafeArea(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.lg,
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'Фильтры',
+                                style: Theme.of(context).textTheme.titleLarge,
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () => cubit.resetFilters(),
+                              child: const Text('Сбросить'),
+                            ),
+                            IconButton(
+                              tooltip: 'Закрыть',
+                              onPressed: () => Navigator.pop(context),
+                              icon: const Icon(Icons.close_rounded),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.all(AppSpacing.lg),
+                        child: Text('Тип операции'),
+                      ),
+                      _TypeFilters(visibleTypes: state.visibleTypes),
+                      const Padding(
+                        padding: EdgeInsets.all(AppSpacing.lg),
+                        child: Text('Период'),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.lg,
+                        ),
+                        child: _DateRangeFilter(range: state.dateRange),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -478,16 +547,9 @@ class _TransactionTile extends StatelessWidget {
     }
   }
 
-  String get _time {
-    final d = transaction.date.value;
-    return '${d.hour.toString().padLeft(2, '0')}:'
-        '${d.minute.toString().padLeft(2, '0')}';
-  }
-
   @override
   Widget build(BuildContext context) {
     final style = _style;
-    final comment = transaction.comment;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -569,43 +631,25 @@ class _TransactionTile extends StatelessWidget {
                             fontSize: 13,
                           ),
                         ),
-                        if (comment != null && comment.isNotEmpty) ...[
-                          const SizedBox(height: 2),
-                          Text(
-                            comment,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: AppColors.textTertiary,
-                              fontSize: 12.5,
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
-                        ],
                       ],
                     ),
                   ),
                   const SizedBox(width: 10),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        _amountText,
-                        style: TextStyle(
-                          color: style.color,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15,
+                  Flexible(
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          _amountText,
+                          style: TextStyle(
+                            color: style.color,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        _time,
-                        style: const TextStyle(
-                          color: AppColors.textTertiary,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ],
               ),

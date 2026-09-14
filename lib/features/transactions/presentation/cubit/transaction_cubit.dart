@@ -143,6 +143,14 @@ class TransactionCubit extends Cubit<TransactionState> {
     _updateState();
   }
 
+  Future<void> resetFilters() async {
+    _visibleTypes = TransactionType.values.toSet();
+    _dateRange = null;
+    _updateState();
+    await typeFilterStorage.write(_visibleTypes);
+    await dateRangeFilterStorage.write(null);
+  }
+
   void _updateState() {
     final initialBalances = {
       for (final account in _accounts) account.id: account.initialBalance,

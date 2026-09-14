@@ -44,6 +44,16 @@ dart run tool/gen_demo_backup.dart demo_data.xlsx
 
 ### Сборка Android APK
 
+Для тестирования на Redmi Note 13 используйте отдельный ARM64 APK:
+
+```bash
+flutter build apk --release --target-platform android-arm64 --split-per-abi
+```
+
+Результат: `build/app/outputs/flutter-apk/app-arm64-v8a-release.apk` (около 23 МБ). Для обновлений сохраняйте этот формат сборки и тот же ключ подписи. У ARM64-сборки с `--split-per-abi` код версии отличается от универсального APK: при текущем `1.0.0+6` это `2006` вместо `6`. Универсальный APK с меньшим кодом версии не подходит для обновления ранее установленной ARM64-сборки.
+
+Универсальный APK для нескольких архитектур (около 66 МБ):
+
 ```bash
 flutter build apk --release
 ```
