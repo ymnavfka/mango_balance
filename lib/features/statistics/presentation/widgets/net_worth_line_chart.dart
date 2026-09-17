@@ -295,6 +295,9 @@ class NetWorthLineChart extends StatelessWidget {
                     ),
                   ],
                 ),
+                duration: MediaQuery.disableAnimationsOf(context)
+                    ? Duration.zero
+                    : const Duration(milliseconds: 150),
               ),
             ),
           ],

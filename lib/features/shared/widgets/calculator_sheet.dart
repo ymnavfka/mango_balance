@@ -276,18 +276,39 @@ class _CalculatorSheetState extends State<CalculatorSheet> {
   @override
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
+    final scale = media.textScaler.scale(26) / 26;
+    // Минимум 48 px для нажатия + 10 px отступов в каждом ряду.
+    // На низком экране прокручиваем клавиатуру, а не сжимаем кнопки.
+    final keyHeight = 58.0 + (scale - 1).clamp(0, 3) * 36;
+    final minimumHeight = 150.0 + (scale - 1).clamp(0, 3) * 70 + keyHeight * 5;
     return SafeArea(
       top: false,
-      child: SizedBox(
-        height: media.size.height * 0.62,
-        child: Column(
-          children: [
-            _header(context),
-            _displayArea(),
-            const SizedBox(height: AppSpacing.sm),
-            Expanded(child: _keypad()),
-          ],
-        ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final preferred = media.size.height * 0.62;
+          final height = preferred
+              .clamp(
+                minimumHeight.clamp(0, constraints.maxHeight),
+                constraints.maxHeight,
+              )
+              .toDouble();
+          return SizedBox(
+            height: height,
+            child: SingleChildScrollView(
+              child: SizedBox(
+                height: height < minimumHeight ? minimumHeight : height,
+                child: Column(
+                  children: [
+                    _header(context),
+                    _displayArea(),
+                    const SizedBox(height: AppSpacing.sm),
+                    Expanded(child: _keypad()),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -297,15 +318,16 @@ class _CalculatorSheetState extends State<CalculatorSheet> {
       padding: const EdgeInsets.fromLTRB(AppSpacing.xl, 0, AppSpacing.md, 0),
       child: Row(
         children: [
-          const Text(
-            'Калькулятор',
-            style: TextStyle(
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
+          const Expanded(
+            child: Text(
+              'Калькулятор',
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
             ),
           ),
-          const Spacer(),
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('Готово'),
@@ -323,7 +345,7 @@ class _CalculatorSheetState extends State<CalculatorSheet> {
         mainAxisSize: MainAxisSize.min,
         children: [
           SizedBox(
-            height: 22,
+            height: MediaQuery.textScalerOf(context).scale(16) * 1.375,
             width: double.infinity,
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,

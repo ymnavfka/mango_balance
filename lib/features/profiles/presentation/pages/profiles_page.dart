@@ -64,165 +64,170 @@ class ProfilesPage extends StatelessWidget {
     return Scaffold(
       drawer: const AppDrawer(currentRoute: AppRoute.profiles),
       appBar: AppBar(title: const Text('Профили')),
-      body: BlocBuilder<ProfileCubit, ProfileState>(
-        builder: (context, state) {
-          if (state.profiles.isEmpty) {
-            return const EmptyState(
-              icon: Icons.people_alt_rounded,
-              title: 'Профилей ещё нет',
-              message:
-                  'Профиль — это изолированное пространство ваших финансов.',
-            );
-          }
+      body: SafeArea(
+        top: false,
+        child: BlocBuilder<ProfileCubit, ProfileState>(
+          builder: (context, state) {
+            if (state.profiles.isEmpty) {
+              return const EmptyState(
+                icon: Icons.people_alt_rounded,
+                title: 'Профилей ещё нет',
+                message:
+                    'Профиль — это изолированное пространство ваших финансов.',
+              );
+            }
 
-          final canDelete = state.profiles.length > 1;
+            final canDelete = state.profiles.length > 1;
 
-          return ListView.builder(
-            padding: const EdgeInsets.only(top: 8, bottom: 96),
-            itemCount: state.profiles.length,
-            itemBuilder: (context, index) {
-              final profile = state.profiles[index];
-              final isActive = profile.id == state.activeProfile?.id;
-              return Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 5,
-                ),
-                child: Material(
-                  color: isActive
-                      ? AppColors.brandContainer
-                      : AppColors.surface,
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                  child: InkWell(
+            return ListView.builder(
+              padding: const EdgeInsets.only(top: 8, bottom: 96),
+              itemCount: state.profiles.length,
+              itemBuilder: (context, index) {
+                final profile = state.profiles[index];
+                final isActive = profile.id == state.activeProfile?.id;
+                return Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 5,
+                  ),
+                  child: Material(
+                    color: isActive
+                        ? AppColors.brandContainer
+                        : AppColors.surface,
                     borderRadius: BorderRadius.circular(AppRadius.md),
-                    onTap: isActive
-                        ? null
-                        : () => context.read<ProfileCubit>().switchProfile(
-                            profile.id,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                      onTap: isActive
+                          ? null
+                          : () => context.read<ProfileCubit>().switchProfile(
+                              profile.id,
+                            ),
+                      child: Ink(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                          border: Border.all(
+                            color: isActive
+                                ? AppColors.brand
+                                : AppColors.outline,
+                            width: isActive ? 1.5 : 1,
                           ),
-                    child: Ink(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(AppRadius.md),
-                        border: Border.all(
-                          color: isActive ? AppColors.brand : AppColors.outline,
-                          width: isActive ? 1.5 : 1,
                         ),
-                      ),
-                      padding: const EdgeInsets.fromLTRB(14, 10, 6, 10),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: isActive
-                                  ? AppColors.brand
-                                  : AppColors.surfaceAlt,
-                              borderRadius: BorderRadius.circular(13),
-                            ),
-                            child: Icon(
-                              Icons.person_rounded,
-                              color: isActive
-                                  ? Colors.white
-                                  : AppColors.textSecondary,
-                            ),
-                          ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  profile.name,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 15,
-                                    color: AppColors.textPrimary,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  isActive
-                                      ? 'Активный профиль'
-                                      : 'Нажмите для переключения',
-                                  style: TextStyle(
-                                    color: isActive
-                                        ? AppColors.brandDark
-                                        : AppColors.textSecondary,
-                                    fontSize: 12.5,
-                                    fontWeight: isActive
-                                        ? FontWeight.w600
-                                        : FontWeight.w400,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          if (isActive)
-                            const Padding(
-                              padding: EdgeInsets.only(right: 4),
+                        padding: const EdgeInsets.fromLTRB(14, 10, 6, 10),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color: isActive
+                                    ? AppColors.brand
+                                    : AppColors.surfaceAlt,
+                                borderRadius: BorderRadius.circular(13),
+                              ),
                               child: Icon(
-                                Icons.check_circle_rounded,
-                                color: AppColors.brand,
-                                size: 22,
+                                Icons.person_rounded,
+                                color: isActive
+                                    ? Colors.white
+                                    : AppColors.textSecondary,
                               ),
                             ),
-                          PopupMenuButton<String>(
-                            icon: const Icon(
-                              Icons.more_vert_rounded,
-                              color: AppColors.textTertiary,
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    profile.name,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 15,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    isActive
+                                        ? 'Активный профиль'
+                                        : 'Нажмите для переключения',
+                                    style: TextStyle(
+                                      color: isActive
+                                          ? AppColors.brandDark
+                                          : AppColors.textSecondary,
+                                      fontSize: 12.5,
+                                      fontWeight: isActive
+                                          ? FontWeight.w600
+                                          : FontWeight.w400,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                            onSelected: (value) {
-                              if (value == 'edit') {
-                                _openEdit(context, profile);
-                              } else if (value == 'delete') {
-                                _confirmDelete(context, profile);
-                              }
-                            },
-                            itemBuilder: (_) => [
-                              const PopupMenuItem(
-                                value: 'edit',
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.edit_rounded, size: 18),
-                                    SizedBox(width: 10),
-                                    Text('Переименовать'),
-                                  ],
+                            if (isActive)
+                              const Padding(
+                                padding: EdgeInsets.only(right: 4),
+                                child: Icon(
+                                  Icons.check_circle_rounded,
+                                  color: AppColors.brand,
+                                  size: 22,
                                 ),
                               ),
-                              if (!isActive && canDelete)
+                            PopupMenuButton<String>(
+                              icon: const Icon(
+                                Icons.more_vert_rounded,
+                                color: AppColors.textTertiary,
+                              ),
+                              onSelected: (value) {
+                                if (value == 'edit') {
+                                  _openEdit(context, profile);
+                                } else if (value == 'delete') {
+                                  _confirmDelete(context, profile);
+                                }
+                              },
+                              itemBuilder: (_) => [
                                 const PopupMenuItem(
-                                  value: 'delete',
+                                  value: 'edit',
                                   child: Row(
                                     children: [
-                                      Icon(
-                                        Icons.delete_outline_rounded,
-                                        size: 18,
-                                        color: AppColors.expense,
-                                      ),
+                                      Icon(Icons.edit_rounded, size: 18),
                                       SizedBox(width: 10),
-                                      Text(
-                                        'Удалить',
-                                        style: TextStyle(
-                                          color: AppColors.expense,
-                                        ),
-                                      ),
+                                      Text('Переименовать'),
                                     ],
                                   ),
                                 ),
-                            ],
-                          ),
-                        ],
+                                if (!isActive && canDelete)
+                                  const PopupMenuItem(
+                                    value: 'delete',
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.delete_outline_rounded,
+                                          size: 18,
+                                          color: AppColors.expense,
+                                        ),
+                                        SizedBox(width: 10),
+                                        Text(
+                                          'Удалить',
+                                          style: TextStyle(
+                                            color: AppColors.expense,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-              );
-            },
-          );
-        },
+                );
+              },
+            );
+          },
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {

@@ -20,37 +20,40 @@ class AccountsPage extends StatelessWidget {
     return Scaffold(
       drawer: const AppDrawer(currentRoute: AppRoute.accounts),
       appBar: AppBar(title: const Text('Счета')),
-      body: BlocBuilder<AccountCubit, AccountState>(
-        builder: (context, state) {
-          if (state.accounts.isEmpty) {
-            return const EmptyState(
-              icon: Icons.account_balance_wallet_rounded,
-              title: 'Счетов ещё нет',
-              message: 'Добавьте счёт или кошелёк, чтобы вести по нему учёт.',
+      body: SafeArea(
+        top: false,
+        child: BlocBuilder<AccountCubit, AccountState>(
+          builder: (context, state) {
+            if (state.accounts.isEmpty) {
+              return const EmptyState(
+                icon: Icons.account_balance_wallet_rounded,
+                title: 'Счетов ещё нет',
+                message: 'Добавьте счёт или кошелёк, чтобы вести по нему учёт.',
+              );
+            }
+
+            // Сортируем счета по популярности так же, как на экране транзакций.
+            final allTransactions = context
+                .watch<TransactionCubit>()
+                .state
+                .allTransactions;
+            final sortedAccounts = PopularityRanker(
+              transactions: allTransactions,
+            ).sortAccounts(state.accounts);
+
+            return ListView(
+              padding: const EdgeInsets.only(top: 12, bottom: 96),
+              children: [
+                _TotalCard(total: state.totalBalance),
+                const SizedBox(height: 6),
+                ...sortedAccounts.map((account) {
+                  final balance = state.balances[account.id] ?? 0;
+                  return _AccountTile(account: account, balance: balance);
+                }),
+              ],
             );
-          }
-
-          // Сортируем счета по популярности так же, как на экране транзакций.
-          final allTransactions = context
-              .watch<TransactionCubit>()
-              .state
-              .allTransactions;
-          final sortedAccounts = PopularityRanker(
-            transactions: allTransactions,
-          ).sortAccounts(state.accounts);
-
-          return ListView(
-            padding: const EdgeInsets.only(top: 12, bottom: 96),
-            children: [
-              _TotalCard(total: state.totalBalance),
-              const SizedBox(height: 6),
-              ...sortedAccounts.map((account) {
-                final balance = state.balances[account.id] ?? 0;
-                return _AccountTile(account: account, balance: balance);
-              }),
-            ],
-          );
-        },
+          },
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
@@ -110,12 +113,18 @@ class _TotalCard extends StatelessWidget {
               ),
             ),
           ),
-          Text(
-            formatMoney(total),
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-              color: AppColors.amount(total),
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerRight,
+              child: Text(
+                formatMoney(total),
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.amount(total),
+                ),
+              ),
             ),
           ),
         ],
@@ -204,12 +213,18 @@ class _AccountTile extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  formatMoney(balance),
-                  style: TextStyle(
-                    color: AppColors.amount(balance),
-                    fontWeight: FontWeight.w700,
-                    fontSize: 15,
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      formatMoney(balance),
+                      style: TextStyle(
+                        color: AppColors.amount(balance),
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                      ),
+                    ),
                   ),
                 ),
                 PopupMenuButton<String>(

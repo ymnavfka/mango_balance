@@ -40,6 +40,24 @@ class _CategoryDonutChartState extends State<CategoryDonutChart> {
   @override
   Widget build(BuildContext context) {
     final isEmpty = widget.breakdown.isEmpty;
+    final reducedMotion = MediaQuery.disableAnimationsOf(context);
+    final totalStyle = TextStyle(
+      fontSize: 19,
+      fontWeight: FontWeight.w800,
+      color: widget.accentColor,
+    );
+    final totalPainter = TextPainter(
+      text: TextSpan(
+        text: formatMoneyAbs(widget.total),
+        style: DefaultTextStyle.of(context).style.merge(totalStyle),
+      ),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+    )..layout();
+    final totalBelow =
+        totalPainter.width > 116 ||
+        MediaQuery.textScalerOf(context).scale(19) > 26;
+    totalPainter.dispose();
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -123,33 +141,51 @@ class _CategoryDonutChartState extends State<CategoryDonutChart> {
                         );
                       }),
                     ),
+                    duration: reducedMotion
+                        ? Duration.zero
+                        : const Duration(milliseconds: 150),
                   ),
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        'Всего',
-                        style: TextStyle(
-                          color: AppColors.textTertiary,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
+                  if (!totalBelow)
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          'Всего',
+                          style: TextStyle(
+                            color: AppColors.textTertiary,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        formatMoneyAbs(widget.total),
-                        style: TextStyle(
-                          fontSize: 19,
-                          fontWeight: FontWeight.w800,
-                          color: widget.accentColor,
+                        const SizedBox(height: 4),
+                        Text(
+                          formatMoneyAbs(widget.total),
+                          style: TextStyle(
+                            fontSize: 19,
+                            fontWeight: FontWeight.w800,
+                            color: widget.accentColor,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
                 ],
               ),
             ),
           if (!isEmpty) ...[
+            if (totalBelow) ...[
+              const Text(
+                'Всего',
+                style: TextStyle(color: AppColors.textSecondary),
+              ),
+              SizedBox(
+                width: double.infinity,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(formatMoneyAbs(widget.total), style: totalStyle),
+                ),
+              ),
+            ],
             const SizedBox(height: 16),
             Column(
               children: [
@@ -180,7 +216,9 @@ class _CategoryDonutChartState extends State<CategoryDonutChart> {
               padding: const EdgeInsets.only(left: 4),
               child: AnimatedRotation(
                 turns: _otherExpanded ? 0.5 : 0,
-                duration: const Duration(milliseconds: 220),
+                duration: MediaQuery.disableAnimationsOf(context)
+                    ? Duration.zero
+                    : const Duration(milliseconds: 220),
                 child: const Icon(
                   Icons.expand_more_rounded,
                   size: 20,
@@ -202,7 +240,9 @@ class _CategoryDonutChartState extends State<CategoryDonutChart> {
         row,
       if (expandable)
         AnimatedSize(
-          duration: const Duration(milliseconds: 220),
+          duration: MediaQuery.disableAnimationsOf(context)
+              ? Duration.zero
+              : const Duration(milliseconds: 220),
           curve: Curves.easeInOut,
           alignment: Alignment.topCenter,
           child: _otherExpanded
@@ -262,58 +302,111 @@ class _CategoryDonutChartState extends State<CategoryDonutChart> {
     Color badgeColor = AppColors.surfaceAlt,
   }) {
     final dotSize = dense ? 10.0 : 12.0;
+    final amountStyle = TextStyle(
+      color: AppColors.textPrimary,
+      fontWeight: isHighlighted ? FontWeight.w700 : FontWeight.w600,
+      fontSize: dense ? 12.5 : 13.5,
+    );
+    final shareText = '${(share * 100).toStringAsFixed(1)}%';
+    const shareStyle = TextStyle(
+      color: AppColors.textSecondary,
+      fontSize: 11.5,
+      fontWeight: FontWeight.w600,
+    );
+    double textWidth(String text, TextStyle style) {
+      final painter = TextPainter(
+        text: TextSpan(
+          text: text,
+          style: DefaultTextStyle.of(context).style.merge(style),
+        ),
+        textDirection: Directionality.of(context),
+        textScaler: MediaQuery.textScalerOf(context),
+      )..layout();
+      final width = painter.width;
+      painter.dispose();
+      return width;
+    }
+
+    final amountText = formatMoneyAbs(amount);
+    final valuesWidth =
+        textWidth(amountText, amountStyle) +
+        textWidth(shareText, shareStyle) +
+        38;
+    final dot = Container(
+      width: dotSize,
+      height: dotSize,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(4),
+      ),
+    );
+    final nameText = Text(
+      name,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(
+        color: AppColors.textPrimary,
+        fontSize: dense ? 13 : 14,
+        fontWeight: isHighlighted ? FontWeight.w700 : FontWeight.w500,
+      ),
+    );
+    final money = Text(amountText, style: amountStyle);
+    final badge = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(
+        color: badgeColor,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(shareText, style: shareStyle),
+    );
     return Padding(
       padding: EdgeInsets.symmetric(vertical: dense ? 4 : 5),
-      child: Row(
-        children: [
-          Container(
-            width: dotSize,
-            height: dotSize,
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(4),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: dense ? 13 : 14,
-                fontWeight: isHighlighted ? FontWeight.w700 : FontWeight.w500,
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            formatMoneyAbs(amount),
-            style: TextStyle(
-              color: AppColors.textPrimary,
-              fontWeight: isHighlighted ? FontWeight.w700 : FontWeight.w600,
-              fontSize: dense ? 12.5 : 13.5,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-            decoration: BoxDecoration(
-              color: badgeColor,
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              '${(share * 100).toStringAsFixed(1)}%',
-              style: const TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 11.5,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          if (trailing != null) trailing,
-        ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          if (valuesWidth + 100 + (trailing == null ? 0 : 24) >
+              constraints.maxWidth) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    dot,
+                    const SizedBox(width: 10),
+                    Expanded(child: nameText),
+                    if (trailing != null) trailing,
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: constraints.maxWidth,
+                      ),
+                      child: FittedBox(fit: BoxFit.scaleDown, child: money),
+                    ),
+                    badge,
+                  ],
+                ),
+              ],
+            );
+          }
+          return Row(
+            children: [
+              dot,
+              const SizedBox(width: 10),
+              Expanded(child: nameText),
+              const SizedBox(width: 8),
+              money,
+              const SizedBox(width: 8),
+              badge,
+              if (trailing != null) trailing,
+            ],
+          );
+        },
       ),
     );
   }

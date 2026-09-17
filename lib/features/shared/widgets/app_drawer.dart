@@ -1,3 +1,4 @@
+import 'adaptive_header_scroll_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -90,9 +91,8 @@ class AppDrawer extends StatelessWidget {
         borderRadius: BorderRadius.horizontal(right: Radius.circular(28)),
       ),
       child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+        child: AdaptiveHeaderScrollView(
+          header: [
             // Брендовая шапка.
             Container(
               margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
@@ -123,11 +123,13 @@ class AppDrawer extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      Text(
-                        'Манго Баланс',
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          color: Colors.white,
-                          fontSize: 19,
+                      Expanded(
+                        child: Text(
+                          'Манго Баланс',
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            color: Colors.white,
+                            fontSize: 19,
+                          ),
                         ),
                       ),
                     ],
@@ -163,10 +165,12 @@ class AppDrawer extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 4),
+          ],
+          slivers: [
             // Навигация.
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              sliver: SliverList.list(
                 children: AppRoute.values.map((route) {
                   final selected = route == currentRoute;
                   return Padding(
@@ -202,15 +206,17 @@ class AppDrawer extends StatelessWidget {
                                     : AppColors.textSecondary,
                               ),
                               const SizedBox(width: 14),
-                              Text(
-                                route.title,
-                                style: theme.textTheme.titleSmall?.copyWith(
-                                  color: selected
-                                      ? AppColors.brandDark
-                                      : AppColors.textPrimary,
-                                  fontWeight: selected
-                                      ? FontWeight.w700
-                                      : FontWeight.w500,
+                              Expanded(
+                                child: Text(
+                                  route.title,
+                                  style: theme.textTheme.titleSmall?.copyWith(
+                                    color: selected
+                                        ? AppColors.brandDark
+                                        : AppColors.textPrimary,
+                                    fontWeight: selected
+                                        ? FontWeight.w700
+                                        : FontWeight.w500,
+                                  ),
                                 ),
                               ),
                             ],
@@ -222,11 +228,20 @@ class AppDrawer extends StatelessWidget {
                 }).toList(),
               ),
             ),
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: Text(
-                'Манго Баланс · v1.0',
-                style: TextStyle(color: AppColors.textTertiary, fontSize: 12),
+            const SliverFillRemaining(
+              hasScrollBody: false,
+              child: Align(
+                alignment: Alignment.bottomLeft,
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Text(
+                    'Манго Баланс · v1.0',
+                    style: TextStyle(
+                      color: AppColors.textTertiary,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
               ),
             ),
           ],

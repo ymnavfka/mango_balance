@@ -408,6 +408,9 @@ class _TimeSeriesBarChartState extends State<TimeSeriesBarChart> {
                                   );
                                 }),
                               ),
+                              duration: MediaQuery.disableAnimationsOf(context)
+                                  ? Duration.zero
+                                  : const Duration(milliseconds: 150),
                             ),
                           ),
                         ),

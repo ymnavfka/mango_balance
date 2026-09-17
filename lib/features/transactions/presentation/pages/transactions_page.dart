@@ -1,3 +1,4 @@
+import '../../../shared/widgets/adaptive_header_scroll_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -72,83 +73,89 @@ class TransactionsPage extends StatelessWidget {
           const SizedBox(width: 4),
         ],
       ),
-      body: BlocBuilder<TransactionCubit, TransactionState>(
-        builder: (context, state) {
-          final accountState = context.watch<AccountCubit>().state;
-          final ranker = PopularityRanker(transactions: state.allTransactions);
-          final accounts = ranker.sortAccounts(accountState.accounts);
-          AccountEntity? selectedAccount;
-          for (final account in accounts) {
-            if (account.id == state.selectedAccountId) {
-              selectedAccount = account;
-              break;
+      body: SafeArea(
+        top: false,
+        child: BlocBuilder<TransactionCubit, TransactionState>(
+          builder: (context, state) {
+            final accountState = context.watch<AccountCubit>().state;
+            final ranker = PopularityRanker(
+              transactions: state.allTransactions,
+            );
+            final accounts = ranker.sortAccounts(accountState.accounts);
+            AccountEntity? selectedAccount;
+            for (final account in accounts) {
+              if (account.id == state.selectedAccountId) {
+                selectedAccount = account;
+                break;
+              }
             }
-          }
 
-          return Column(
-            children: [
-              _BalanceCard(
-                label: selectedAccount?.name ?? 'Все счета',
-                balance: state.selectedBalance,
-              ),
-              Row(
-                children: [
-                  Expanded(
-                    child: _AccountChips(
-                      accounts: accounts,
-                      selectedId: state.selectedAccountId,
+            return AdaptiveHeaderScrollView(
+              header: [
+                _BalanceCard(
+                  label: selectedAccount?.name ?? 'Все счета',
+                  balance: state.selectedBalance,
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _AccountChips(
+                        accounts: accounts,
+                        selectedId: state.selectedAccountId,
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(right: AppSpacing.sm),
+                      child: _FilterButton(state: state),
+                    ),
+                  ],
+                ),
+              ],
+              slivers: [
+                if (state.sections.isEmpty)
+                  const SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: EmptyState(
+                      icon: Icons.receipt_long_rounded,
+                      title: 'Пока нет операций',
+                      message:
+                          'Нажмите «+», чтобы добавить первый доход, '
+                          'расход или перевод.',
+                    ),
+                  )
+                else
+                  SliverPadding(
+                    padding: const EdgeInsets.only(bottom: 96, top: 4),
+                    sliver: SliverList.builder(
+                      itemCount: state.sections.length,
+                      itemBuilder: (context, sectionIndex) {
+                        final section = state.sections[sectionIndex];
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(20, 10, 20, 8),
+                              child: Text(
+                                section.title,
+                                style: Theme.of(context).textTheme.labelLarge
+                                    ?.copyWith(
+                                      color: AppColors.textSecondary,
+                                      letterSpacing: 0.2,
+                                    ),
+                              ),
+                            ),
+                            ...section.transactions.map(
+                              (tx) => _TransactionTile(transaction: tx),
+                            ),
+                          ],
+                        );
+                      },
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.only(right: AppSpacing.sm),
-                    child: _FilterButton(state: state),
-                  ),
-                ],
-              ),
-              Expanded(
-                child: state.sections.isEmpty
-                    ? const EmptyState(
-                        icon: Icons.receipt_long_rounded,
-                        title: 'Пока нет операций',
-                        message:
-                            'Нажмите «+», чтобы добавить первый доход, '
-                            'расход или перевод.',
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.only(bottom: 96, top: 4),
-                        itemCount: state.sections.length,
-                        itemBuilder: (context, sectionIndex) {
-                          final section = state.sections[sectionIndex];
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.fromLTRB(
-                                  20,
-                                  10,
-                                  20,
-                                  8,
-                                ),
-                                child: Text(
-                                  section.title,
-                                  style: Theme.of(context).textTheme.labelLarge
-                                      ?.copyWith(
-                                        color: AppColors.textSecondary,
-                                        letterSpacing: 0.2,
-                                      ),
-                                ),
-                              ),
-                              ...section.transactions.map(
-                                (tx) => _TransactionTile(transaction: tx),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-              ),
-            ],
-          );
-        },
+              ],
+            );
+          },
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
@@ -274,9 +281,11 @@ class _FilterButton extends StatelessWidget {
                                 style: Theme.of(context).textTheme.titleLarge,
                               ),
                             ),
-                            TextButton(
-                              onPressed: () => cubit.resetFilters(),
-                              child: const Text('Сбросить'),
+                            Flexible(
+                              child: TextButton(
+                                onPressed: () => cubit.resetFilters(),
+                                child: const Text('Сбросить'),
+                              ),
                             ),
                             IconButton(
                               tooltip: 'Закрыть',
@@ -323,7 +332,10 @@ class _AccountChips extends StatelessWidget {
   Widget build(BuildContext context) {
     if (accounts.isEmpty) return const SizedBox(height: AppSpacing.sm);
     return SizedBox(
-      height: 44,
+      height: (MediaQuery.textScalerOf(context).scale(13.5) * 1.5 + 16).clamp(
+        44,
+        double.infinity,
+      ),
       child: ListView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
@@ -400,29 +412,51 @@ class _TypeFilters extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-      child: Row(
-        children: [
-          _TypeChip(
-            label: 'Доход',
-            type: TransactionType.income,
-            color: AppColors.income,
-            visibleTypes: visibleTypes,
-          ),
-          const SizedBox(width: 8),
-          _TypeChip(
-            label: 'Расход',
-            type: TransactionType.expense,
-            color: AppColors.expense,
-            visibleTypes: visibleTypes,
-          ),
-          const SizedBox(width: 8),
-          _TypeChip(
-            label: 'Перевод',
-            type: TransactionType.transfer,
-            color: AppColors.transfer,
-            visibleTypes: visibleTypes,
-          ),
-        ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final stacked =
+              constraints.maxWidth <
+              MediaQuery.textScalerOf(context).scale(13.5) / 13.5 * 270;
+          final chips = <Widget>[
+            _TypeChip(
+              label: 'Доход',
+              type: TransactionType.income,
+              color: AppColors.income,
+              visibleTypes: visibleTypes,
+            ),
+            _TypeChip(
+              label: 'Расход',
+              type: TransactionType.expense,
+              color: AppColors.expense,
+              visibleTypes: visibleTypes,
+            ),
+            _TypeChip(
+              label: 'Перевод',
+              type: TransactionType.transfer,
+              color: AppColors.transfer,
+              visibleTypes: visibleTypes,
+            ),
+          ];
+          if (stacked) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (var i = 0; i < chips.length; i++) ...[
+                  if (i > 0) const SizedBox(height: 8),
+                  chips[i],
+                ],
+              ],
+            );
+          }
+          return Row(
+            children: [
+              for (var i = 0; i < chips.length; i++) ...[
+                if (i > 0) const SizedBox(width: 8),
+                Expanded(child: chips[i]),
+              ],
+            ],
+          );
+        },
       ),
     );
   }
@@ -446,49 +480,45 @@ class _TypeChip extends StatelessWidget {
     final isChecked = visibleTypes.contains(type);
     final isOnlyOneActive = visibleTypes.length == 1 && isChecked;
 
-    return Expanded(
-      child: Material(
-        color: isChecked ? color : AppColors.surface,
+    return Material(
+      color: isChecked ? color : AppColors.surface,
+      borderRadius: BorderRadius.circular(AppRadius.pill),
+      child: InkWell(
         borderRadius: BorderRadius.circular(AppRadius.pill),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(AppRadius.pill),
-          onTap: isOnlyOneActive
-              ? null
-              : () => context.read<TransactionCubit>().toggleTransactionType(
-                  type,
-                ),
-          child: Container(
-            height: 40,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(AppRadius.pill),
-              border: Border.all(color: isChecked ? color : AppColors.outline),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  isChecked
-                      ? Icons.check_circle_rounded
-                      : Icons.circle_outlined,
-                  size: 16,
-                  color: isChecked ? Colors.white : AppColors.textTertiary,
-                ),
-                const SizedBox(width: 6),
-                Flexible(
-                  child: Text(
-                    label,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: isChecked ? Colors.white : AppColors.textSecondary,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13.5,
-                    ),
+        onTap: isOnlyOneActive
+            ? null
+            : () =>
+                  context.read<TransactionCubit>().toggleTransactionType(type),
+        child: Container(
+          height: (MediaQuery.textScalerOf(context).scale(13.5) * 1.5 + 16)
+              .clamp(40, double.infinity),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadius.pill),
+            border: Border.all(color: isChecked ? color : AppColors.outline),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isChecked ? Icons.check_circle_rounded : Icons.circle_outlined,
+                size: 16,
+                color: isChecked ? Colors.white : AppColors.textTertiary,
+              ),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  label,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: isChecked ? Colors.white : AppColors.textSecondary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13.5,
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

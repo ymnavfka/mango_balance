@@ -76,6 +76,11 @@ class _CategoryFormDialogState extends State<CategoryFormDialog> {
           ),
           const FormFieldLabel('Тип'),
           SegmentedButton<TransactionType>(
+            direction:
+                MediaQuery.sizeOf(context).width < 360 ||
+                    MediaQuery.textScalerOf(context).scale(14) > 21
+                ? Axis.vertical
+                : Axis.horizontal,
             segments: const [
               ButtonSegment(
                 value: TransactionType.income,

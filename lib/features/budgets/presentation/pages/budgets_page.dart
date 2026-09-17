@@ -40,60 +40,66 @@ class BudgetsPage extends StatelessWidget {
     return Scaffold(
       drawer: const AppDrawer(currentRoute: AppRoute.budgets),
       appBar: AppBar(title: const Text('Бюджеты')),
-      body: BlocBuilder<BudgetCubit, BudgetState>(
-        builder: (context, state) {
-          if (state.progresses.isEmpty) {
-            return const EmptyState(
-              icon: Icons.savings_rounded,
-              title: 'Бюджеты ещё не созданы',
-              message:
-                  'Задайте лимит трат на период, чтобы держать расходы '
-                  'под контролем.',
-            );
-          }
-          return ListView.builder(
-            padding: const EdgeInsets.only(top: 8, bottom: 96),
-            itemCount: state.progresses.length,
-            itemBuilder: (context, index) {
-              final progress = state.progresses[index];
-              return Dismissible(
-                key: ValueKey(progress.budget.id),
-                direction: DismissDirection.endToStart,
-                background: Container(
-                  alignment: Alignment.centerRight,
-                  padding: const EdgeInsets.symmetric(horizontal: 28),
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.expense,
-                    borderRadius: BorderRadius.circular(AppRadius.lg),
-                  ),
-                  child: const Icon(Icons.delete_rounded, color: Colors.white),
-                ),
-                onDismissed: (_) {
-                  final cubit = context.read<BudgetCubit>();
-                  final removed = progress.budget;
-                  cubit.deleteBudget(removed.id);
-                  showUndoSnackBar(
-                    context,
-                    message: 'Бюджет удалён',
-                    onUndo: () => cubit.addBudget(removed),
-                  );
-                },
-                child: BudgetProgressCard(
-                  progress: progress,
-                  onTap: () => _openForm(
-                    context,
-                    cubit: context.read<BudgetCubit>(),
-                    initial: progress.budget,
-                  ),
-                ),
+      body: SafeArea(
+        top: false,
+        child: BlocBuilder<BudgetCubit, BudgetState>(
+          builder: (context, state) {
+            if (state.progresses.isEmpty) {
+              return const EmptyState(
+                icon: Icons.savings_rounded,
+                title: 'Бюджеты ещё не созданы',
+                message:
+                    'Задайте лимит трат на период, чтобы держать расходы '
+                    'под контролем.',
               );
-            },
-          );
-        },
+            }
+            return ListView.builder(
+              padding: const EdgeInsets.only(top: 8, bottom: 96),
+              itemCount: state.progresses.length,
+              itemBuilder: (context, index) {
+                final progress = state.progresses[index];
+                return Dismissible(
+                  key: ValueKey(progress.budget.id),
+                  direction: DismissDirection.endToStart,
+                  background: Container(
+                    alignment: Alignment.centerRight,
+                    padding: const EdgeInsets.symmetric(horizontal: 28),
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.expense,
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                    ),
+                    child: const Icon(
+                      Icons.delete_rounded,
+                      color: Colors.white,
+                    ),
+                  ),
+                  onDismissed: (_) {
+                    final cubit = context.read<BudgetCubit>();
+                    final removed = progress.budget;
+                    cubit.deleteBudget(removed.id);
+                    showUndoSnackBar(
+                      context,
+                      message: 'Бюджет удалён',
+                      onUndo: () => cubit.addBudget(removed),
+                    );
+                  },
+                  child: BudgetProgressCard(
+                    progress: progress,
+                    onTap: () => _openForm(
+                      context,
+                      cubit: context.read<BudgetCubit>(),
+                      initial: progress.budget,
+                    ),
+                  ),
+                );
+              },
+            );
+          },
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openForm(context),

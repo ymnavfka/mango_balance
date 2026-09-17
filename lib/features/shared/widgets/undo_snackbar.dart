@@ -5,12 +5,16 @@ const Duration kUndoSnackBarDuration = Duration(seconds: 5);
 
 /// Показывает плашку об удалении с обратным отсчётом 5→0, кружком прогресса
 /// и автоматическим исчезновением по окончании отсчёта. Нажатие «Отменить»
-/// вызывает [onUndo] и сразу скрывает плашку.
+/// вызывает [onUndo] и сразу скрывает плашку. При отключённых анимациях
+/// показывается статическое сообщение на 15 секунд; для экранного диктора
+/// сохраняется стандартное поведение SnackBar без автоматического скрытия.
 void showUndoSnackBar(
   BuildContext context, {
   required String message,
   required VoidCallback onUndo,
 }) {
+  final media = MediaQuery.of(context);
+  final quiet = media.disableAnimations || media.accessibleNavigation;
   ScaffoldMessenger.of(context)
     ..clearSnackBars()
     ..showSnackBar(
@@ -18,8 +22,12 @@ void showUndoSnackBar(
         // Запасной предохранитель: фактическое закрытие выполняет сам виджет
         // по окончании отсчёта (см. _onStatusChanged). Встроенный авто-таймер
         // SnackBar ненадёжен, пока содержимое непрерывно анимируется.
-        duration: kUndoSnackBarDuration + const Duration(seconds: 5),
-        content: _UndoCountdownContent(message: message),
+        duration: quiet
+            ? const Duration(seconds: 15)
+            : kUndoSnackBarDuration + const Duration(seconds: 5),
+        content: quiet
+            ? Text(message)
+            : _UndoCountdownContent(message: message),
         action: SnackBarAction(label: 'Отменить', onPressed: onUndo),
       ),
     );

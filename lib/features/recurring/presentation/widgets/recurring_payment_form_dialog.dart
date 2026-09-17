@@ -293,6 +293,11 @@ class _RecurringPaymentFormDialogState
               ),
               const FormFieldLabel('Тип операции'),
               SegmentedButton<TransactionType>(
+                direction:
+                    MediaQuery.sizeOf(context).width < 360 ||
+                        MediaQuery.textScalerOf(context).scale(14) > 21
+                    ? Axis.vertical
+                    : Axis.horizontal,
                 segments: const [
                   ButtonSegment(
                     value: TransactionType.income,
@@ -379,42 +384,33 @@ class _RecurringPaymentFormDialogState
                 ),
               ),
               const FormFieldLabel('Период повторения'),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(
-                    width: 96,
-                    child: TextField(
-                      controller: _intervalCountController,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      textAlign: TextAlign.center,
-                      onChanged: (_) => setState(() {}),
-                      decoration: const InputDecoration(
-                        prefixText: 'кажд. ',
-                        hintText: '1',
-                      ),
-                    ),
+              _intervalFields(
+                count: TextField(
+                  controller: _intervalCountController,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  textAlign: TextAlign.center,
+                  onChanged: (_) => setState(() {}),
+                  decoration: const InputDecoration(
+                    prefixText: 'кажд. ',
+                    hintText: '1',
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: AppDropdownField<RecurringInterval>(
-                      value: _intervalUnit,
-                      items: RecurringInterval.values
-                          .map(
-                            (unit) => DropdownMenuItem(
-                              value: unit,
-                              child: Text(unit.singularLabel),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (value) {
-                        if (value == null) return;
-                        setState(() => _intervalUnit = value);
-                      },
-                    ),
-                  ),
-                ],
+                ),
+                unit: AppDropdownField<RecurringInterval>(
+                  value: _intervalUnit,
+                  items: RecurringInterval.values
+                      .map(
+                        (unit) => DropdownMenuItem(
+                          value: unit,
+                          child: Text(unit.singularLabel),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    if (value == null) return;
+                    setState(() => _intervalUnit = value);
+                  },
+                ),
               ),
               Padding(
                 padding: const EdgeInsets.only(top: AppSpacing.sm),
@@ -448,44 +444,33 @@ class _RecurringPaymentFormDialogState
                     inForm: true,
                   ),
                 const SizedBox(height: AppSpacing.sm),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(
-                      width: 96,
-                      child: TextField(
-                        controller: _notifyValueController,
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                        ],
-                        textAlign: TextAlign.center,
-                        onChanged: (_) => setState(() {}),
-                        decoration: const InputDecoration(
-                          prefixText: 'за ',
-                          hintText: '1',
-                        ),
-                      ),
+                _intervalFields(
+                  count: TextField(
+                    controller: _notifyValueController,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    textAlign: TextAlign.center,
+                    onChanged: (_) => setState(() {}),
+                    decoration: const InputDecoration(
+                      prefixText: 'за ',
+                      hintText: '1',
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: AppDropdownField<NotifyLeadUnit>(
-                        value: _notifyUnit,
-                        items: NotifyLeadUnit.values
-                            .map(
-                              (unit) => DropdownMenuItem(
-                                value: unit,
-                                child: Text(unit.singularLabel),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: (value) {
-                          if (value == null) return;
-                          setState(() => _notifyUnit = value);
-                        },
-                      ),
-                    ),
-                  ],
+                  ),
+                  unit: AppDropdownField<NotifyLeadUnit>(
+                    value: _notifyUnit,
+                    items: NotifyLeadUnit.values
+                        .map(
+                          (unit) => DropdownMenuItem(
+                            value: unit,
+                            child: Text(unit.singularLabel),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      if (value == null) return;
+                      setState(() => _notifyUnit = value);
+                    },
+                  ),
                 ),
                 Padding(
                   padding: const EdgeInsets.only(top: AppSpacing.sm),
@@ -503,6 +488,28 @@ class _RecurringPaymentFormDialogState
           ),
         ),
       ),
+    );
+  }
+
+  Widget _intervalFields({required Widget count, required Widget unit}) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 240 ||
+            MediaQuery.textScalerOf(context).scale(14) > 21) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [count, const SizedBox(height: 12), unit],
+          );
+        }
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(width: 96, child: count),
+            const SizedBox(width: 12),
+            Expanded(child: unit),
+          ],
+        );
+      },
     );
   }
 }

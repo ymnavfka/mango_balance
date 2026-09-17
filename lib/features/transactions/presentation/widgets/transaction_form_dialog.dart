@@ -308,6 +308,11 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
         children: [
           const FormFieldLabel('Тип операции', top: 0),
           SegmentedButton<TransactionType>(
+            direction:
+                MediaQuery.sizeOf(context).width < 360 ||
+                    MediaQuery.textScalerOf(context).scale(14) > 21
+                ? Axis.vertical
+                : Axis.horizontal,
             segments: const [
               ButtonSegment(
                 value: TransactionType.income,
@@ -557,7 +562,7 @@ class _EmptyFieldBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 52,
+      constraints: const BoxConstraints(minHeight: 52),
       alignment: Alignment.centerLeft,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(

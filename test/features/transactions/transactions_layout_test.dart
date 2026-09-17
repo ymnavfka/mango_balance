@@ -110,8 +110,10 @@ TransactionState fixture() {
 Future<TestTransactions> showPage(
   WidgetTester tester, {
   double scale = 1,
+  Size size = const Size(360, 640),
+  EdgeInsets padding = EdgeInsets.zero,
 }) async {
-  tester.view.physicalSize = const Size(360, 640);
+  tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
@@ -130,7 +132,7 @@ Future<TestTransactions> showPage(
         builder: (context, child) => MediaQuery(
           data: MediaQuery.of(
             context,
-          ).copyWith(textScaler: TextScaler.linear(scale)),
+          ).copyWith(textScaler: TextScaler.linear(scale), padding: padding),
           child: child!,
         ),
         home: const TransactionsPage(),
@@ -142,24 +144,64 @@ Future<TestTransactions> showPage(
 }
 
 void main() {
-  testWidgets('360×740 screen fits four full transactions above the add button', (
-    tester,
-  ) async {
-    await showPage(tester);
-    tester.view.physicalSize = const Size(360, 740);
-    await tester.pumpAndSettle();
-    expect(find.text('Комментарий к покупке'), findsNothing);
-    expect(find.text('12:34'), findsNothing);
-    expect(find.text('Доход'), findsNothing);
-    expect(find.text('За всё время'), findsNothing);
-    final fourth = find.byKey(const ValueKey(4));
-    final add = find.byType(FloatingActionButton);
-    expect(
-      tester.getBottomLeft(fourth).dy,
-      lessThan(tester.getTopLeft(add).dy),
-    );
-    expect(tester.takeException(), isNull);
-  });
+  for (final size in [
+    const Size(320, 568),
+    const Size(393, 873),
+    const Size(740, 360),
+  ]) {
+    for (final scale in [1.0, 2.0]) {
+      testWidgets('transactions and filters fit $size at text scale $scale', (
+        tester,
+      ) async {
+        await showPage(
+          tester,
+          size: size,
+          scale: scale,
+          padding: size.width > size.height
+              ? const EdgeInsets.only(left: 32, bottom: 24)
+              : EdgeInsets.zero,
+        );
+        expect(tester.takeException(), isNull);
+        await tester.ensureVisible(find.byTooltip('Фильтры'));
+        await tester.tap(find.byTooltip('Фильтры'));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        await tester.tap(find.byTooltip('Закрыть'));
+        await tester.pumpAndSettle();
+        final scrollable = find.byType(CustomScrollView).first;
+        final headerBefore = tester.getTopLeft(find.text('Все счета').first).dy;
+        await tester.drag(scrollable, const Offset(0, -250));
+        await tester.pumpAndSettle();
+        if (size.height > 700 && scale == 1) {
+          expect(
+            tester.getTopLeft(find.text('Все счета').first).dy,
+            headerBefore,
+          );
+        }
+        expect(tester.takeException(), isNull);
+      });
+    }
+  }
+
+  testWidgets(
+    '360×740 screen fits four full transactions above the add button',
+    (tester) async {
+      await showPage(tester);
+      tester.view.physicalSize = const Size(360, 740);
+      await tester.pumpAndSettle();
+      expect(find.text('Комментарий к покупке'), findsNothing);
+      expect(find.text('12:34'), findsNothing);
+      expect(find.text('Доход'), findsNothing);
+      expect(find.text('За всё время'), findsNothing);
+      final fourth = find.byKey(const ValueKey(4));
+      final add = find.byType(FloatingActionButton);
+      expect(
+        tester.getBottomLeft(fourth).dy,
+        lessThan(tester.getTopLeft(add).dy),
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('accounts remain accessible and filters open, update and reset', (
     tester,

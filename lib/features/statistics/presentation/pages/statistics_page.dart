@@ -21,75 +21,78 @@ class StatisticsPage extends StatelessWidget {
     return Scaffold(
       drawer: const AppDrawer(currentRoute: AppRoute.statistics),
       appBar: AppBar(title: const Text('Статистика')),
-      body: BlocBuilder<StatisticsCubit, StatisticsState>(
-        builder: (context, state) {
-          final snapshot = state.snapshot;
-          final cubit = context.read<StatisticsCubit>();
+      body: SafeArea(
+        top: false,
+        child: BlocBuilder<StatisticsCubit, StatisticsState>(
+          builder: (context, state) {
+            final snapshot = state.snapshot;
+            final cubit = context.read<StatisticsCubit>();
 
-          if (!snapshot.hasAnyTransactions) {
-            return Column(
-              children: [
-                const SizedBox(height: AppSpacing.lg),
-                PeriodSelector(
-                  selected: snapshot.periodType,
-                  onSelected: cubit.selectPeriodType,
-                ),
-                const Expanded(
-                  child: EmptyState(
-                    icon: Icons.insights_rounded,
-                    title: 'Пока нет данных',
-                    message:
-                        'Добавьте операции, чтобы увидеть статистику доходов '
-                        'и расходов.',
+            if (!snapshot.hasAnyTransactions) {
+              return Column(
+                children: [
+                  const SizedBox(height: AppSpacing.lg),
+                  PeriodSelector(
+                    selected: snapshot.periodType,
+                    onSelected: cubit.selectPeriodType,
                   ),
-                ),
-              ],
-            );
-          }
+                  const Expanded(
+                    child: EmptyState(
+                      icon: Icons.insights_rounded,
+                      title: 'Пока нет данных',
+                      message:
+                          'Добавьте операции, чтобы увидеть статистику доходов '
+                          'и расходов.',
+                    ),
+                  ),
+                ],
+              );
+            }
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.only(top: AppSpacing.lg, bottom: 24),
-            child: Column(
-              children: [
-                PeriodSelector(
-                  selected: snapshot.periodType,
-                  onSelected: cubit.selectPeriodType,
-                ),
-                const SizedBox(height: AppSpacing.md),
-                if (snapshot.periodType != PeriodType.allTime)
-                  PeriodNavigator(
-                    label: snapshot.currentRange.label,
-                    canGoBack: snapshot.canNavigateBack,
-                    canGoForward: snapshot.canNavigateForward,
-                    onBack: () => cubit.shiftAnchor(-1),
-                    onForward: () => cubit.shiftAnchor(1),
-                  )
-                else
-                  const _AllTimeBadge(),
-                const SizedBox(height: AppSpacing.xs),
-                CategoryDonutChart(
-                  title: 'Доходы по категориям',
-                  total: snapshot.totalIncome,
-                  breakdown: snapshot.incomeBreakdown,
-                  accentColor: AppColors.income,
-                  icon: Icons.south_west_rounded,
-                ),
-                CategoryDonutChart(
-                  title: 'Расходы по категориям',
-                  total: snapshot.totalExpense,
-                  breakdown: snapshot.expenseBreakdown,
-                  accentColor: AppColors.expense,
-                  icon: Icons.north_east_rounded,
-                ),
-                TimeSeriesBarChart(
-                  buckets: snapshot.timeSeries,
-                  periodType: snapshot.periodType,
-                ),
-                NetWorthLineChart(points: snapshot.netWorthSeries),
-              ],
-            ),
-          );
-        },
+            return SingleChildScrollView(
+              padding: const EdgeInsets.only(top: AppSpacing.lg, bottom: 24),
+              child: Column(
+                children: [
+                  PeriodSelector(
+                    selected: snapshot.periodType,
+                    onSelected: cubit.selectPeriodType,
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  if (snapshot.periodType != PeriodType.allTime)
+                    PeriodNavigator(
+                      label: snapshot.currentRange.label,
+                      canGoBack: snapshot.canNavigateBack,
+                      canGoForward: snapshot.canNavigateForward,
+                      onBack: () => cubit.shiftAnchor(-1),
+                      onForward: () => cubit.shiftAnchor(1),
+                    )
+                  else
+                    const _AllTimeBadge(),
+                  const SizedBox(height: AppSpacing.xs),
+                  CategoryDonutChart(
+                    title: 'Доходы по категориям',
+                    total: snapshot.totalIncome,
+                    breakdown: snapshot.incomeBreakdown,
+                    accentColor: AppColors.income,
+                    icon: Icons.south_west_rounded,
+                  ),
+                  CategoryDonutChart(
+                    title: 'Расходы по категориям',
+                    total: snapshot.totalExpense,
+                    breakdown: snapshot.expenseBreakdown,
+                    accentColor: AppColors.expense,
+                    icon: Icons.north_east_rounded,
+                  ),
+                  TimeSeriesBarChart(
+                    buckets: snapshot.timeSeries,
+                    periodType: snapshot.periodType,
+                  ),
+                  NetWorthLineChart(points: snapshot.netWorthSeries),
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }
