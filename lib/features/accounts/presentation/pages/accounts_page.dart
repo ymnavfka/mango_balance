@@ -113,7 +113,7 @@ class _TotalCard extends StatelessWidget {
               ),
             ),
           ),
-          Flexible(
+          Expanded(
             child: FittedBox(
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerRight,
@@ -213,7 +213,7 @@ class _AccountTile extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Flexible(
+                Expanded(
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerRight,
