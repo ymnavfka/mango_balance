@@ -455,6 +455,8 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
               ),
             ),
           ),
+          const FormFieldLabel('Дата и время'),
+          _DateField(text: _formatDate(_date), onTap: _pickDateTime),
           const FormFieldLabel('Комментарий'),
           TextField(
             controller: _commentController,
@@ -464,8 +466,6 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
               hintText: 'Необязательный комментарий',
             ),
           ),
-          const FormFieldLabel('Дата и время'),
-          _DateField(text: _formatDate(_date), onTap: _pickDateTime),
         ],
       ),
     );
