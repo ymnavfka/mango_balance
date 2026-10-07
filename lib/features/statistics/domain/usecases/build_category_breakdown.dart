@@ -31,7 +31,10 @@ class BuildCategoryBreakdown {
     }
 
     final entries = totalsByCategory.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
+      ..sort((a, b) {
+        final amountOrder = b.value.compareTo(a.value);
+        return amountOrder != 0 ? amountOrder : a.key.compareTo(b.key);
+      });
 
     final total = entries.fold<double>(0, (sum, entry) => sum + entry.value);
     if (total <= 0) {

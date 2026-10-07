@@ -1,3 +1,4 @@
+import 'category_averages.dart';
 import 'category_breakdown.dart';
 import 'net_worth_point.dart';
 import 'period_bucket.dart';
@@ -18,6 +19,7 @@ class StatisticsSnapshot {
     required this.canNavigateForward,
     required this.canNavigateBack,
     required this.hasAnyTransactions,
+    this.categoryAverages,
   });
 
   factory StatisticsSnapshot.empty() {
@@ -50,6 +52,7 @@ class StatisticsSnapshot {
   final bool canNavigateForward;
   final bool canNavigateBack;
   final bool hasAnyTransactions;
+  final CategoryAverages? categoryAverages;
 
   double get netBalance => totalIncome - totalExpense;
 }

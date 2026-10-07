@@ -7,6 +7,8 @@ import '../../../shared/widgets/empty_state.dart';
 import '../../domain/entities/period_type.dart';
 import '../cubit/statistics_cubit.dart';
 import '../cubit/statistics_state.dart';
+import '../utils/category_comparison_labels.dart';
+import '../widgets/category_comparison_header.dart';
 import '../widgets/category_donut_chart.dart';
 import '../widgets/net_worth_line_chart.dart';
 import '../widgets/period_navigator.dart';
@@ -27,6 +29,20 @@ class StatisticsPage extends StatelessWidget {
           builder: (context, state) {
             final snapshot = state.snapshot;
             final cubit = context.read<StatisticsCubit>();
+            final averages = snapshot.categoryAverages;
+            final showComparison = snapshot.periodType != PeriodType.allTime;
+            final hasAverage = averages != null && averages.periodCount > 0;
+            final matchesElapsedDays = averages?.matchesElapsedDays ?? false;
+            final periodLabel = categoryPeriodLabel(
+              snapshot.periodType,
+              snapshot.currentRange,
+              matchesElapsedDays: matchesElapsedDays,
+              elapsedDays: averages?.elapsedDays,
+            );
+            final averageLabel = categoryAverageLabel(
+              snapshot.periodType,
+              matchesElapsedDays: matchesElapsedDays,
+            );
 
             if (!snapshot.hasAnyTransactions) {
               return Column(
@@ -69,12 +85,23 @@ class StatisticsPage extends StatelessWidget {
                   else
                     const _AllTimeBadge(),
                   const SizedBox(height: AppSpacing.xs),
+                  if (showComparison)
+                    CategoryComparisonHeader(
+                      periodType: snapshot.periodType,
+                      averages: averages,
+                    ),
                   CategoryDonutChart(
                     title: 'Доходы по категориям',
                     total: snapshot.totalIncome,
                     breakdown: snapshot.incomeBreakdown,
                     accentColor: AppColors.income,
                     icon: Icons.south_west_rounded,
+                    showComparison: showComparison,
+                    averageTotal: hasAverage ? averages.totalIncome : null,
+                    averageBreakdown: averages?.incomeBreakdown ?? const [],
+                    periodLabel: periodLabel,
+                    averageLabel: averageLabel,
+                    matchesElapsedDays: matchesElapsedDays,
                   ),
                   CategoryDonutChart(
                     title: 'Расходы по категориям',
@@ -82,6 +109,12 @@ class StatisticsPage extends StatelessWidget {
                     breakdown: snapshot.expenseBreakdown,
                     accentColor: AppColors.expense,
                     icon: Icons.north_east_rounded,
+                    showComparison: showComparison,
+                    averageTotal: hasAverage ? averages.totalExpense : null,
+                    averageBreakdown: averages?.expenseBreakdown ?? const [],
+                    periodLabel: periodLabel,
+                    averageLabel: averageLabel,
+                    matchesElapsedDays: matchesElapsedDays,
                   ),
                   TimeSeriesBarChart(
                     buckets: snapshot.timeSeries,

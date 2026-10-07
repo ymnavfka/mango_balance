@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../shared/theme/app_colors.dart';
 import '../../../shared/utils/money_format.dart';
 import '../../domain/entities/category_breakdown.dart';
+import 'category_comparison_chart.dart';
 import 'chart_palette.dart';
 
 class CategoryDonutChart extends StatefulWidget {
@@ -14,6 +15,12 @@ class CategoryDonutChart extends StatefulWidget {
     required this.breakdown,
     required this.accentColor,
     required this.icon,
+    this.showComparison = false,
+    this.averageTotal,
+    this.averageBreakdown = const [],
+    this.periodLabel = 'Выбранный период',
+    this.averageLabel = 'В среднем',
+    this.matchesElapsedDays = false,
   });
 
   final String title;
@@ -21,6 +28,12 @@ class CategoryDonutChart extends StatefulWidget {
   final List<CategoryBreakdown> breakdown;
   final Color accentColor;
   final IconData icon;
+  final bool showComparison;
+  final double? averageTotal;
+  final List<CategoryBreakdown> averageBreakdown;
+  final String periodLabel;
+  final String averageLabel;
+  final bool matchesElapsedDays;
 
   @override
   State<CategoryDonutChart> createState() => _CategoryDonutChartState();
@@ -39,6 +52,20 @@ class _CategoryDonutChartState extends State<CategoryDonutChart> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.showComparison) {
+      return CategoryComparisonChart(
+        title: widget.title,
+        total: widget.total,
+        breakdown: widget.breakdown,
+        accentColor: widget.accentColor,
+        icon: widget.icon,
+        averageTotal: widget.averageTotal,
+        averageBreakdown: widget.averageBreakdown,
+        periodLabel: widget.periodLabel,
+        averageLabel: widget.averageLabel,
+        matchesElapsedDays: widget.matchesElapsedDays,
+      );
+    }
     final isEmpty = widget.breakdown.isEmpty;
     final reducedMotion = MediaQuery.disableAnimationsOf(context);
     final totalStyle = TextStyle(

@@ -3,6 +3,7 @@ import '../../../transactions/domain/entities/transaction.dart';
 import '../entities/period_type.dart';
 import '../entities/statistics_snapshot.dart';
 import 'build_category_breakdown.dart';
+import 'build_category_comparison.dart';
 import 'build_net_worth_series.dart';
 import 'build_time_series.dart';
 import 'compute_period_range.dart';
@@ -14,12 +15,15 @@ class BuildStatisticsSnapshot {
     required BuildTimeSeries buildTimeSeries,
     required BuildNetWorthSeries buildNetWorthSeries,
   }) : _computePeriodRange = computePeriodRange,
-       _buildCategoryBreakdown = buildCategoryBreakdown,
+       _buildCategoryComparison = BuildCategoryComparison(
+         buildCategoryBreakdown: buildCategoryBreakdown,
+         computePeriodRange: computePeriodRange,
+       ),
        _buildTimeSeries = buildTimeSeries,
        _buildNetWorthSeries = buildNetWorthSeries;
 
   final ComputePeriodRange _computePeriodRange;
-  final BuildCategoryBreakdown _buildCategoryBreakdown;
+  final BuildCategoryComparison _buildCategoryComparison;
   final BuildTimeSeries _buildTimeSeries;
   final BuildNetWorthSeries _buildNetWorthSeries;
 
@@ -37,8 +41,13 @@ class BuildStatisticsSnapshot {
       );
     }
 
+    final tomorrow = DateTime(now.year, now.month, now.day + 1);
     final accountable = transactions
-        .where((tx) => tx.type != TransactionType.transfer)
+        .where(
+          (tx) =>
+              tx.type != TransactionType.transfer &&
+              tx.date.value.isBefore(tomorrow),
+        )
         .toList();
 
     final earliest = accountable.isEmpty
@@ -53,17 +62,15 @@ class BuildStatisticsSnapshot {
       earliestTransactionDate: earliest,
     );
 
-    final inRange = transactions
+    final inRange = accountable
         .where((tx) => currentRange.contains(tx.date.value))
         .toList();
 
-    final incomeBreakdown = _buildCategoryBreakdown(
-      transactions: inRange,
-      type: TransactionType.income,
-    );
-    final expenseBreakdown = _buildCategoryBreakdown(
-      transactions: inRange,
-      type: TransactionType.expense,
+    final comparison = _buildCategoryComparison(
+      transactions: accountable,
+      periodType: periodType,
+      currentRange: currentRange,
+      now: now,
     );
 
     final totalIncome = inRange
@@ -98,8 +105,9 @@ class BuildStatisticsSnapshot {
       periodType: periodType,
       anchorDate: anchorDate,
       currentRange: currentRange,
-      incomeBreakdown: incomeBreakdown,
-      expenseBreakdown: expenseBreakdown,
+      incomeBreakdown: comparison.income,
+      expenseBreakdown: comparison.expense,
+      categoryAverages: comparison.averages,
       totalIncome: totalIncome,
       totalExpense: totalExpense,
       timeSeries: timeSeries,

@@ -25,7 +25,7 @@ class ComputePeriodRange {
     switch (type) {
       case PeriodType.day:
         final start = DateTime(anchor.year, anchor.month, anchor.day);
-        final end = start.add(const Duration(days: 1));
+        final end = DateTime(anchor.year, anchor.month, anchor.day + 1);
         return PeriodRange(
           start: start,
           end: end,
@@ -33,9 +33,13 @@ class ComputePeriodRange {
         );
       case PeriodType.week:
         final base = DateTime(anchor.year, anchor.month, anchor.day);
-        final start = base.subtract(Duration(days: base.weekday - 1));
-        final end = start.add(const Duration(days: 7));
-        final lastDay = end.subtract(const Duration(days: 1));
+        final start = DateTime(
+          base.year,
+          base.month,
+          base.day - base.weekday + 1,
+        );
+        final end = DateTime(start.year, start.month, start.day + 7);
+        final lastDay = DateTime(end.year, end.month, end.day - 1);
         return PeriodRange(
           start: start,
           end: end,
@@ -74,15 +78,25 @@ class ComputePeriodRange {
   }) {
     switch (type) {
       case PeriodType.day:
-        return anchor.add(Duration(days: direction));
+        return DateTime(anchor.year, anchor.month, anchor.day + direction);
       case PeriodType.week:
-        return anchor.add(Duration(days: 7 * direction));
+        return DateTime(anchor.year, anchor.month, anchor.day + 7 * direction);
       case PeriodType.month:
-        return DateTime(anchor.year, anchor.month + direction, anchor.day);
+        return _clampedDate(anchor.year, anchor.month + direction, anchor.day);
       case PeriodType.year:
-        return DateTime(anchor.year + direction, anchor.month, anchor.day);
+        return _clampedDate(anchor.year + direction, anchor.month, anchor.day);
       case PeriodType.allTime:
         return anchor;
     }
+  }
+
+  static DateTime _clampedDate(int year, int month, int day) {
+    final targetMonth = DateTime(year, month);
+    final lastDay = DateTime(targetMonth.year, targetMonth.month + 1, 0).day;
+    return DateTime(
+      targetMonth.year,
+      targetMonth.month,
+      day > lastDay ? lastDay : day,
+    );
   }
 }
