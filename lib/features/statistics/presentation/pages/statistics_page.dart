@@ -69,6 +69,20 @@ class StatisticsPage extends StatelessWidget {
               padding: const EdgeInsets.only(top: AppSpacing.lg, bottom: 24),
               child: Column(
                 children: [
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Период доходов и расходов',
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
                   PeriodSelector(
                     selected: snapshot.periodType,
                     onSelected: cubit.selectPeriodType,

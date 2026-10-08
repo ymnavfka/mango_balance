@@ -1,0 +1,50 @@
+[
+  {
+    "file": "01-money.jpg",
+    "width": 1080,
+    "height": 1920,
+    "bytes": 330004
+  },
+  {
+    "file": "02-private.jpg",
+    "width": 1080,
+    "height": 1920,
+    "bytes": 171677
+  },
+  {
+    "file": "03-transactions.jpg",
+    "width": 1080,
+    "height": 1920,
+    "bytes": 214955
+  },
+  {
+    "file": "04-statistics.jpg",
+    "width": 1080,
+    "height": 1920,
+    "bytes": 217912
+  },
+  {
+    "file": "05-budgets.jpg",
+    "width": 1080,
+    "height": 1920,
+    "bytes": 227444
+  },
+  {
+    "file": "06-accounts.jpg",
+    "width": 1080,
+    "height": 1920,
+    "bytes": 183348
+  },
+  {
+    "file": "07-recurring.jpg",
+    "width": 1080,
+    "height": 1920,
+    "bytes": 240099
+  },
+  {
+    "file": "08-profiles.jpg",
+    "width": 1080,
+    "height": 1920,
+    "bytes": 160052
+  }
+]

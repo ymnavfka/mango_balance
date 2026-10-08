@@ -15,18 +15,18 @@ class BuildNetWorthSeries {
     required DateTime now,
     double startingBalance = 0,
   }) {
+    final today = DateTime(now.year, now.month, now.day);
     final deltasByDay = <DateTime, double>{};
     for (final tx in transactions) {
       if (tx.type == TransactionType.transfer) continue;
       final date = tx.date.value;
       final day = DateTime(date.year, date.month, date.day);
+      if (day.isAfter(today)) continue;
       final delta = tx.type == TransactionType.income
           ? tx.amount.value
           : -tx.amount.value;
       deltasByDay[day] = (deltasByDay[day] ?? 0) + delta;
     }
-
-    final today = DateTime(now.year, now.month, now.day);
 
     if (deltasByDay.isEmpty) {
       if (startingBalance == 0) {
@@ -35,7 +35,7 @@ class BuildNetWorthSeries {
       // Транзакций нет, но есть изначальный баланс — ровная линия на его уровне.
       return [
         NetWorthPoint(
-          date: today.subtract(const Duration(days: 1)),
+          date: DateTime(today.year, today.month, today.day - 1),
           balance: startingBalance,
         ),
         NetWorthPoint(date: today, balance: startingBalance),
@@ -60,7 +60,7 @@ class BuildNetWorthSeries {
     points.insert(
       0,
       NetWorthPoint(
-        date: first.subtract(const Duration(days: 1)),
+        date: DateTime(first.year, first.month, first.day - 1),
         balance: startingBalance,
       ),
     );
