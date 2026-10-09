@@ -34,6 +34,7 @@ class AccountRepositoryImpl implements AccountRepository {
                   id: account.id,
                   name: account.name,
                   isFallback: account.isFallback,
+                  isArchived: account.isArchived,
                   initialBalance: account.initialBalance,
                 ),
               )
@@ -47,11 +48,15 @@ class AccountRepositoryImpl implements AccountRepository {
     if (existing == null) {
       return;
     }
+    if (existing.isFallback && account.isArchived) {
+      throw Exception('Базовый объект нельзя архивировать');
+    }
     await db.updateAccount(
       Account(
         id: account.id,
         name: account.name.trim(),
         isFallback: account.isFallback,
+        isArchived: account.isArchived,
         initialBalance: account.initialBalance,
         profileId: existing.profileId,
       ),
@@ -74,8 +79,10 @@ class AccountRepositoryImpl implements AccountRepository {
       throw Exception('Базовый счёт не найден');
     }
 
-    await db.replaceAccountForTransactions(account.id, fallback.id);
-    await db.replaceAccountForRecurringPayments(account.id, fallback.id);
-    await db.deleteAccount(id);
+    await db.transaction(() async {
+      await db.replaceAccountForTransactions(account.id, fallback.id);
+      await db.replaceAccountForRecurringPayments(account.id, fallback.id);
+      await db.deleteAccount(id);
+    });
   }
 }

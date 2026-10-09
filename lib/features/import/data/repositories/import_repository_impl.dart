@@ -204,6 +204,7 @@ class ImportRepositoryImpl implements ImportRepository {
                 AccountsCompanion.insert(
                   name: a.name,
                   isFallback: Value(a.isFallback),
+                  isArchived: Value(a.isArchived && !a.isFallback),
                   initialBalance: Value(a.initialBalance),
                   profileId: Value(newProfileId),
                 ),
@@ -219,6 +220,7 @@ class ImportRepositoryImpl implements ImportRepository {
                   name: c.name,
                   type: c.type,
                   isFallback: Value(c.isFallback),
+                  isArchived: Value(c.isArchived && !c.isFallback),
                   profileId: Value(newProfileId),
                 ),
               );

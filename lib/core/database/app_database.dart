@@ -18,6 +18,7 @@ class Categories extends Table {
   TextColumn get name => text()();
   TextColumn get type => text()();
   BoolColumn get isFallback => boolean().withDefault(const Constant(false))();
+  BoolColumn get isArchived => boolean().withDefault(const Constant(false))();
   IntColumn get profileId => integer().customConstraint(
     'REFERENCES profiles(id) NOT NULL DEFAULT 1',
   )();
@@ -27,6 +28,7 @@ class Accounts extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text()();
   BoolColumn get isFallback => boolean().withDefault(const Constant(false))();
+  BoolColumn get isArchived => boolean().withDefault(const Constant(false))();
   // Баланс счёта на момент начала учёта (до первой транзакции). Транзакции
   // прибавляются/убавляются поверх него; в статистику доходов/расходов не входит.
   RealColumn get initialBalance => real().withDefault(const Constant(0))();
@@ -119,8 +121,10 @@ class RecurringPayments extends Table {
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
+  AppDatabase.forTesting(super.executor);
+
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -188,6 +192,11 @@ class AppDatabase extends _$AppDatabase {
 
       if (from < 10) {
         await m.addColumn(accounts, accounts.initialBalance);
+      }
+
+      if (from < 12) {
+        if (from >= 3) await m.addColumn(accounts, accounts.isArchived);
+        if (from >= 2) await m.addColumn(categories, categories.isArchived);
       }
 
       if (from < 11) {

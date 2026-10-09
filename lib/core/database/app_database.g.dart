@@ -299,6 +299,21 @@ class $CategoriesTable extends Categories
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _isArchivedMeta = const VerificationMeta(
+    'isArchived',
+  );
+  @override
+  late final GeneratedColumn<bool> isArchived = GeneratedColumn<bool>(
+    'is_archived',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_archived" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _profileIdMeta = const VerificationMeta(
     'profileId',
   );
@@ -313,7 +328,14 @@ class $CategoriesTable extends Categories
     defaultValue: const CustomExpression('1'),
   );
   @override
-  List<GeneratedColumn> get $columns => [id, name, type, isFallback, profileId];
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    type,
+    isFallback,
+    isArchived,
+    profileId,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -351,6 +373,12 @@ class $CategoriesTable extends Categories
         isFallback.isAcceptableOrUnknown(data['is_fallback']!, _isFallbackMeta),
       );
     }
+    if (data.containsKey('is_archived')) {
+      context.handle(
+        _isArchivedMeta,
+        isArchived.isAcceptableOrUnknown(data['is_archived']!, _isArchivedMeta),
+      );
+    }
     if (data.containsKey('profile_id')) {
       context.handle(
         _profileIdMeta,
@@ -382,6 +410,10 @@ class $CategoriesTable extends Categories
         DriftSqlType.bool,
         data['${effectivePrefix}is_fallback'],
       )!,
+      isArchived: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_archived'],
+      )!,
       profileId: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}profile_id'],
@@ -400,12 +432,14 @@ class Category extends DataClass implements Insertable<Category> {
   final String name;
   final String type;
   final bool isFallback;
+  final bool isArchived;
   final int profileId;
   const Category({
     required this.id,
     required this.name,
     required this.type,
     required this.isFallback,
+    required this.isArchived,
     required this.profileId,
   });
   @override
@@ -415,6 +449,7 @@ class Category extends DataClass implements Insertable<Category> {
     map['name'] = Variable<String>(name);
     map['type'] = Variable<String>(type);
     map['is_fallback'] = Variable<bool>(isFallback);
+    map['is_archived'] = Variable<bool>(isArchived);
     map['profile_id'] = Variable<int>(profileId);
     return map;
   }
@@ -425,6 +460,7 @@ class Category extends DataClass implements Insertable<Category> {
       name: Value(name),
       type: Value(type),
       isFallback: Value(isFallback),
+      isArchived: Value(isArchived),
       profileId: Value(profileId),
     );
   }
@@ -439,6 +475,7 @@ class Category extends DataClass implements Insertable<Category> {
       name: serializer.fromJson<String>(json['name']),
       type: serializer.fromJson<String>(json['type']),
       isFallback: serializer.fromJson<bool>(json['isFallback']),
+      isArchived: serializer.fromJson<bool>(json['isArchived']),
       profileId: serializer.fromJson<int>(json['profileId']),
     );
   }
@@ -450,6 +487,7 @@ class Category extends DataClass implements Insertable<Category> {
       'name': serializer.toJson<String>(name),
       'type': serializer.toJson<String>(type),
       'isFallback': serializer.toJson<bool>(isFallback),
+      'isArchived': serializer.toJson<bool>(isArchived),
       'profileId': serializer.toJson<int>(profileId),
     };
   }
@@ -459,12 +497,14 @@ class Category extends DataClass implements Insertable<Category> {
     String? name,
     String? type,
     bool? isFallback,
+    bool? isArchived,
     int? profileId,
   }) => Category(
     id: id ?? this.id,
     name: name ?? this.name,
     type: type ?? this.type,
     isFallback: isFallback ?? this.isFallback,
+    isArchived: isArchived ?? this.isArchived,
     profileId: profileId ?? this.profileId,
   );
   Category copyWithCompanion(CategoriesCompanion data) {
@@ -475,6 +515,9 @@ class Category extends DataClass implements Insertable<Category> {
       isFallback: data.isFallback.present
           ? data.isFallback.value
           : this.isFallback,
+      isArchived: data.isArchived.present
+          ? data.isArchived.value
+          : this.isArchived,
       profileId: data.profileId.present ? data.profileId.value : this.profileId,
     );
   }
@@ -486,13 +529,15 @@ class Category extends DataClass implements Insertable<Category> {
           ..write('name: $name, ')
           ..write('type: $type, ')
           ..write('isFallback: $isFallback, ')
+          ..write('isArchived: $isArchived, ')
           ..write('profileId: $profileId')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, name, type, isFallback, profileId);
+  int get hashCode =>
+      Object.hash(id, name, type, isFallback, isArchived, profileId);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -501,6 +546,7 @@ class Category extends DataClass implements Insertable<Category> {
           other.name == this.name &&
           other.type == this.type &&
           other.isFallback == this.isFallback &&
+          other.isArchived == this.isArchived &&
           other.profileId == this.profileId);
 }
 
@@ -509,12 +555,14 @@ class CategoriesCompanion extends UpdateCompanion<Category> {
   final Value<String> name;
   final Value<String> type;
   final Value<bool> isFallback;
+  final Value<bool> isArchived;
   final Value<int> profileId;
   const CategoriesCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
     this.type = const Value.absent(),
     this.isFallback = const Value.absent(),
+    this.isArchived = const Value.absent(),
     this.profileId = const Value.absent(),
   });
   CategoriesCompanion.insert({
@@ -522,6 +570,7 @@ class CategoriesCompanion extends UpdateCompanion<Category> {
     required String name,
     required String type,
     this.isFallback = const Value.absent(),
+    this.isArchived = const Value.absent(),
     this.profileId = const Value.absent(),
   }) : name = Value(name),
        type = Value(type);
@@ -530,6 +579,7 @@ class CategoriesCompanion extends UpdateCompanion<Category> {
     Expression<String>? name,
     Expression<String>? type,
     Expression<bool>? isFallback,
+    Expression<bool>? isArchived,
     Expression<int>? profileId,
   }) {
     return RawValuesInsertable({
@@ -537,6 +587,7 @@ class CategoriesCompanion extends UpdateCompanion<Category> {
       if (name != null) 'name': name,
       if (type != null) 'type': type,
       if (isFallback != null) 'is_fallback': isFallback,
+      if (isArchived != null) 'is_archived': isArchived,
       if (profileId != null) 'profile_id': profileId,
     });
   }
@@ -546,6 +597,7 @@ class CategoriesCompanion extends UpdateCompanion<Category> {
     Value<String>? name,
     Value<String>? type,
     Value<bool>? isFallback,
+    Value<bool>? isArchived,
     Value<int>? profileId,
   }) {
     return CategoriesCompanion(
@@ -553,6 +605,7 @@ class CategoriesCompanion extends UpdateCompanion<Category> {
       name: name ?? this.name,
       type: type ?? this.type,
       isFallback: isFallback ?? this.isFallback,
+      isArchived: isArchived ?? this.isArchived,
       profileId: profileId ?? this.profileId,
     );
   }
@@ -572,6 +625,9 @@ class CategoriesCompanion extends UpdateCompanion<Category> {
     if (isFallback.present) {
       map['is_fallback'] = Variable<bool>(isFallback.value);
     }
+    if (isArchived.present) {
+      map['is_archived'] = Variable<bool>(isArchived.value);
+    }
     if (profileId.present) {
       map['profile_id'] = Variable<int>(profileId.value);
     }
@@ -585,6 +641,7 @@ class CategoriesCompanion extends UpdateCompanion<Category> {
           ..write('name: $name, ')
           ..write('type: $type, ')
           ..write('isFallback: $isFallback, ')
+          ..write('isArchived: $isArchived, ')
           ..write('profileId: $profileId')
           ..write(')'))
         .toString();
@@ -633,6 +690,21 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _isArchivedMeta = const VerificationMeta(
+    'isArchived',
+  );
+  @override
+  late final GeneratedColumn<bool> isArchived = GeneratedColumn<bool>(
+    'is_archived',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_archived" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _initialBalanceMeta = const VerificationMeta(
     'initialBalance',
   );
@@ -663,6 +735,7 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
     id,
     name,
     isFallback,
+    isArchived,
     initialBalance,
     profileId,
   ];
@@ -693,6 +766,12 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
       context.handle(
         _isFallbackMeta,
         isFallback.isAcceptableOrUnknown(data['is_fallback']!, _isFallbackMeta),
+      );
+    }
+    if (data.containsKey('is_archived')) {
+      context.handle(
+        _isArchivedMeta,
+        isArchived.isAcceptableOrUnknown(data['is_archived']!, _isArchivedMeta),
       );
     }
     if (data.containsKey('initial_balance')) {
@@ -731,6 +810,10 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
         DriftSqlType.bool,
         data['${effectivePrefix}is_fallback'],
       )!,
+      isArchived: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_archived'],
+      )!,
       initialBalance: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}initial_balance'],
@@ -752,12 +835,14 @@ class Account extends DataClass implements Insertable<Account> {
   final int id;
   final String name;
   final bool isFallback;
+  final bool isArchived;
   final double initialBalance;
   final int profileId;
   const Account({
     required this.id,
     required this.name,
     required this.isFallback,
+    required this.isArchived,
     required this.initialBalance,
     required this.profileId,
   });
@@ -767,6 +852,7 @@ class Account extends DataClass implements Insertable<Account> {
     map['id'] = Variable<int>(id);
     map['name'] = Variable<String>(name);
     map['is_fallback'] = Variable<bool>(isFallback);
+    map['is_archived'] = Variable<bool>(isArchived);
     map['initial_balance'] = Variable<double>(initialBalance);
     map['profile_id'] = Variable<int>(profileId);
     return map;
@@ -777,6 +863,7 @@ class Account extends DataClass implements Insertable<Account> {
       id: Value(id),
       name: Value(name),
       isFallback: Value(isFallback),
+      isArchived: Value(isArchived),
       initialBalance: Value(initialBalance),
       profileId: Value(profileId),
     );
@@ -791,6 +878,7 @@ class Account extends DataClass implements Insertable<Account> {
       id: serializer.fromJson<int>(json['id']),
       name: serializer.fromJson<String>(json['name']),
       isFallback: serializer.fromJson<bool>(json['isFallback']),
+      isArchived: serializer.fromJson<bool>(json['isArchived']),
       initialBalance: serializer.fromJson<double>(json['initialBalance']),
       profileId: serializer.fromJson<int>(json['profileId']),
     );
@@ -802,6 +890,7 @@ class Account extends DataClass implements Insertable<Account> {
       'id': serializer.toJson<int>(id),
       'name': serializer.toJson<String>(name),
       'isFallback': serializer.toJson<bool>(isFallback),
+      'isArchived': serializer.toJson<bool>(isArchived),
       'initialBalance': serializer.toJson<double>(initialBalance),
       'profileId': serializer.toJson<int>(profileId),
     };
@@ -811,12 +900,14 @@ class Account extends DataClass implements Insertable<Account> {
     int? id,
     String? name,
     bool? isFallback,
+    bool? isArchived,
     double? initialBalance,
     int? profileId,
   }) => Account(
     id: id ?? this.id,
     name: name ?? this.name,
     isFallback: isFallback ?? this.isFallback,
+    isArchived: isArchived ?? this.isArchived,
     initialBalance: initialBalance ?? this.initialBalance,
     profileId: profileId ?? this.profileId,
   );
@@ -827,6 +918,9 @@ class Account extends DataClass implements Insertable<Account> {
       isFallback: data.isFallback.present
           ? data.isFallback.value
           : this.isFallback,
+      isArchived: data.isArchived.present
+          ? data.isArchived.value
+          : this.isArchived,
       initialBalance: data.initialBalance.present
           ? data.initialBalance.value
           : this.initialBalance,
@@ -840,6 +934,7 @@ class Account extends DataClass implements Insertable<Account> {
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('isFallback: $isFallback, ')
+          ..write('isArchived: $isArchived, ')
           ..write('initialBalance: $initialBalance, ')
           ..write('profileId: $profileId')
           ..write(')'))
@@ -848,7 +943,7 @@ class Account extends DataClass implements Insertable<Account> {
 
   @override
   int get hashCode =>
-      Object.hash(id, name, isFallback, initialBalance, profileId);
+      Object.hash(id, name, isFallback, isArchived, initialBalance, profileId);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -856,6 +951,7 @@ class Account extends DataClass implements Insertable<Account> {
           other.id == this.id &&
           other.name == this.name &&
           other.isFallback == this.isFallback &&
+          other.isArchived == this.isArchived &&
           other.initialBalance == this.initialBalance &&
           other.profileId == this.profileId);
 }
@@ -864,12 +960,14 @@ class AccountsCompanion extends UpdateCompanion<Account> {
   final Value<int> id;
   final Value<String> name;
   final Value<bool> isFallback;
+  final Value<bool> isArchived;
   final Value<double> initialBalance;
   final Value<int> profileId;
   const AccountsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
     this.isFallback = const Value.absent(),
+    this.isArchived = const Value.absent(),
     this.initialBalance = const Value.absent(),
     this.profileId = const Value.absent(),
   });
@@ -877,6 +975,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     this.id = const Value.absent(),
     required String name,
     this.isFallback = const Value.absent(),
+    this.isArchived = const Value.absent(),
     this.initialBalance = const Value.absent(),
     this.profileId = const Value.absent(),
   }) : name = Value(name);
@@ -884,6 +983,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     Expression<int>? id,
     Expression<String>? name,
     Expression<bool>? isFallback,
+    Expression<bool>? isArchived,
     Expression<double>? initialBalance,
     Expression<int>? profileId,
   }) {
@@ -891,6 +991,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
       if (id != null) 'id': id,
       if (name != null) 'name': name,
       if (isFallback != null) 'is_fallback': isFallback,
+      if (isArchived != null) 'is_archived': isArchived,
       if (initialBalance != null) 'initial_balance': initialBalance,
       if (profileId != null) 'profile_id': profileId,
     });
@@ -900,6 +1001,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     Value<int>? id,
     Value<String>? name,
     Value<bool>? isFallback,
+    Value<bool>? isArchived,
     Value<double>? initialBalance,
     Value<int>? profileId,
   }) {
@@ -907,6 +1009,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
       id: id ?? this.id,
       name: name ?? this.name,
       isFallback: isFallback ?? this.isFallback,
+      isArchived: isArchived ?? this.isArchived,
       initialBalance: initialBalance ?? this.initialBalance,
       profileId: profileId ?? this.profileId,
     );
@@ -924,6 +1027,9 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     if (isFallback.present) {
       map['is_fallback'] = Variable<bool>(isFallback.value);
     }
+    if (isArchived.present) {
+      map['is_archived'] = Variable<bool>(isArchived.value);
+    }
     if (initialBalance.present) {
       map['initial_balance'] = Variable<double>(initialBalance.value);
     }
@@ -939,6 +1045,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('isFallback: $isFallback, ')
+          ..write('isArchived: $isArchived, ')
           ..write('initialBalance: $initialBalance, ')
           ..write('profileId: $profileId')
           ..write(')'))
@@ -3644,6 +3751,7 @@ typedef $$CategoriesTableCreateCompanionBuilder =
       required String name,
       required String type,
       Value<bool> isFallback,
+      Value<bool> isArchived,
       Value<int> profileId,
     });
 typedef $$CategoriesTableUpdateCompanionBuilder =
@@ -3652,6 +3760,7 @@ typedef $$CategoriesTableUpdateCompanionBuilder =
       Value<String> name,
       Value<String> type,
       Value<bool> isFallback,
+      Value<bool> isArchived,
       Value<int> profileId,
     });
 
@@ -3773,6 +3882,11 @@ class $$CategoriesTableFilterComposer
 
   ColumnFilters<bool> get isFallback => $composableBuilder(
     column: $table.isFallback,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isArchived => $composableBuilder(
+    column: $table.isArchived,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3904,6 +4018,11 @@ class $$CategoriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isArchived => $composableBuilder(
+    column: $table.isArchived,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$ProfilesTableOrderingComposer get profileId {
     final $$ProfilesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -3948,6 +4067,11 @@ class $$CategoriesTableAnnotationComposer
 
   GeneratedColumn<bool> get isFallback => $composableBuilder(
     column: $table.isFallback,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isArchived => $composableBuilder(
+    column: $table.isArchived,
     builder: (column) => column,
   );
 
@@ -4088,12 +4212,14 @@ class $$CategoriesTableTableManager
                 Value<String> name = const Value.absent(),
                 Value<String> type = const Value.absent(),
                 Value<bool> isFallback = const Value.absent(),
+                Value<bool> isArchived = const Value.absent(),
                 Value<int> profileId = const Value.absent(),
               }) => CategoriesCompanion(
                 id: id,
                 name: name,
                 type: type,
                 isFallback: isFallback,
+                isArchived: isArchived,
                 profileId: profileId,
               ),
           createCompanionCallback:
@@ -4102,12 +4228,14 @@ class $$CategoriesTableTableManager
                 required String name,
                 required String type,
                 Value<bool> isFallback = const Value.absent(),
+                Value<bool> isArchived = const Value.absent(),
                 Value<int> profileId = const Value.absent(),
               }) => CategoriesCompanion.insert(
                 id: id,
                 name: name,
                 type: type,
                 isFallback: isFallback,
+                isArchived: isArchived,
                 profileId: profileId,
               ),
           withReferenceMapper: (p0) => p0
@@ -4262,6 +4390,7 @@ typedef $$AccountsTableCreateCompanionBuilder =
       Value<int> id,
       required String name,
       Value<bool> isFallback,
+      Value<bool> isArchived,
       Value<double> initialBalance,
       Value<int> profileId,
     });
@@ -4270,6 +4399,7 @@ typedef $$AccountsTableUpdateCompanionBuilder =
       Value<int> id,
       Value<String> name,
       Value<bool> isFallback,
+      Value<bool> isArchived,
       Value<double> initialBalance,
       Value<int> profileId,
     });
@@ -4380,6 +4510,11 @@ class $$AccountsTableFilterComposer
 
   ColumnFilters<bool> get isFallback => $composableBuilder(
     column: $table.isFallback,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isArchived => $composableBuilder(
+    column: $table.isArchived,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4511,6 +4646,11 @@ class $$AccountsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isArchived => $composableBuilder(
+    column: $table.isArchived,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get initialBalance => $composableBuilder(
     column: $table.initialBalance,
     builder: (column) => ColumnOrderings(column),
@@ -4557,6 +4697,11 @@ class $$AccountsTableAnnotationComposer
 
   GeneratedColumn<bool> get isFallback => $composableBuilder(
     column: $table.isFallback,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isArchived => $composableBuilder(
+    column: $table.isArchived,
     builder: (column) => column,
   );
 
@@ -4701,12 +4846,14 @@ class $$AccountsTableTableManager
                 Value<int> id = const Value.absent(),
                 Value<String> name = const Value.absent(),
                 Value<bool> isFallback = const Value.absent(),
+                Value<bool> isArchived = const Value.absent(),
                 Value<double> initialBalance = const Value.absent(),
                 Value<int> profileId = const Value.absent(),
               }) => AccountsCompanion(
                 id: id,
                 name: name,
                 isFallback: isFallback,
+                isArchived: isArchived,
                 initialBalance: initialBalance,
                 profileId: profileId,
               ),
@@ -4715,12 +4862,14 @@ class $$AccountsTableTableManager
                 Value<int> id = const Value.absent(),
                 required String name,
                 Value<bool> isFallback = const Value.absent(),
+                Value<bool> isArchived = const Value.absent(),
                 Value<double> initialBalance = const Value.absent(),
                 Value<int> profileId = const Value.absent(),
               }) => AccountsCompanion.insert(
                 id: id,
                 name: name,
                 isFallback: isFallback,
+                isArchived: isArchived,
                 initialBalance: initialBalance,
                 profileId: profileId,
               ),

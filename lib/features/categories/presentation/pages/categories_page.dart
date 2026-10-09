@@ -5,13 +5,19 @@ import '../../../../core/enums/transaction_type.dart';
 import '../../../shared/theme/app_colors.dart';
 import '../../../shared/widgets/app_drawer.dart';
 import '../../../shared/widgets/empty_state.dart';
-import '../../domain/entities/category.dart';
+import '../../../shared/widgets/archive_actions.dart';
 import '../cubit/category_cubit.dart';
 import '../cubit/category_state.dart';
 import '../widgets/category_form_dialog.dart';
 
-class CategoriesPage extends StatelessWidget {
+class CategoriesPage extends StatefulWidget {
   const CategoriesPage({super.key});
+  @override
+  State<CategoriesPage> createState() => _CategoriesPageState();
+}
+
+class _CategoriesPageState extends State<CategoriesPage> {
+  bool _showArchived = false;
 
   ({Color color, Color surface, IconData icon}) _style(TransactionType type) {
     switch (type) {
@@ -40,24 +46,37 @@ class CategoriesPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: const AppDrawer(currentRoute: AppRoute.categories),
-      appBar: AppBar(title: const Text('Категории')),
+      appBar: AppBar(
+        title: Text(_showArchived ? 'Архив — категории' : 'Категории'),
+        actions: [
+          TextButton(
+            onPressed: () => setState(() => _showArchived = !_showArchived),
+            child: Text(_showArchived ? 'Активные' : 'Архив'),
+          ),
+        ],
+      ),
       body: SafeArea(
         top: false,
         child: BlocBuilder<CategoryCubit, CategoryState>(
           builder: (context, state) {
-            if (state.categories.isEmpty) {
-              return const EmptyState(
+            final visible = state.categories
+                .where((item) => item.isArchived == _showArchived)
+                .toList();
+            if (visible.isEmpty) {
+              return EmptyState(
                 icon: Icons.category_rounded,
-                title: 'Категорий ещё нет',
-                message: 'Добавьте категории, чтобы группировать операции.',
+                title: _showArchived ? 'Архив пуст' : 'Категорий ещё нет',
+                message: _showArchived
+                    ? 'Архивные объекты сохраняют историю и могут быть восстановлены.'
+                    : 'Добавьте категории, чтобы группировать операции.',
               );
             }
 
             return ListView.builder(
               padding: const EdgeInsets.only(top: 8, bottom: 96),
-              itemCount: state.categories.length,
+              itemCount: visible.length,
               itemBuilder: (context, index) {
-                final category = state.categories[index];
+                final category = visible[index];
                 final style = _style(category.type);
                 return Padding(
                   padding: const EdgeInsets.symmetric(
@@ -104,7 +123,9 @@ class CategoriesPage extends StatelessWidget {
                                 crossAxisAlignment: WrapCrossAlignment.center,
                                 children: [
                                   Text(
-                                    category.type.label,
+                                    category.isArchived
+                                        ? '${category.type.label} · В архиве'
+                                        : category.type.label,
                                     style: const TextStyle(
                                       color: AppColors.textSecondary,
                                       fontSize: 12.5,
@@ -153,20 +174,20 @@ class CategoriesPage extends StatelessWidget {
                               );
                             },
                           ),
-                        IconButton(
-                          icon: Icon(
-                            category.isFallback
-                                ? Icons.lock_rounded
-                                : Icons.delete_outline_rounded,
-                            size: 20,
+                        if (!category.isFallback)
+                          ArchiveActions(
+                            id: category.id,
+                            name: category.name,
+                            isAccount: false,
+                            isArchived: category.isArchived,
+                            onArchiveChanged: (value) =>
+                                context.read<CategoryCubit>().updateCategory(
+                                  category.copyWith(isArchived: value),
+                                ),
+                            onDelete: () => context
+                                .read<CategoryCubit>()
+                                .deleteCategory(category.id),
                           ),
-                          color: category.isFallback
-                              ? AppColors.textTertiary
-                              : AppColors.expense,
-                          onPressed: category.isFallback
-                              ? null
-                              : () => _confirmDelete(context, category),
-                        ),
                       ],
                     ),
                   ),
@@ -191,36 +212,5 @@ class CategoriesPage extends StatelessWidget {
         label: const Text('Категория'),
       ),
     );
-  }
-
-  Future<void> _confirmDelete(
-    BuildContext context,
-    CategoryEntity category,
-  ) async {
-    final cubit = context.read<CategoryCubit>();
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Удалить категорию?'),
-        content: Text(
-          'Операции категории «${category.name}» будут перепривязаны к '
-          'базовой категории.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Отмена'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: AppColors.expense),
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Удалить'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed == true) {
-      cubit.deleteCategory(category.id);
-    }
   }
 }

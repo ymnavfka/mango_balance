@@ -218,8 +218,23 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final categories = context.watch<CategoryCubit>().state.categories;
-    final rawAccounts = context.watch<AccountCubit>().state.accounts;
+    final categories = context
+        .watch<CategoryCubit>()
+        .state
+        .categories
+        .where((c) => !c.isArchived || c.id == widget.initial?.categoryId)
+        .toList();
+    final rawAccounts = context
+        .watch<AccountCubit>()
+        .state
+        .accounts
+        .where(
+          (a) =>
+              !a.isArchived ||
+              a.id == widget.initial?.accountId ||
+              a.id == widget.initial?.toAccountId,
+        )
+        .toList();
     final allTransactions = context
         .watch<TransactionCubit>()
         .state

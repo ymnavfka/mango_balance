@@ -47,6 +47,7 @@ class _CategoryFormDialogState extends State<CategoryFormDialog> {
       name: name,
       type: _type,
       isFallback: widget.initial?.isFallback ?? false,
+      isArchived: widget.initial?.isArchived ?? false,
     );
 
     widget.onSubmit(category);

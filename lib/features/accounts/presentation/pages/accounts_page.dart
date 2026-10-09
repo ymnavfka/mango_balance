@@ -6,29 +6,49 @@ import '../../../shared/theme/app_colors.dart';
 import '../../../shared/utils/money_format.dart';
 import '../../../shared/widgets/app_drawer.dart';
 import '../../../shared/widgets/empty_state.dart';
+import '../../../shared/widgets/archive_actions.dart';
 import '../../../transactions/presentation/cubit/transaction_cubit.dart';
 import '../../domain/entities/account.dart';
 import '../cubit/account_cubit.dart';
 import '../cubit/account_state.dart';
 import '../widgets/account_form_dialog.dart';
 
-class AccountsPage extends StatelessWidget {
+class AccountsPage extends StatefulWidget {
   const AccountsPage({super.key});
+  @override
+  State<AccountsPage> createState() => _AccountsPageState();
+}
+
+class _AccountsPageState extends State<AccountsPage> {
+  bool _showArchived = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: const AppDrawer(currentRoute: AppRoute.accounts),
-      appBar: AppBar(title: const Text('Счета')),
+      appBar: AppBar(
+        title: Text(_showArchived ? 'Архив — счета' : 'Счета'),
+        actions: [
+          TextButton(
+            onPressed: () => setState(() => _showArchived = !_showArchived),
+            child: Text(_showArchived ? 'Активные' : 'Архив'),
+          ),
+        ],
+      ),
       body: SafeArea(
         top: false,
         child: BlocBuilder<AccountCubit, AccountState>(
           builder: (context, state) {
-            if (state.accounts.isEmpty) {
-              return const EmptyState(
+            final visible = state.accounts
+                .where((item) => item.isArchived == _showArchived)
+                .toList();
+            if (visible.isEmpty) {
+              return EmptyState(
                 icon: Icons.account_balance_wallet_rounded,
-                title: 'Счетов ещё нет',
-                message: 'Добавьте счёт или кошелёк, чтобы вести по нему учёт.',
+                title: _showArchived ? 'Архив пуст' : 'Счетов ещё нет',
+                message: _showArchived
+                    ? 'Архивные объекты сохраняют историю и могут быть восстановлены.'
+                    : 'Добавьте счёт или кошелёк, чтобы вести по нему учёт.',
               );
             }
 
@@ -39,7 +59,7 @@ class AccountsPage extends StatelessWidget {
                 .allTransactions;
             final sortedAccounts = PopularityRanker(
               transactions: allTransactions,
-            ).sortAccounts(state.accounts);
+            ).sortAccounts(visible);
 
             return ListView(
               padding: const EdgeInsets.only(top: 12, bottom: 96),
@@ -201,7 +221,9 @@ class _AccountTile extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        account.isFallback
+                        account.isArchived
+                            ? 'В архиве'
+                            : account.isFallback
                             ? 'Счёт по умолчанию'
                             : 'Пользовательский',
                         style: const TextStyle(
@@ -227,49 +249,22 @@ class _AccountTile extends StatelessWidget {
                     ),
                   ),
                 ),
-                PopupMenuButton<String>(
-                  icon: const Icon(
-                    Icons.more_vert_rounded,
-                    color: AppColors.textTertiary,
-                  ),
-                  onSelected: (value) {
-                    if (value == 'edit') {
-                      _edit(context);
-                    } else if (value == 'delete') {
-                      context.read<AccountCubit>().deleteAccount(account.id);
-                    }
-                  },
-                  itemBuilder: (_) => [
-                    const PopupMenuItem(
-                      value: 'edit',
-                      child: Row(
-                        children: [
-                          Icon(Icons.edit_rounded, size: 18),
-                          SizedBox(width: 10),
-                          Text('Редактировать'),
-                        ],
-                      ),
-                    ),
-                    if (!account.isFallback)
-                      const PopupMenuItem(
-                        value: 'delete',
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.delete_outline_rounded,
-                              size: 18,
-                              color: AppColors.expense,
-                            ),
-                            SizedBox(width: 10),
-                            Text(
-                              'Удалить',
-                              style: TextStyle(color: AppColors.expense),
-                            ),
-                          ],
-                        ),
-                      ),
-                  ],
+                IconButton(
+                  icon: const Icon(Icons.edit_rounded),
+                  onPressed: () => _edit(context),
                 ),
+                if (!account.isFallback)
+                  ArchiveActions(
+                    id: account.id,
+                    name: account.name,
+                    isAccount: true,
+                    isArchived: account.isArchived,
+                    onArchiveChanged: (value) => context
+                        .read<AccountCubit>()
+                        .updateAccount(account.copyWith(isArchived: value)),
+                    onDelete: () =>
+                        context.read<AccountCubit>().deleteAccount(account.id),
+                  ),
               ],
             ),
           ),

@@ -66,6 +66,7 @@ class XlsxImportParser {
           name: name,
           initialBalance: _amount(row, 3) ?? 0,
           isFallback: _bool(row, 4),
+          isArchived: _bool(row, 5),
         ),
       );
     });
@@ -85,6 +86,7 @@ class XlsxImportParser {
           name: name,
           type: type,
           isFallback: _bool(row, 4),
+          isArchived: _bool(row, 5),
         ),
       );
     });

@@ -19,6 +19,7 @@ class BackupAccount {
     required this.name,
     required this.initialBalance,
     required this.isFallback,
+    this.isArchived = false,
   });
 
   final int sourceId;
@@ -26,6 +27,7 @@ class BackupAccount {
   final String name;
   final double initialBalance;
   final bool isFallback;
+  final bool isArchived;
 }
 
 class BackupCategory {
@@ -35,6 +37,7 @@ class BackupCategory {
     required this.name,
     required this.type,
     required this.isFallback,
+    this.isArchived = false,
   });
 
   final int sourceId;
@@ -42,6 +45,7 @@ class BackupCategory {
   final String name;
   final String type;
   final bool isFallback;
+  final bool isArchived;
 }
 
 class BackupTransaction {

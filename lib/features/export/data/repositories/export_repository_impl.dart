@@ -105,6 +105,7 @@ class ExportRepositoryImpl implements ExportRepository {
       TextCellValue('Название'),
       TextCellValue('Начальный баланс'),
       TextCellValue('Резервный'),
+      TextCellValue('Архивный'),
     ]);
     for (final a in accounts) {
       excel.appendRow(_accountsSheet, [
@@ -113,6 +114,7 @@ class ExportRepositoryImpl implements ExportRepository {
         TextCellValue(a.name),
         DoubleCellValue(a.initialBalance),
         TextCellValue(_bool(a.isFallback)),
+        TextCellValue(_bool(a.isArchived)),
       ]);
     }
 
@@ -123,6 +125,7 @@ class ExportRepositoryImpl implements ExportRepository {
       TextCellValue('Название'),
       TextCellValue('Тип'),
       TextCellValue('Резервный'),
+      TextCellValue('Архивный'),
     ]);
     for (final c in categories) {
       excel.appendRow(_categoriesSheet, [
@@ -131,6 +134,7 @@ class ExportRepositoryImpl implements ExportRepository {
         TextCellValue(c.name),
         TextCellValue(c.type),
         TextCellValue(_bool(c.isFallback)),
+        TextCellValue(_bool(c.isArchived)),
       ]);
     }
 

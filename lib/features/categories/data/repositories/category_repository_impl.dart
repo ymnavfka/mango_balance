@@ -42,12 +42,16 @@ class CategoryRepositoryImpl implements CategoryRepository {
       return;
     }
 
+    if (existing.isFallback && category.isArchived) {
+      throw Exception('Базовый объект нельзя архивировать');
+    }
     await db.updateCategory(
       Category(
         id: category.id,
         name: category.name.trim(),
         type: _mapType(category.type),
         isFallback: category.isFallback,
+        isArchived: category.isArchived,
         profileId: existing.profileId,
       ),
     );
@@ -72,9 +76,11 @@ class CategoryRepositoryImpl implements CategoryRepository {
       throw Exception('Базовая категория отсутствует');
     }
 
-    await db.replaceCategoryForTransactions(category.id, fallback.id);
-    await db.replaceCategoryForRecurringPayments(category.id, fallback.id);
-    await db.deleteCategory(id);
+    await db.transaction(() async {
+      await db.replaceCategoryForTransactions(category.id, fallback.id);
+      await db.replaceCategoryForRecurringPayments(category.id, fallback.id);
+      await db.deleteCategory(id);
+    });
   }
 
   CategoryEntity _mapToEntity(Category category) {
@@ -85,6 +91,7 @@ class CategoryRepositoryImpl implements CategoryRepository {
           ? TransactionType.income
           : TransactionType.expense,
       isFallback: category.isFallback,
+      isArchived: category.isArchived,
     );
   }
 

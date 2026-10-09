@@ -64,6 +64,7 @@ class _AccountFormDialogState extends State<AccountFormDialog> {
         id: widget.initial?.id ?? 0,
         name: name,
         isFallback: widget.initial?.isFallback ?? false,
+        isArchived: widget.initial?.isArchived ?? false,
         initialBalance: initialBalance,
       ),
     );

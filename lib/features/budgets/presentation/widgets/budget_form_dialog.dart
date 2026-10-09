@@ -191,7 +191,11 @@ class _BudgetFormDialogState extends State<BudgetFormDialog> {
                 final ranker = PopularityRanker(transactions: allTransactions);
                 final expenseCategories = ranker.sortCategories(
                   state.categories.where(
-                    (c) => c.type == TransactionType.expense,
+                    (c) =>
+                        c.type == TransactionType.expense &&
+                        (!c.isArchived ||
+                            (widget.initial?.categoryIds.contains(c.id) ??
+                                false)),
                   ),
                 );
                 if (expenseCategories.isEmpty) {
