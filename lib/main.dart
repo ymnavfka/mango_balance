@@ -1,3 +1,5 @@
+import 'features/goals/presentation/goal_cubit.dart';
+import 'features/goals/presentation/goals_page.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -70,6 +72,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
+        BlocProvider<GoalCubit>(create: (_) => getIt<GoalCubit>(), lazy: false),
         BlocProvider<ProfileCubit>(create: (_) => getIt<ProfileCubit>()),
         BlocProvider<TransactionCubit>(
           create: (_) => getIt<TransactionCubit>(),
@@ -134,6 +137,7 @@ class MyApp extends StatelessWidget {
         routes: {
           '/': (_) => const TransactionsPage(),
           '/statistics': (_) => const StatisticsPage(),
+          '/goals': (_) => const GoalsPage(),
           '/budgets': (_) => const BudgetsPage(),
           '/recurring': (_) => const RecurringPaymentsPage(),
           '/categories': (_) => const CategoriesPage(),

@@ -11,6 +11,7 @@ enum AppRoute {
   statistics,
   budgets,
   recurring,
+  goals,
   categories,
   accounts,
   profiles,
@@ -25,6 +26,8 @@ extension AppRouteX on AppRoute {
         return '/statistics';
       case AppRoute.budgets:
         return '/budgets';
+      case AppRoute.goals:
+        return '/goals';
       case AppRoute.recurring:
         return '/recurring';
       case AppRoute.categories:
@@ -44,6 +47,8 @@ extension AppRouteX on AppRoute {
         return 'Статистика';
       case AppRoute.budgets:
         return 'Бюджеты';
+      case AppRoute.goals:
+        return 'Цели';
       case AppRoute.recurring:
         return 'Регулярные платежи';
       case AppRoute.categories:
@@ -63,6 +68,8 @@ extension AppRouteX on AppRoute {
         return Icons.insights_rounded;
       case AppRoute.budgets:
         return Icons.savings_rounded;
+      case AppRoute.goals:
+        return Icons.flag_rounded;
       case AppRoute.recurring:
         return Icons.event_repeat_rounded;
       case AppRoute.categories:

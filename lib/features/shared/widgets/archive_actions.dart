@@ -34,12 +34,19 @@ class ArchiveActions extends StatelessWidget {
     int operations;
     int recurring;
     int budgets = 0;
+    int goals = 0;
     double initialBalance = 0;
     if (isAccount) {
       final row = await db.accountById(id);
       if (row == null) return;
       final fallback = await db.fallbackAccount(row.profileId);
       if (fallback == null) throw Exception('Базовый счёт не найден');
+      goals =
+          (await (db.select(db.goals)..where(
+                    (g) => g.accountId.equals(id) & g.status.equals('active'),
+                  ))
+                  .get())
+              .length;
       destination = fallback.name;
       initialBalance = row.initialBalance;
       operations =
@@ -83,6 +90,8 @@ class ArchiveActions extends StatelessWidget {
         'Категория будет исключена из бюджетов ($budgets), что изменит их расчёты.',
       if (initialBalance != 0)
         'Начальный баланс удаляемого счёта будет удалён. Общий баланс изменится.',
+      if (goals > 0)
+        'Активные цели ($goals) будут отключены от счёта и приостановлены. Последний прогресс останется для справки.',
       'Рекомендуем сначала экспортировать данные. Чтобы сохранить историю без изменений, используйте архивацию.',
     ];
     final result = await showDialog<String>(
@@ -138,6 +147,8 @@ class ArchiveActions extends StatelessWidget {
                 content: Text(
                   isArchived
                       ? '«$name» восстановлен из архива'
+                      : isAccount
+                      ? '«$name» в архиве. Связанные активные цели приостановлены. История сохранена.'
                       : '«$name» в архиве. История и отчёты сохранены.',
                 ),
               ),

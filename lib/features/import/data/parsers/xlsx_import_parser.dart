@@ -1,3 +1,4 @@
+import '../../../goals/domain/goal.dart';
 import 'dart:typed_data';
 
 import 'package:excel/excel.dart';
@@ -224,11 +225,58 @@ class XlsxImportParser {
           startDate: startDate,
           nextRunDate: nextRunDate,
           isActive: _bool(row, 12),
+          sourceId: _int(row, 13),
+        ),
+      );
+    });
+
+    final goals = <GoalPlan>[];
+    _forEachRow(excel.tables['Цели'], (row) {
+      final id = _int(row, 0), profile = _int(row, 1), target = _int(row, 3);
+      final name = _str(row, 2),
+          unit = _str(row, 6),
+          status = _str(row, 10) ?? 'active';
+      final due = _date(row, 4), anchor = _date(row, 5);
+      final count = _int(row, 7) ?? 1,
+          saved = _int(row, 9) ?? 0,
+          snapshot = _int(row, 11) ?? 0;
+      if (id == null ||
+          profile == null ||
+          name == null ||
+          target == null ||
+          target <= 0 ||
+          target > 900000000000000 ||
+          due == null ||
+          anchor == null ||
+          count < 1 ||
+          count > 10000 ||
+          saved < 0 ||
+          snapshot < 0 ||
+          !['active', 'paused', 'completed'].contains(status) ||
+          (unit != null && !['day', 'week', 'month', 'year'].contains(unit))) {
+        return;
+      }
+      goals.add(
+        GoalPlan(
+          id: id,
+          profileId: profile,
+          name: name,
+          target: target,
+          dueDate: due,
+          anchorDate: anchor,
+          intervalUnit: unit,
+          intervalCount: count,
+          accountId: _int(row, 8),
+          manualSaved: saved,
+          status: status,
+          savedSnapshot: snapshot,
+          sourcePaymentId: _int(row, 12),
         ),
       );
     });
 
     return BackupData(
+      goals: goals,
       profiles: profiles,
       accounts: accounts,
       categories: categories,

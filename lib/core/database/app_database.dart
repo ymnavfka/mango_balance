@@ -107,6 +107,23 @@ class RecurringPayments extends Table {
   TextColumn get notifyUnit => text().nullable()();
 }
 
+class Goals extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get profileId => integer().references(Profiles, #id)();
+  TextColumn get name => text()();
+  IntColumn get target => integer()();
+  DateTimeColumn get dueDate => dateTime()();
+  DateTimeColumn get anchorDate => dateTime()();
+  TextColumn get intervalUnit => text().nullable()();
+  IntColumn get intervalCount => integer().withDefault(const Constant(1))();
+  IntColumn get accountId => integer().nullable().references(Accounts, #id)();
+  IntColumn get manualSaved => integer().withDefault(const Constant(0))();
+  TextColumn get status => text().withDefault(const Constant('active'))();
+  IntColumn get savedSnapshot => integer().withDefault(const Constant(0))();
+  IntColumn get sourcePaymentId =>
+      integer().nullable().unique().references(RecurringPayments, #id)();
+}
+
 @DriftDatabase(
   tables: [
     Transactions,
@@ -116,6 +133,7 @@ class RecurringPayments extends Table {
     Budgets,
     BudgetCategories,
     RecurringPayments,
+    Goals,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -124,7 +142,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 12;
+  int get schemaVersion => 13;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -135,6 +153,7 @@ class AppDatabase extends _$AppDatabase {
       await _insertStandardAccountsForProfile(1);
     },
     onUpgrade: (m, from, to) async {
+      if (from < 13) await m.createTable(goals);
       if (from < 2) {
         await m.createTable(categories);
         await _insertLegacyDefaultCategories();
@@ -533,6 +552,7 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> deleteProfile(int id) {
     return transaction(() async {
+      await (delete(goals)..where((g) => g.profileId.equals(id))).go();
       final profileBudgetIds = await (select(
         budgets,
       )..where((b) => b.profileId.equals(id))).map((row) => row.id).get();
@@ -747,7 +767,12 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<void> deleteRecurringPayment(int id) {
-    return (delete(recurringPayments)..where((r) => r.id.equals(id))).go();
+    return transaction(() async {
+      await (update(goals)..where((g) => g.sourcePaymentId.equals(id))).write(
+        const GoalsCompanion(sourcePaymentId: Value(null)),
+      );
+      await (delete(recurringPayments)..where((r) => r.id.equals(id))).go();
+    });
   }
 
   Future<RecurringPayment?> recurringPaymentById(int id) {

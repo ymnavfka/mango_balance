@@ -1,3 +1,5 @@
+import '../../features/goals/data/goal_repository.dart';
+import '../../features/goals/presentation/goal_cubit.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -278,6 +280,8 @@ Future<void> setupDependencies() async {
       buildBudgetsProgressUseCase: getIt(),
     ),
   );
+
+  getIt.registerFactory(() => GoalCubit(GoalRepository(getIt()), getIt()));
 
   getIt.registerFactory(
     () => RecurringCubit(

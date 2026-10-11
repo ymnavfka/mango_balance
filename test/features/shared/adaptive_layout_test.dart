@@ -1,3 +1,5 @@
+import 'package:mango_balance/features/goals/data/goal_repository.dart';
+import 'package:mango_balance/features/goals/presentation/goal_cubit.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:mango_balance/features/categories/domain/entities/category.dart';
 import 'package:mango_balance/features/categories/presentation/cubit/category_cubit.dart';
@@ -32,6 +34,12 @@ import 'package:mango_balance/features/shared/widgets/undo_snackbar.dart';
 import 'package:mango_balance/features/statistics/domain/entities/category_breakdown.dart';
 import 'package:mango_balance/features/statistics/presentation/widgets/category_donut_chart.dart';
 
+class TestGoals extends Cubit<GoalSnapshot> implements GoalCubit {
+  TestGoals() : super(const GoalSnapshot());
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
 Future<void> mount(
   WidgetTester tester,
   Widget child, {
@@ -58,7 +66,10 @@ Future<void> mount(
         ),
         child: child!,
       ),
-      home: Scaffold(body: child),
+      home: BlocProvider<GoalCubit>(
+        create: (_) => TestGoals(),
+        child: Scaffold(body: child),
+      ),
     ),
   );
   await tester.pumpAndSettle();

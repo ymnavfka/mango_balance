@@ -3072,6 +3072,774 @@ class RecurringPaymentsCompanion extends UpdateCompanion<RecurringPayment> {
   }
 }
 
+class $GoalsTable extends Goals with TableInfo<$GoalsTable, Goal> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $GoalsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _profileIdMeta = const VerificationMeta(
+    'profileId',
+  );
+  @override
+  late final GeneratedColumn<int> profileId = GeneratedColumn<int>(
+    'profile_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES profiles (id)',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _targetMeta = const VerificationMeta('target');
+  @override
+  late final GeneratedColumn<int> target = GeneratedColumn<int>(
+    'target',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dueDateMeta = const VerificationMeta(
+    'dueDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> dueDate = GeneratedColumn<DateTime>(
+    'due_date',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _anchorDateMeta = const VerificationMeta(
+    'anchorDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> anchorDate = GeneratedColumn<DateTime>(
+    'anchor_date',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _intervalUnitMeta = const VerificationMeta(
+    'intervalUnit',
+  );
+  @override
+  late final GeneratedColumn<String> intervalUnit = GeneratedColumn<String>(
+    'interval_unit',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _intervalCountMeta = const VerificationMeta(
+    'intervalCount',
+  );
+  @override
+  late final GeneratedColumn<int> intervalCount = GeneratedColumn<int>(
+    'interval_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _accountIdMeta = const VerificationMeta(
+    'accountId',
+  );
+  @override
+  late final GeneratedColumn<int> accountId = GeneratedColumn<int>(
+    'account_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES accounts (id)',
+    ),
+  );
+  static const VerificationMeta _manualSavedMeta = const VerificationMeta(
+    'manualSaved',
+  );
+  @override
+  late final GeneratedColumn<int> manualSaved = GeneratedColumn<int>(
+    'manual_saved',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('active'),
+  );
+  static const VerificationMeta _savedSnapshotMeta = const VerificationMeta(
+    'savedSnapshot',
+  );
+  @override
+  late final GeneratedColumn<int> savedSnapshot = GeneratedColumn<int>(
+    'saved_snapshot',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _sourcePaymentIdMeta = const VerificationMeta(
+    'sourcePaymentId',
+  );
+  @override
+  late final GeneratedColumn<int> sourcePaymentId = GeneratedColumn<int>(
+    'source_payment_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'UNIQUE REFERENCES recurring_payments (id)',
+    ),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    profileId,
+    name,
+    target,
+    dueDate,
+    anchorDate,
+    intervalUnit,
+    intervalCount,
+    accountId,
+    manualSaved,
+    status,
+    savedSnapshot,
+    sourcePaymentId,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'goals';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Goal> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('profile_id')) {
+      context.handle(
+        _profileIdMeta,
+        profileId.isAcceptableOrUnknown(data['profile_id']!, _profileIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_profileIdMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('target')) {
+      context.handle(
+        _targetMeta,
+        target.isAcceptableOrUnknown(data['target']!, _targetMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_targetMeta);
+    }
+    if (data.containsKey('due_date')) {
+      context.handle(
+        _dueDateMeta,
+        dueDate.isAcceptableOrUnknown(data['due_date']!, _dueDateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dueDateMeta);
+    }
+    if (data.containsKey('anchor_date')) {
+      context.handle(
+        _anchorDateMeta,
+        anchorDate.isAcceptableOrUnknown(data['anchor_date']!, _anchorDateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_anchorDateMeta);
+    }
+    if (data.containsKey('interval_unit')) {
+      context.handle(
+        _intervalUnitMeta,
+        intervalUnit.isAcceptableOrUnknown(
+          data['interval_unit']!,
+          _intervalUnitMeta,
+        ),
+      );
+    }
+    if (data.containsKey('interval_count')) {
+      context.handle(
+        _intervalCountMeta,
+        intervalCount.isAcceptableOrUnknown(
+          data['interval_count']!,
+          _intervalCountMeta,
+        ),
+      );
+    }
+    if (data.containsKey('account_id')) {
+      context.handle(
+        _accountIdMeta,
+        accountId.isAcceptableOrUnknown(data['account_id']!, _accountIdMeta),
+      );
+    }
+    if (data.containsKey('manual_saved')) {
+      context.handle(
+        _manualSavedMeta,
+        manualSaved.isAcceptableOrUnknown(
+          data['manual_saved']!,
+          _manualSavedMeta,
+        ),
+      );
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    }
+    if (data.containsKey('saved_snapshot')) {
+      context.handle(
+        _savedSnapshotMeta,
+        savedSnapshot.isAcceptableOrUnknown(
+          data['saved_snapshot']!,
+          _savedSnapshotMeta,
+        ),
+      );
+    }
+    if (data.containsKey('source_payment_id')) {
+      context.handle(
+        _sourcePaymentIdMeta,
+        sourcePaymentId.isAcceptableOrUnknown(
+          data['source_payment_id']!,
+          _sourcePaymentIdMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Goal map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Goal(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      profileId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}profile_id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      target: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}target'],
+      )!,
+      dueDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}due_date'],
+      )!,
+      anchorDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}anchor_date'],
+      )!,
+      intervalUnit: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}interval_unit'],
+      ),
+      intervalCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}interval_count'],
+      )!,
+      accountId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}account_id'],
+      ),
+      manualSaved: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}manual_saved'],
+      )!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      savedSnapshot: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}saved_snapshot'],
+      )!,
+      sourcePaymentId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}source_payment_id'],
+      ),
+    );
+  }
+
+  @override
+  $GoalsTable createAlias(String alias) {
+    return $GoalsTable(attachedDatabase, alias);
+  }
+}
+
+class Goal extends DataClass implements Insertable<Goal> {
+  final int id;
+  final int profileId;
+  final String name;
+  final int target;
+  final DateTime dueDate;
+  final DateTime anchorDate;
+  final String? intervalUnit;
+  final int intervalCount;
+  final int? accountId;
+  final int manualSaved;
+  final String status;
+  final int savedSnapshot;
+  final int? sourcePaymentId;
+  const Goal({
+    required this.id,
+    required this.profileId,
+    required this.name,
+    required this.target,
+    required this.dueDate,
+    required this.anchorDate,
+    this.intervalUnit,
+    required this.intervalCount,
+    this.accountId,
+    required this.manualSaved,
+    required this.status,
+    required this.savedSnapshot,
+    this.sourcePaymentId,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['profile_id'] = Variable<int>(profileId);
+    map['name'] = Variable<String>(name);
+    map['target'] = Variable<int>(target);
+    map['due_date'] = Variable<DateTime>(dueDate);
+    map['anchor_date'] = Variable<DateTime>(anchorDate);
+    if (!nullToAbsent || intervalUnit != null) {
+      map['interval_unit'] = Variable<String>(intervalUnit);
+    }
+    map['interval_count'] = Variable<int>(intervalCount);
+    if (!nullToAbsent || accountId != null) {
+      map['account_id'] = Variable<int>(accountId);
+    }
+    map['manual_saved'] = Variable<int>(manualSaved);
+    map['status'] = Variable<String>(status);
+    map['saved_snapshot'] = Variable<int>(savedSnapshot);
+    if (!nullToAbsent || sourcePaymentId != null) {
+      map['source_payment_id'] = Variable<int>(sourcePaymentId);
+    }
+    return map;
+  }
+
+  GoalsCompanion toCompanion(bool nullToAbsent) {
+    return GoalsCompanion(
+      id: Value(id),
+      profileId: Value(profileId),
+      name: Value(name),
+      target: Value(target),
+      dueDate: Value(dueDate),
+      anchorDate: Value(anchorDate),
+      intervalUnit: intervalUnit == null && nullToAbsent
+          ? const Value.absent()
+          : Value(intervalUnit),
+      intervalCount: Value(intervalCount),
+      accountId: accountId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(accountId),
+      manualSaved: Value(manualSaved),
+      status: Value(status),
+      savedSnapshot: Value(savedSnapshot),
+      sourcePaymentId: sourcePaymentId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sourcePaymentId),
+    );
+  }
+
+  factory Goal.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Goal(
+      id: serializer.fromJson<int>(json['id']),
+      profileId: serializer.fromJson<int>(json['profileId']),
+      name: serializer.fromJson<String>(json['name']),
+      target: serializer.fromJson<int>(json['target']),
+      dueDate: serializer.fromJson<DateTime>(json['dueDate']),
+      anchorDate: serializer.fromJson<DateTime>(json['anchorDate']),
+      intervalUnit: serializer.fromJson<String?>(json['intervalUnit']),
+      intervalCount: serializer.fromJson<int>(json['intervalCount']),
+      accountId: serializer.fromJson<int?>(json['accountId']),
+      manualSaved: serializer.fromJson<int>(json['manualSaved']),
+      status: serializer.fromJson<String>(json['status']),
+      savedSnapshot: serializer.fromJson<int>(json['savedSnapshot']),
+      sourcePaymentId: serializer.fromJson<int?>(json['sourcePaymentId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'profileId': serializer.toJson<int>(profileId),
+      'name': serializer.toJson<String>(name),
+      'target': serializer.toJson<int>(target),
+      'dueDate': serializer.toJson<DateTime>(dueDate),
+      'anchorDate': serializer.toJson<DateTime>(anchorDate),
+      'intervalUnit': serializer.toJson<String?>(intervalUnit),
+      'intervalCount': serializer.toJson<int>(intervalCount),
+      'accountId': serializer.toJson<int?>(accountId),
+      'manualSaved': serializer.toJson<int>(manualSaved),
+      'status': serializer.toJson<String>(status),
+      'savedSnapshot': serializer.toJson<int>(savedSnapshot),
+      'sourcePaymentId': serializer.toJson<int?>(sourcePaymentId),
+    };
+  }
+
+  Goal copyWith({
+    int? id,
+    int? profileId,
+    String? name,
+    int? target,
+    DateTime? dueDate,
+    DateTime? anchorDate,
+    Value<String?> intervalUnit = const Value.absent(),
+    int? intervalCount,
+    Value<int?> accountId = const Value.absent(),
+    int? manualSaved,
+    String? status,
+    int? savedSnapshot,
+    Value<int?> sourcePaymentId = const Value.absent(),
+  }) => Goal(
+    id: id ?? this.id,
+    profileId: profileId ?? this.profileId,
+    name: name ?? this.name,
+    target: target ?? this.target,
+    dueDate: dueDate ?? this.dueDate,
+    anchorDate: anchorDate ?? this.anchorDate,
+    intervalUnit: intervalUnit.present ? intervalUnit.value : this.intervalUnit,
+    intervalCount: intervalCount ?? this.intervalCount,
+    accountId: accountId.present ? accountId.value : this.accountId,
+    manualSaved: manualSaved ?? this.manualSaved,
+    status: status ?? this.status,
+    savedSnapshot: savedSnapshot ?? this.savedSnapshot,
+    sourcePaymentId: sourcePaymentId.present
+        ? sourcePaymentId.value
+        : this.sourcePaymentId,
+  );
+  Goal copyWithCompanion(GoalsCompanion data) {
+    return Goal(
+      id: data.id.present ? data.id.value : this.id,
+      profileId: data.profileId.present ? data.profileId.value : this.profileId,
+      name: data.name.present ? data.name.value : this.name,
+      target: data.target.present ? data.target.value : this.target,
+      dueDate: data.dueDate.present ? data.dueDate.value : this.dueDate,
+      anchorDate: data.anchorDate.present
+          ? data.anchorDate.value
+          : this.anchorDate,
+      intervalUnit: data.intervalUnit.present
+          ? data.intervalUnit.value
+          : this.intervalUnit,
+      intervalCount: data.intervalCount.present
+          ? data.intervalCount.value
+          : this.intervalCount,
+      accountId: data.accountId.present ? data.accountId.value : this.accountId,
+      manualSaved: data.manualSaved.present
+          ? data.manualSaved.value
+          : this.manualSaved,
+      status: data.status.present ? data.status.value : this.status,
+      savedSnapshot: data.savedSnapshot.present
+          ? data.savedSnapshot.value
+          : this.savedSnapshot,
+      sourcePaymentId: data.sourcePaymentId.present
+          ? data.sourcePaymentId.value
+          : this.sourcePaymentId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Goal(')
+          ..write('id: $id, ')
+          ..write('profileId: $profileId, ')
+          ..write('name: $name, ')
+          ..write('target: $target, ')
+          ..write('dueDate: $dueDate, ')
+          ..write('anchorDate: $anchorDate, ')
+          ..write('intervalUnit: $intervalUnit, ')
+          ..write('intervalCount: $intervalCount, ')
+          ..write('accountId: $accountId, ')
+          ..write('manualSaved: $manualSaved, ')
+          ..write('status: $status, ')
+          ..write('savedSnapshot: $savedSnapshot, ')
+          ..write('sourcePaymentId: $sourcePaymentId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    profileId,
+    name,
+    target,
+    dueDate,
+    anchorDate,
+    intervalUnit,
+    intervalCount,
+    accountId,
+    manualSaved,
+    status,
+    savedSnapshot,
+    sourcePaymentId,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Goal &&
+          other.id == this.id &&
+          other.profileId == this.profileId &&
+          other.name == this.name &&
+          other.target == this.target &&
+          other.dueDate == this.dueDate &&
+          other.anchorDate == this.anchorDate &&
+          other.intervalUnit == this.intervalUnit &&
+          other.intervalCount == this.intervalCount &&
+          other.accountId == this.accountId &&
+          other.manualSaved == this.manualSaved &&
+          other.status == this.status &&
+          other.savedSnapshot == this.savedSnapshot &&
+          other.sourcePaymentId == this.sourcePaymentId);
+}
+
+class GoalsCompanion extends UpdateCompanion<Goal> {
+  final Value<int> id;
+  final Value<int> profileId;
+  final Value<String> name;
+  final Value<int> target;
+  final Value<DateTime> dueDate;
+  final Value<DateTime> anchorDate;
+  final Value<String?> intervalUnit;
+  final Value<int> intervalCount;
+  final Value<int?> accountId;
+  final Value<int> manualSaved;
+  final Value<String> status;
+  final Value<int> savedSnapshot;
+  final Value<int?> sourcePaymentId;
+  const GoalsCompanion({
+    this.id = const Value.absent(),
+    this.profileId = const Value.absent(),
+    this.name = const Value.absent(),
+    this.target = const Value.absent(),
+    this.dueDate = const Value.absent(),
+    this.anchorDate = const Value.absent(),
+    this.intervalUnit = const Value.absent(),
+    this.intervalCount = const Value.absent(),
+    this.accountId = const Value.absent(),
+    this.manualSaved = const Value.absent(),
+    this.status = const Value.absent(),
+    this.savedSnapshot = const Value.absent(),
+    this.sourcePaymentId = const Value.absent(),
+  });
+  GoalsCompanion.insert({
+    this.id = const Value.absent(),
+    required int profileId,
+    required String name,
+    required int target,
+    required DateTime dueDate,
+    required DateTime anchorDate,
+    this.intervalUnit = const Value.absent(),
+    this.intervalCount = const Value.absent(),
+    this.accountId = const Value.absent(),
+    this.manualSaved = const Value.absent(),
+    this.status = const Value.absent(),
+    this.savedSnapshot = const Value.absent(),
+    this.sourcePaymentId = const Value.absent(),
+  }) : profileId = Value(profileId),
+       name = Value(name),
+       target = Value(target),
+       dueDate = Value(dueDate),
+       anchorDate = Value(anchorDate);
+  static Insertable<Goal> custom({
+    Expression<int>? id,
+    Expression<int>? profileId,
+    Expression<String>? name,
+    Expression<int>? target,
+    Expression<DateTime>? dueDate,
+    Expression<DateTime>? anchorDate,
+    Expression<String>? intervalUnit,
+    Expression<int>? intervalCount,
+    Expression<int>? accountId,
+    Expression<int>? manualSaved,
+    Expression<String>? status,
+    Expression<int>? savedSnapshot,
+    Expression<int>? sourcePaymentId,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (profileId != null) 'profile_id': profileId,
+      if (name != null) 'name': name,
+      if (target != null) 'target': target,
+      if (dueDate != null) 'due_date': dueDate,
+      if (anchorDate != null) 'anchor_date': anchorDate,
+      if (intervalUnit != null) 'interval_unit': intervalUnit,
+      if (intervalCount != null) 'interval_count': intervalCount,
+      if (accountId != null) 'account_id': accountId,
+      if (manualSaved != null) 'manual_saved': manualSaved,
+      if (status != null) 'status': status,
+      if (savedSnapshot != null) 'saved_snapshot': savedSnapshot,
+      if (sourcePaymentId != null) 'source_payment_id': sourcePaymentId,
+    });
+  }
+
+  GoalsCompanion copyWith({
+    Value<int>? id,
+    Value<int>? profileId,
+    Value<String>? name,
+    Value<int>? target,
+    Value<DateTime>? dueDate,
+    Value<DateTime>? anchorDate,
+    Value<String?>? intervalUnit,
+    Value<int>? intervalCount,
+    Value<int?>? accountId,
+    Value<int>? manualSaved,
+    Value<String>? status,
+    Value<int>? savedSnapshot,
+    Value<int?>? sourcePaymentId,
+  }) {
+    return GoalsCompanion(
+      id: id ?? this.id,
+      profileId: profileId ?? this.profileId,
+      name: name ?? this.name,
+      target: target ?? this.target,
+      dueDate: dueDate ?? this.dueDate,
+      anchorDate: anchorDate ?? this.anchorDate,
+      intervalUnit: intervalUnit ?? this.intervalUnit,
+      intervalCount: intervalCount ?? this.intervalCount,
+      accountId: accountId ?? this.accountId,
+      manualSaved: manualSaved ?? this.manualSaved,
+      status: status ?? this.status,
+      savedSnapshot: savedSnapshot ?? this.savedSnapshot,
+      sourcePaymentId: sourcePaymentId ?? this.sourcePaymentId,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (profileId.present) {
+      map['profile_id'] = Variable<int>(profileId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (target.present) {
+      map['target'] = Variable<int>(target.value);
+    }
+    if (dueDate.present) {
+      map['due_date'] = Variable<DateTime>(dueDate.value);
+    }
+    if (anchorDate.present) {
+      map['anchor_date'] = Variable<DateTime>(anchorDate.value);
+    }
+    if (intervalUnit.present) {
+      map['interval_unit'] = Variable<String>(intervalUnit.value);
+    }
+    if (intervalCount.present) {
+      map['interval_count'] = Variable<int>(intervalCount.value);
+    }
+    if (accountId.present) {
+      map['account_id'] = Variable<int>(accountId.value);
+    }
+    if (manualSaved.present) {
+      map['manual_saved'] = Variable<int>(manualSaved.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (savedSnapshot.present) {
+      map['saved_snapshot'] = Variable<int>(savedSnapshot.value);
+    }
+    if (sourcePaymentId.present) {
+      map['source_payment_id'] = Variable<int>(sourcePaymentId.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('GoalsCompanion(')
+          ..write('id: $id, ')
+          ..write('profileId: $profileId, ')
+          ..write('name: $name, ')
+          ..write('target: $target, ')
+          ..write('dueDate: $dueDate, ')
+          ..write('anchorDate: $anchorDate, ')
+          ..write('intervalUnit: $intervalUnit, ')
+          ..write('intervalCount: $intervalCount, ')
+          ..write('accountId: $accountId, ')
+          ..write('manualSaved: $manualSaved, ')
+          ..write('status: $status, ')
+          ..write('savedSnapshot: $savedSnapshot, ')
+          ..write('sourcePaymentId: $sourcePaymentId')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3085,6 +3853,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $RecurringPaymentsTable recurringPayments =
       $RecurringPaymentsTable(this);
+  late final $GoalsTable goals = $GoalsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3097,6 +3866,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     budgets,
     budgetCategories,
     recurringPayments,
+    goals,
   ];
 }
 
@@ -3210,6 +3980,25 @@ final class $$ProfilesTableReferences
     final cache = $_typedResult.readTableOrNull(
       _recurringPaymentsRefsTable($_db),
     );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$GoalsTable, List<Goal>> _goalsRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.goals,
+    aliasName: $_aliasNameGenerator(db.profiles.id, db.goals.profileId),
+  );
+
+  $$GoalsTableProcessedTableManager get goalsRefs {
+    final manager = $$GoalsTableTableManager(
+      $_db,
+      $_db.goals,
+    ).filter((f) => f.profileId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_goalsRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -3356,6 +4145,31 @@ class $$ProfilesTableFilterComposer
           }) => $$RecurringPaymentsTableFilterComposer(
             $db: $db,
             $table: $db.recurringPayments,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> goalsRefs(
+    Expression<bool> Function($$GoalsTableFilterComposer f) f,
+  ) {
+    final $$GoalsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.goals,
+      getReferencedColumn: (t) => t.profileId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$GoalsTableFilterComposer(
+            $db: $db,
+            $table: $db.goals,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -3534,6 +4348,31 @@ class $$ProfilesTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> goalsRefs<T extends Object>(
+    Expression<T> Function($$GoalsTableAnnotationComposer a) f,
+  ) {
+    final $$GoalsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.goals,
+      getReferencedColumn: (t) => t.profileId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$GoalsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.goals,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$ProfilesTableTableManager
@@ -3555,6 +4394,7 @@ class $$ProfilesTableTableManager
             bool transactionsRefs,
             bool budgetsRefs,
             bool recurringPaymentsRefs,
+            bool goalsRefs,
           })
         > {
   $$ProfilesTableTableManager(_$AppDatabase db, $ProfilesTable table)
@@ -3599,6 +4439,7 @@ class $$ProfilesTableTableManager
                 transactionsRefs = false,
                 budgetsRefs = false,
                 recurringPaymentsRefs = false,
+                goalsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -3608,6 +4449,7 @@ class $$ProfilesTableTableManager
                     if (transactionsRefs) db.transactions,
                     if (budgetsRefs) db.budgets,
                     if (recurringPaymentsRefs) db.recurringPayments,
+                    if (goalsRefs) db.goals,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -3717,6 +4559,27 @@ class $$ProfilesTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (goalsRefs)
+                        await $_getPrefetchedData<
+                          Profile,
+                          $ProfilesTable,
+                          Goal
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ProfilesTableReferences
+                              ._goalsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ProfilesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).goalsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.profileId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -3743,6 +4606,7 @@ typedef $$ProfilesTableProcessedTableManager =
         bool transactionsRefs,
         bool budgetsRefs,
         bool recurringPaymentsRefs,
+        bool goalsRefs,
       })
     >;
 typedef $$CategoriesTableCreateCompanionBuilder =
@@ -4487,6 +5351,25 @@ final class $$AccountsTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$GoalsTable, List<Goal>> _goalsRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.goals,
+    aliasName: $_aliasNameGenerator(db.accounts.id, db.goals.accountId),
+  );
+
+  $$GoalsTableProcessedTableManager get goalsRefs {
+    final manager = $$GoalsTableTableManager(
+      $_db,
+      $_db.goals,
+    ).filter((f) => f.accountId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_goalsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$AccountsTableFilterComposer
@@ -4612,6 +5495,31 @@ class $$AccountsTableFilterComposer
           }) => $$RecurringPaymentsTableFilterComposer(
             $db: $db,
             $table: $db.recurringPayments,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> goalsRefs(
+    Expression<bool> Function($$GoalsTableFilterComposer f) f,
+  ) {
+    final $$GoalsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.goals,
+      getReferencedColumn: (t) => t.accountId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$GoalsTableFilterComposer(
+            $db: $db,
+            $table: $db.goals,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -4808,6 +5716,31 @@ class $$AccountsTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> goalsRefs<T extends Object>(
+    Expression<T> Function($$GoalsTableAnnotationComposer a) f,
+  ) {
+    final $$GoalsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.goals,
+      getReferencedColumn: (t) => t.accountId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$GoalsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.goals,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$AccountsTableTableManager
@@ -4828,6 +5761,7 @@ class $$AccountsTableTableManager
             bool fromTransactions,
             bool toTransactions,
             bool recurringPaymentsRefs,
+            bool goalsRefs,
           })
         > {
   $$AccountsTableTableManager(_$AppDatabase db, $AccountsTable table)
@@ -4887,6 +5821,7 @@ class $$AccountsTableTableManager
                 fromTransactions = false,
                 toTransactions = false,
                 recurringPaymentsRefs = false,
+                goalsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -4894,6 +5829,7 @@ class $$AccountsTableTableManager
                     if (fromTransactions) db.transactions,
                     if (toTransactions) db.transactions,
                     if (recurringPaymentsRefs) db.recurringPayments,
+                    if (goalsRefs) db.goals,
                   ],
                   addJoins:
                       <
@@ -4992,6 +5928,27 @@ class $$AccountsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (goalsRefs)
+                        await $_getPrefetchedData<
+                          Account,
+                          $AccountsTable,
+                          Goal
+                        >(
+                          currentTable: table,
+                          referencedTable: $$AccountsTableReferences
+                              ._goalsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$AccountsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).goalsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.accountId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -5017,6 +5974,7 @@ typedef $$AccountsTableProcessedTableManager =
         bool fromTransactions,
         bool toTransactions,
         bool recurringPaymentsRefs,
+        bool goalsRefs,
       })
     >;
 typedef $$TransactionsTableCreateCompanionBuilder =
@@ -6608,6 +7566,28 @@ final class $$RecurringPaymentsTableReferences
       manager.$state.copyWith(prefetchedData: [item]),
     );
   }
+
+  static MultiTypedResultKey<$GoalsTable, List<Goal>> _goalsRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.goals,
+    aliasName: $_aliasNameGenerator(
+      db.recurringPayments.id,
+      db.goals.sourcePaymentId,
+    ),
+  );
+
+  $$GoalsTableProcessedTableManager get goalsRefs {
+    final manager = $$GoalsTableTableManager(
+      $_db,
+      $_db.goals,
+    ).filter((f) => f.sourcePaymentId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_goalsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$RecurringPaymentsTableFilterComposer
@@ -6741,6 +7721,31 @@ class $$RecurringPaymentsTableFilterComposer
           ),
     );
     return composer;
+  }
+
+  Expression<bool> goalsRefs(
+    Expression<bool> Function($$GoalsTableFilterComposer f) f,
+  ) {
+    final $$GoalsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.goals,
+      getReferencedColumn: (t) => t.sourcePaymentId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$GoalsTableFilterComposer(
+            $db: $db,
+            $table: $db.goals,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
   }
 }
 
@@ -6998,6 +8003,31 @@ class $$RecurringPaymentsTableAnnotationComposer
     );
     return composer;
   }
+
+  Expression<T> goalsRefs<T extends Object>(
+    Expression<T> Function($$GoalsTableAnnotationComposer a) f,
+  ) {
+    final $$GoalsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.goals,
+      getReferencedColumn: (t) => t.sourcePaymentId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$GoalsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.goals,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$RecurringPaymentsTableTableManager
@@ -7017,6 +8047,7 @@ class $$RecurringPaymentsTableTableManager
             bool profileId,
             bool categoryId,
             bool accountId,
+            bool goalsRefs,
           })
         > {
   $$RecurringPaymentsTableTableManager(
@@ -7108,10 +8139,15 @@ class $$RecurringPaymentsTableTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({profileId = false, categoryId = false, accountId = false}) {
+              ({
+                profileId = false,
+                categoryId = false,
+                accountId = false,
+                goalsRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
-                  explicitlyWatchedTables: [],
+                  explicitlyWatchedTables: [if (goalsRefs) db.goals],
                   addJoins:
                       <
                         T extends TableManagerState<
@@ -7177,7 +8213,29 @@ class $$RecurringPaymentsTableTableManager
                         return state;
                       },
                   getPrefetchedDataCallback: (items) async {
-                    return [];
+                    return [
+                      if (goalsRefs)
+                        await $_getPrefetchedData<
+                          RecurringPayment,
+                          $RecurringPaymentsTable,
+                          Goal
+                        >(
+                          currentTable: table,
+                          referencedTable: $$RecurringPaymentsTableReferences
+                              ._goalsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$RecurringPaymentsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).goalsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.sourcePaymentId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
                   },
                 );
               },
@@ -7197,7 +8255,670 @@ typedef $$RecurringPaymentsTableProcessedTableManager =
       $$RecurringPaymentsTableUpdateCompanionBuilder,
       (RecurringPayment, $$RecurringPaymentsTableReferences),
       RecurringPayment,
-      PrefetchHooks Function({bool profileId, bool categoryId, bool accountId})
+      PrefetchHooks Function({
+        bool profileId,
+        bool categoryId,
+        bool accountId,
+        bool goalsRefs,
+      })
+    >;
+typedef $$GoalsTableCreateCompanionBuilder =
+    GoalsCompanion Function({
+      Value<int> id,
+      required int profileId,
+      required String name,
+      required int target,
+      required DateTime dueDate,
+      required DateTime anchorDate,
+      Value<String?> intervalUnit,
+      Value<int> intervalCount,
+      Value<int?> accountId,
+      Value<int> manualSaved,
+      Value<String> status,
+      Value<int> savedSnapshot,
+      Value<int?> sourcePaymentId,
+    });
+typedef $$GoalsTableUpdateCompanionBuilder =
+    GoalsCompanion Function({
+      Value<int> id,
+      Value<int> profileId,
+      Value<String> name,
+      Value<int> target,
+      Value<DateTime> dueDate,
+      Value<DateTime> anchorDate,
+      Value<String?> intervalUnit,
+      Value<int> intervalCount,
+      Value<int?> accountId,
+      Value<int> manualSaved,
+      Value<String> status,
+      Value<int> savedSnapshot,
+      Value<int?> sourcePaymentId,
+    });
+
+final class $$GoalsTableReferences
+    extends BaseReferences<_$AppDatabase, $GoalsTable, Goal> {
+  $$GoalsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $ProfilesTable _profileIdTable(_$AppDatabase db) => db.profiles
+      .createAlias($_aliasNameGenerator(db.goals.profileId, db.profiles.id));
+
+  $$ProfilesTableProcessedTableManager get profileId {
+    final $_column = $_itemColumn<int>('profile_id')!;
+
+    final manager = $$ProfilesTableTableManager(
+      $_db,
+      $_db.profiles,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_profileIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $AccountsTable _accountIdTable(_$AppDatabase db) => db.accounts
+      .createAlias($_aliasNameGenerator(db.goals.accountId, db.accounts.id));
+
+  $$AccountsTableProcessedTableManager? get accountId {
+    final $_column = $_itemColumn<int>('account_id');
+    if ($_column == null) return null;
+    final manager = $$AccountsTableTableManager(
+      $_db,
+      $_db.accounts,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_accountIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $RecurringPaymentsTable _sourcePaymentIdTable(_$AppDatabase db) =>
+      db.recurringPayments.createAlias(
+        $_aliasNameGenerator(db.goals.sourcePaymentId, db.recurringPayments.id),
+      );
+
+  $$RecurringPaymentsTableProcessedTableManager? get sourcePaymentId {
+    final $_column = $_itemColumn<int>('source_payment_id');
+    if ($_column == null) return null;
+    final manager = $$RecurringPaymentsTableTableManager(
+      $_db,
+      $_db.recurringPayments,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_sourcePaymentIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$GoalsTableFilterComposer extends Composer<_$AppDatabase, $GoalsTable> {
+  $$GoalsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get target => $composableBuilder(
+    column: $table.target,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get dueDate => $composableBuilder(
+    column: $table.dueDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get anchorDate => $composableBuilder(
+    column: $table.anchorDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get intervalUnit => $composableBuilder(
+    column: $table.intervalUnit,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get intervalCount => $composableBuilder(
+    column: $table.intervalCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get manualSaved => $composableBuilder(
+    column: $table.manualSaved,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get savedSnapshot => $composableBuilder(
+    column: $table.savedSnapshot,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ProfilesTableFilterComposer get profileId {
+    final $$ProfilesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.profileId,
+      referencedTable: $db.profiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProfilesTableFilterComposer(
+            $db: $db,
+            $table: $db.profiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$AccountsTableFilterComposer get accountId {
+    final $$AccountsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AccountsTableFilterComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$RecurringPaymentsTableFilterComposer get sourcePaymentId {
+    final $$RecurringPaymentsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sourcePaymentId,
+      referencedTable: $db.recurringPayments,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RecurringPaymentsTableFilterComposer(
+            $db: $db,
+            $table: $db.recurringPayments,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$GoalsTableOrderingComposer
+    extends Composer<_$AppDatabase, $GoalsTable> {
+  $$GoalsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get target => $composableBuilder(
+    column: $table.target,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get dueDate => $composableBuilder(
+    column: $table.dueDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get anchorDate => $composableBuilder(
+    column: $table.anchorDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get intervalUnit => $composableBuilder(
+    column: $table.intervalUnit,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get intervalCount => $composableBuilder(
+    column: $table.intervalCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get manualSaved => $composableBuilder(
+    column: $table.manualSaved,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get savedSnapshot => $composableBuilder(
+    column: $table.savedSnapshot,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ProfilesTableOrderingComposer get profileId {
+    final $$ProfilesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.profileId,
+      referencedTable: $db.profiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProfilesTableOrderingComposer(
+            $db: $db,
+            $table: $db.profiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$AccountsTableOrderingComposer get accountId {
+    final $$AccountsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AccountsTableOrderingComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$RecurringPaymentsTableOrderingComposer get sourcePaymentId {
+    final $$RecurringPaymentsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sourcePaymentId,
+      referencedTable: $db.recurringPayments,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RecurringPaymentsTableOrderingComposer(
+            $db: $db,
+            $table: $db.recurringPayments,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$GoalsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $GoalsTable> {
+  $$GoalsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<int> get target =>
+      $composableBuilder(column: $table.target, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get dueDate =>
+      $composableBuilder(column: $table.dueDate, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get anchorDate => $composableBuilder(
+    column: $table.anchorDate,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get intervalUnit => $composableBuilder(
+    column: $table.intervalUnit,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get intervalCount => $composableBuilder(
+    column: $table.intervalCount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get manualSaved => $composableBuilder(
+    column: $table.manualSaved,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<int> get savedSnapshot => $composableBuilder(
+    column: $table.savedSnapshot,
+    builder: (column) => column,
+  );
+
+  $$ProfilesTableAnnotationComposer get profileId {
+    final $$ProfilesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.profileId,
+      referencedTable: $db.profiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProfilesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.profiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$AccountsTableAnnotationComposer get accountId {
+    final $$AccountsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AccountsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$RecurringPaymentsTableAnnotationComposer get sourcePaymentId {
+    final $$RecurringPaymentsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.sourcePaymentId,
+          referencedTable: $db.recurringPayments,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$RecurringPaymentsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.recurringPayments,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+}
+
+class $$GoalsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $GoalsTable,
+          Goal,
+          $$GoalsTableFilterComposer,
+          $$GoalsTableOrderingComposer,
+          $$GoalsTableAnnotationComposer,
+          $$GoalsTableCreateCompanionBuilder,
+          $$GoalsTableUpdateCompanionBuilder,
+          (Goal, $$GoalsTableReferences),
+          Goal,
+          PrefetchHooks Function({
+            bool profileId,
+            bool accountId,
+            bool sourcePaymentId,
+          })
+        > {
+  $$GoalsTableTableManager(_$AppDatabase db, $GoalsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$GoalsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$GoalsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$GoalsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> profileId = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<int> target = const Value.absent(),
+                Value<DateTime> dueDate = const Value.absent(),
+                Value<DateTime> anchorDate = const Value.absent(),
+                Value<String?> intervalUnit = const Value.absent(),
+                Value<int> intervalCount = const Value.absent(),
+                Value<int?> accountId = const Value.absent(),
+                Value<int> manualSaved = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<int> savedSnapshot = const Value.absent(),
+                Value<int?> sourcePaymentId = const Value.absent(),
+              }) => GoalsCompanion(
+                id: id,
+                profileId: profileId,
+                name: name,
+                target: target,
+                dueDate: dueDate,
+                anchorDate: anchorDate,
+                intervalUnit: intervalUnit,
+                intervalCount: intervalCount,
+                accountId: accountId,
+                manualSaved: manualSaved,
+                status: status,
+                savedSnapshot: savedSnapshot,
+                sourcePaymentId: sourcePaymentId,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int profileId,
+                required String name,
+                required int target,
+                required DateTime dueDate,
+                required DateTime anchorDate,
+                Value<String?> intervalUnit = const Value.absent(),
+                Value<int> intervalCount = const Value.absent(),
+                Value<int?> accountId = const Value.absent(),
+                Value<int> manualSaved = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<int> savedSnapshot = const Value.absent(),
+                Value<int?> sourcePaymentId = const Value.absent(),
+              }) => GoalsCompanion.insert(
+                id: id,
+                profileId: profileId,
+                name: name,
+                target: target,
+                dueDate: dueDate,
+                anchorDate: anchorDate,
+                intervalUnit: intervalUnit,
+                intervalCount: intervalCount,
+                accountId: accountId,
+                manualSaved: manualSaved,
+                status: status,
+                savedSnapshot: savedSnapshot,
+                sourcePaymentId: sourcePaymentId,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) =>
+                    (e.readTable(table), $$GoalsTableReferences(db, table, e)),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                profileId = false,
+                accountId = false,
+                sourcePaymentId = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (profileId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.profileId,
+                                    referencedTable: $$GoalsTableReferences
+                                        ._profileIdTable(db),
+                                    referencedColumn: $$GoalsTableReferences
+                                        ._profileIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+                        if (accountId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.accountId,
+                                    referencedTable: $$GoalsTableReferences
+                                        ._accountIdTable(db),
+                                    referencedColumn: $$GoalsTableReferences
+                                        ._accountIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+                        if (sourcePaymentId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.sourcePaymentId,
+                                    referencedTable: $$GoalsTableReferences
+                                        ._sourcePaymentIdTable(db),
+                                    referencedColumn: $$GoalsTableReferences
+                                        ._sourcePaymentIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$GoalsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $GoalsTable,
+      Goal,
+      $$GoalsTableFilterComposer,
+      $$GoalsTableOrderingComposer,
+      $$GoalsTableAnnotationComposer,
+      $$GoalsTableCreateCompanionBuilder,
+      $$GoalsTableUpdateCompanionBuilder,
+      (Goal, $$GoalsTableReferences),
+      Goal,
+      PrefetchHooks Function({
+        bool profileId,
+        bool accountId,
+        bool sourcePaymentId,
+      })
     >;
 
 class $AppDatabaseManager {
@@ -7217,4 +8938,6 @@ class $AppDatabaseManager {
       $$BudgetCategoriesTableTableManager(_db, _db.budgetCategories);
   $$RecurringPaymentsTableTableManager get recurringPayments =>
       $$RecurringPaymentsTableTableManager(_db, _db.recurringPayments);
+  $$GoalsTableTableManager get goals =>
+      $$GoalsTableTableManager(_db, _db.goals);
 }

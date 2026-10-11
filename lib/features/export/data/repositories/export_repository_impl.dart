@@ -242,6 +242,7 @@ class ExportRepositoryImpl implements ExportRepository {
       TextCellValue('Дата начала'),
       TextCellValue('Дата следующего'),
       TextCellValue('Активен'),
+      TextCellValue('ID'),
     ]);
     for (final r in recurring) {
       excel.appendRow(_recurringSheet, [
@@ -258,6 +259,46 @@ class ExportRepositoryImpl implements ExportRepository {
         DateTimeCellValue.fromDateTime(r.startDate),
         DateTimeCellValue.fromDateTime(r.nextRunDate),
         TextCellValue(_bool(r.isActive)),
+        IntCellValue(r.id),
+      ]);
+    }
+
+    final goals = await (db.select(
+      db.goals,
+    )..where((g) => g.profileId.isIn(ids))).get();
+    excel.appendRow(
+      'Цели',
+      [
+        'ID',
+        'ПрофильID',
+        'Название',
+        'Сумма (копейки)',
+        'Срок',
+        'Исходная дата',
+        'Повторение',
+        'Интервал',
+        'СчётID',
+        'Накоплено вручную (копейки)',
+        'Статус',
+        'Последний прогресс (копейки)',
+        'ПлатёжID',
+      ].map(TextCellValue.new).toList(),
+    );
+    for (final g in goals) {
+      excel.appendRow('Цели', [
+        IntCellValue(g.id),
+        IntCellValue(g.profileId),
+        TextCellValue(g.name),
+        IntCellValue(g.target),
+        DateTimeCellValue.fromDateTime(g.dueDate),
+        DateTimeCellValue.fromDateTime(g.anchorDate),
+        TextCellValue(g.intervalUnit ?? ''),
+        IntCellValue(g.intervalCount),
+        g.accountId == null ? null : IntCellValue(g.accountId!),
+        IntCellValue(g.manualSaved),
+        TextCellValue(g.status),
+        IntCellValue(g.savedSnapshot),
+        g.sourcePaymentId == null ? null : IntCellValue(g.sourcePaymentId!),
       ]);
     }
 

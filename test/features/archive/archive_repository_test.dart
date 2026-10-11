@@ -232,6 +232,7 @@ void main() {
       await old.customStatement(
         'ALTER TABLE categories DROP COLUMN is_archived',
       );
+      await old.customStatement('DROP TABLE goals');
       await old.customStatement('PRAGMA user_version = 11');
       await old.close();
       final upgraded = AppDatabase.forTesting(NativeDatabase(file));

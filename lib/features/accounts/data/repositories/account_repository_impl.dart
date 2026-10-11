@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart';
+import '../../../goals/data/goal_repository.dart';
 
 import '../../../../core/database/app_database.dart';
 import '../../../../core/services/active_profile_holder.dart';
@@ -51,16 +52,21 @@ class AccountRepositoryImpl implements AccountRepository {
     if (existing.isFallback && account.isArchived) {
       throw Exception('Базовый объект нельзя архивировать');
     }
-    await db.updateAccount(
-      Account(
-        id: account.id,
-        name: account.name.trim(),
-        isFallback: account.isFallback,
-        isArchived: account.isArchived,
-        initialBalance: account.initialBalance,
-        profileId: existing.profileId,
-      ),
-    );
+    await db.transaction(() async {
+      if (account.isArchived && !existing.isArchived) {
+        await GoalRepository(db).detachAccount(account.id, existing.profileId);
+      }
+      await db.updateAccount(
+        Account(
+          id: account.id,
+          name: account.name.trim(),
+          isFallback: account.isFallback,
+          isArchived: account.isArchived,
+          initialBalance: account.initialBalance,
+          profileId: existing.profileId,
+        ),
+      );
+    });
   }
 
   @override
@@ -80,6 +86,7 @@ class AccountRepositoryImpl implements AccountRepository {
     }
 
     await db.transaction(() async {
+      await GoalRepository(db).detachAccount(account.id, account.profileId);
       await db.replaceAccountForTransactions(account.id, fallback.id);
       await db.replaceAccountForRecurringPayments(account.id, fallback.id);
       await db.deleteAccount(id);

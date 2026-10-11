@@ -179,6 +179,7 @@ class ImportRepositoryImpl implements ImportRepository {
       final accountIdMap = <int, int>{};
       final categoryIdMap = <int, int>{};
       final budgetIdMap = <int, int>{};
+      final recurringIdMap = <int, int>{};
 
       final createdProfileNames = <String>[];
       int importedTransactions = 0;
@@ -280,7 +281,7 @@ class ImportRepositoryImpl implements ImportRepository {
           final categoryId = categoryIdMap[r.categorySourceId];
           final accountId = accountIdMap[r.accountSourceId];
           if (categoryId == null || accountId == null) continue;
-          await db
+          final recurringId = await db
               .into(db.recurringPayments)
               .insert(
                 RecurringPaymentsCompanion.insert(
@@ -297,7 +298,38 @@ class ImportRepositoryImpl implements ImportRepository {
                   isActive: Value(r.isActive),
                 ),
               );
+          if (r.sourceId != null) recurringIdMap[r.sourceId!] = recurringId;
           createdRecurring++;
+        }
+        for (final goal in data.goals.where(
+          (g) => g.profileId == profile.sourceId,
+        )) {
+          final accountId = accountIdMap[goal.accountId];
+          final account = accountId == null
+              ? null
+              : await db.accountById(accountId);
+          final unavailable =
+              goal.accountId != null && (account == null || account.isArchived);
+          await db
+              .into(db.goals)
+              .insert(
+                GoalsCompanion.insert(
+                  profileId: newProfileId,
+                  name: goal.name,
+                  target: goal.target,
+                  dueDate: goal.dueDate,
+                  anchorDate: goal.anchorDate,
+                  intervalUnit: Value(goal.intervalUnit),
+                  intervalCount: Value(goal.intervalCount),
+                  accountId: Value(unavailable ? null : accountId),
+                  manualSaved: Value(unavailable ? 0 : goal.manualSaved),
+                  status: Value(
+                    unavailable && goal.isActive ? 'paused' : goal.status,
+                  ),
+                  savedSnapshot: Value(goal.savedSnapshot),
+                  sourcePaymentId: Value(recurringIdMap[goal.sourcePaymentId]),
+                ),
+              );
         }
       }
 

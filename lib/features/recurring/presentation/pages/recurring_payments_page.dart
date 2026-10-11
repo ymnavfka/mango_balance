@@ -1,3 +1,5 @@
+import '../../../../core/enums/transaction_type.dart';
+import '../../../goals/presentation/goal_payment_action.dart';
 import '../../../shared/widgets/adaptive_header_scroll_view.dart';
 import '../../../../core/services/notification_service.dart';
 import 'package:flutter/material.dart';
@@ -103,15 +105,21 @@ class RecurringPaymentsPage extends StatelessWidget {
                             onUndo: () => cubit.addRecurringPayment(payment),
                           );
                         },
-                        child: RecurringPaymentCard(
-                          payment: payment,
-                          notificationAccess: state.notificationAccess,
-                          onNotificationBlocked: () =>
-                              showNotificationHelp(context),
-                          onTap: () => _openForm(context, initial: payment),
-                          onToggleActive: (value) => context
-                              .read<RecurringCubit>()
-                              .setActive(payment.id, value),
+                        child: Column(
+                          children: [
+                            RecurringPaymentCard(
+                              payment: payment,
+                              notificationAccess: state.notificationAccess,
+                              onNotificationBlocked: () =>
+                                  showNotificationHelp(context),
+                              onTap: () => _openForm(context, initial: payment),
+                              onToggleActive: (value) => context
+                                  .read<RecurringCubit>()
+                                  .setActive(payment.id, value),
+                            ),
+                            if (payment.type == TransactionType.expense)
+                              GoalPaymentAction(payment: payment),
+                          ],
                         ),
                       );
                     },

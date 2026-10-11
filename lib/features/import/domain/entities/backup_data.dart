@@ -1,3 +1,5 @@
+import '../../../goals/domain/goal.dart';
+
 /// Полный бэкап приложения, разобранный из XLSX. Все связи хранятся по исходным
 /// id (sourceId) из файла и переотображаются на новые id при восстановлении.
 class BackupProfile {
@@ -100,6 +102,7 @@ class BackupBudgetCategory {
 
 class BackupRecurring {
   const BackupRecurring({
+    this.sourceId,
     required this.profileSourceId,
     required this.name,
     required this.type,
@@ -121,6 +124,7 @@ class BackupRecurring {
   final int? accountSourceId;
   final String intervalUnit;
   final int intervalCount;
+  final int? sourceId;
   final DateTime startDate;
   final DateTime nextRunDate;
   final bool isActive;
@@ -128,6 +132,7 @@ class BackupRecurring {
 
 class BackupData {
   const BackupData({
+    this.goals = const [],
     required this.profiles,
     required this.accounts,
     required this.categories,
@@ -137,6 +142,7 @@ class BackupData {
     required this.recurring,
   });
 
+  final List<GoalPlan> goals;
   final List<BackupProfile> profiles;
   final List<BackupAccount> accounts;
   final List<BackupCategory> categories;
