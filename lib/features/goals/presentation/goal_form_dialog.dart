@@ -98,6 +98,8 @@ class _GoalFormDialogState extends State<GoalFormDialog> {
           manualSaved: _account == null ? saved! : 0,
           status: initial == null || _resume ? 'active' : initial.status,
           savedSnapshot: initial?.savedSnapshot ?? 0,
+          savedOccurrenceCount: initial?.savedOccurrenceCount ?? 0,
+          savedThroughDate: initial?.savedThroughDate,
           sourcePaymentId: initial?.sourcePaymentId ?? widget.source?.id,
         ),
       );
@@ -139,6 +141,13 @@ class _GoalFormDialogState extends State<GoalFormDialog> {
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: const InputDecoration(labelText: 'Нужно накопить, ₽'),
           ),
+          if (_account == null && _unit != null)
+            const Padding(
+              padding: EdgeInsets.only(top: 6),
+              child: Text(
+                'Указанной суммой можно покрыть несколько повторений. После траты уменьшите ее вручную.',
+              ),
+            ),
           const SizedBox(height: 16),
           OutlinedButton.icon(
             icon: const Icon(Icons.calendar_today_rounded),
@@ -218,7 +227,7 @@ class _GoalFormDialogState extends State<GoalFormDialog> {
             )
           else
             const Text(
-              'Деньги счёта делятся поровну между активными целями, не больше нужной суммы каждой. Ближайшие даты не дают приоритета.',
+              'Деньги счета идут на будущие события по порядку дат. В одну дату делятся поровну.',
             ),
           if (widget.initial?.status == 'paused')
             const Padding(

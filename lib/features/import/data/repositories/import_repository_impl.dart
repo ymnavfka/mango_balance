@@ -327,6 +327,8 @@ class ImportRepositoryImpl implements ImportRepository {
                     unavailable && goal.isActive ? 'paused' : goal.status,
                   ),
                   savedSnapshot: Value(goal.savedSnapshot),
+                  savedOccurrenceCount: Value(goal.savedOccurrenceCount),
+                  savedThroughDate: Value(goal.savedThroughDate),
                   sourcePaymentId: Value(recurringIdMap[goal.sourcePaymentId]),
                 ),
               );

@@ -15,24 +15,32 @@ GoalPlan goalFromRow(Goal row) => GoalPlan(
   manualSaved: row.manualSaved,
   status: row.status,
   savedSnapshot: row.savedSnapshot,
+  savedOccurrenceCount: row.savedOccurrenceCount,
+  savedThroughDate: row.savedThroughDate,
   sourcePaymentId: row.sourcePaymentId,
 );
 
 class GoalSnapshot {
   const GoalSnapshot({
     this.goals = const [],
+    this.coverage = const {},
     this.allocations = const {},
     this.balances = const {},
     this.accountNames = const {},
   });
   final List<GoalPlan> goals;
-  final Map<int, int> allocations, balances;
+  final Map<int, GoalCoverage> coverage;
+
+  /// Kept for older callers; new code should use [coverage].
+  final Map<int, int> allocations;
+  final Map<int, int> balances;
   final Map<int, String> accountNames;
 }
 
 class GoalRepository {
   GoalRepository(this.db);
   final AppDatabase db;
+
   Future<List<GoalPlan>> _goals(int profileId) async =>
       (await (db.select(
             db.goals,
@@ -80,7 +88,9 @@ class GoalRepository {
   }) => db.transaction(() async {
     final today = goalDay(now ?? DateTime.now());
     var goals = await _goals(profileId);
-    // Completed one-offs keep their deadline balance, even after days offline.
+
+    // Freeze one-off goals at their due date. Repeating goals contribute
+    // only their next event on or after that simulated date.
     final expiredDates =
         goals
             .where(
@@ -94,7 +104,7 @@ class GoalRepository {
             .toList()
           ..sort();
     for (final date in expiredDates) {
-      final atDeadline = goals.map((g) {
+      final atDate = goals.map((g) {
         if (!g.isActive ||
             g.intervalUnit == null ||
             !g.dueDate.isBefore(date)) {
@@ -110,34 +120,38 @@ class GoalRepository {
           intervalUnit: g.intervalUnit,
           intervalCount: g.intervalCount,
           accountId: g.accountId,
-          manualSaved: 0,
+          manualSaved: g.manualSaved,
         );
       }).toList();
-      final allocation = allocateGoals(
-        atDeadline,
+      final snapshot = allocateGoalEvents(
+        atDate,
         await _balances(profileId, through: date),
+        through: date,
       );
       for (final goal in goals.where(
         (g) =>
             g.isActive && g.intervalUnit == null && goalDay(g.dueDate) == date,
       )) {
+        final coverage = snapshot[goal.id] ?? const GoalCoverage();
         await (db.update(db.goals)..where((g) => g.id.equals(goal.id))).write(
           GoalsCompanion(
             status: const Value('completed'),
-            savedSnapshot: Value(allocation[goal.id] ?? 0),
+            savedSnapshot: Value(coverage.allocated),
+            savedOccurrenceCount: Value(coverage.coveredOccurrences),
+            savedThroughDate: Value(coverage.coveredThrough),
           ),
         );
       }
       goals = await _goals(profileId);
     }
+
+    // Events that elapsed while the app was closed disappear. Keep the
+    // manually entered balance: the user decides whether the money was spent.
     for (final goal in goals.where(
       (g) => g.isActive && g.intervalUnit != null && g.dueDate.isBefore(today),
     )) {
       await (db.update(db.goals)..where((g) => g.id.equals(goal.id))).write(
-        GoalsCompanion(
-          dueDate: Value(nextGoalDeadline(goal, today)),
-          manualSaved: const Value(0),
-        ),
+        GoalsCompanion(dueDate: Value(nextGoalDeadline(goal, today))),
       );
     }
     goals = await _goals(profileId);
@@ -145,26 +159,36 @@ class GoalRepository {
     final accounts = await (db.select(
       db.accounts,
     )..where((a) => a.profileId.equals(profileId))).get();
-    // Also heals imported or otherwise stale links to archived accounts.
+
+    // Heal stale/imported references using the last full future allocation.
     final unavailable = accounts
         .where((a) => a.isArchived)
         .map((a) => a.id)
         .toSet();
     final available = accounts.map((a) => a.id).toSet();
-    final allocation = allocateGoals(goals, balances);
+    final coverage = allocateGoalEvents(goals, balances);
     for (final goal in goals.where(
       (g) =>
           g.accountId != null &&
           (unavailable.contains(g.accountId) ||
               !available.contains(g.accountId)),
     )) {
+      final saved = coverage[goal.id] ?? const GoalCoverage();
       await (db.update(db.goals)..where((g) => g.id.equals(goal.id))).write(
         GoalsCompanion(
           accountId: const Value(null),
           status: Value(goal.isActive ? 'paused' : goal.status),
           manualSaved: const Value(0),
           savedSnapshot: Value(
-            goal.isActive ? allocation[goal.id] ?? 0 : goal.savedSnapshot,
+            goal.isActive ? saved.allocated : goal.savedSnapshot,
+          ),
+          savedOccurrenceCount: Value(
+            goal.isActive
+                ? saved.coveredOccurrences
+                : goal.savedOccurrenceCount,
+          ),
+          savedThroughDate: Value(
+            goal.isActive ? saved.coveredThrough : goal.savedThroughDate,
           ),
         ),
       );
@@ -172,7 +196,7 @@ class GoalRepository {
     goals = await _goals(profileId);
     return GoalSnapshot(
       goals: goals,
-      allocations: allocateGoals(goals, balances),
+      coverage: allocateGoalEvents(goals, balances),
       balances: balances,
       accountNames: {for (final a in accounts) a.id: a.name},
     );
@@ -210,6 +234,18 @@ class GoalRepository {
         throw Exception('Исходный платёж больше недоступен');
       }
     }
+    if (goal.sourcePaymentId != null) {
+      final duplicate =
+          await (db.select(db.goals)..where(
+                (g) =>
+                    g.sourcePaymentId.equals(goal.sourcePaymentId!) &
+                    g.id.isNotValue(goal.id),
+              ))
+              .getSingleOrNull();
+      if (duplicate != null) {
+        throw Exception('Для этого платежа уже создана цель');
+      }
+    }
     final row = GoalsCompanion(
       profileId: Value(goal.profileId),
       name: Value(goal.name.trim()),
@@ -222,6 +258,8 @@ class GoalRepository {
       manualSaved: Value(goal.accountId == null ? goal.manualSaved : 0),
       status: Value(goal.status),
       savedSnapshot: Value(goal.savedSnapshot),
+      savedOccurrenceCount: Value(goal.savedOccurrenceCount),
+      savedThroughDate: Value(goal.savedThroughDate),
       sourcePaymentId: Value(goal.sourcePaymentId),
     );
     if (goal.id == 0) {
@@ -236,15 +274,19 @@ class GoalRepository {
 
   Future<void> complete(int id, int profileId) => db.transaction(() async {
     final snapshot = await load(profileId);
+    final coverage = snapshot.coverage[id] ?? const GoalCoverage();
     await (db.update(
       db.goals,
     )..where((g) => g.id.equals(id) & g.profileId.equals(profileId))).write(
       GoalsCompanion(
         status: const Value('completed'),
-        savedSnapshot: Value(snapshot.allocations[id] ?? 0),
+        savedSnapshot: Value(coverage.allocated),
+        savedOccurrenceCount: Value(coverage.coveredOccurrences),
+        savedThroughDate: Value(coverage.coveredThrough),
       ),
     );
   });
+
   Future<void> delete(int id, int profileId) async {
     await (db.delete(
       db.goals,
@@ -255,15 +297,22 @@ class GoalRepository {
   Future<void> detachAccount(int accountId, int profileId) async {
     final snapshot = await load(profileId);
     for (final goal in snapshot.goals.where((g) => g.accountId == accountId)) {
+      final coverage = snapshot.coverage[goal.id] ?? const GoalCoverage();
       await (db.update(db.goals)..where((g) => g.id.equals(goal.id))).write(
         GoalsCompanion(
           accountId: const Value(null),
           manualSaved: const Value(0),
           status: Value(goal.isActive ? 'paused' : goal.status),
           savedSnapshot: Value(
+            goal.isActive ? coverage.allocated : goal.savedSnapshot,
+          ),
+          savedOccurrenceCount: Value(
             goal.isActive
-                ? snapshot.allocations[goal.id] ?? 0
-                : goal.savedSnapshot,
+                ? coverage.coveredOccurrences
+                : goal.savedOccurrenceCount,
+          ),
+          savedThroughDate: Value(
+            goal.isActive ? coverage.coveredThrough : goal.savedThroughDate,
           ),
         ),
       );

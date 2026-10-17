@@ -3215,6 +3215,29 @@ class $GoalsTable extends Goals with TableInfo<$GoalsTable, Goal> {
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _savedOccurrenceCountMeta =
+      const VerificationMeta('savedOccurrenceCount');
+  @override
+  late final GeneratedColumn<int> savedOccurrenceCount = GeneratedColumn<int>(
+    'saved_occurrence_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _savedThroughDateMeta = const VerificationMeta(
+    'savedThroughDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> savedThroughDate =
+      GeneratedColumn<DateTime>(
+        'saved_through_date',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _sourcePaymentIdMeta = const VerificationMeta(
     'sourcePaymentId',
   );
@@ -3243,6 +3266,8 @@ class $GoalsTable extends Goals with TableInfo<$GoalsTable, Goal> {
     manualSaved,
     status,
     savedSnapshot,
+    savedOccurrenceCount,
+    savedThroughDate,
     sourcePaymentId,
   ];
   @override
@@ -3348,6 +3373,24 @@ class $GoalsTable extends Goals with TableInfo<$GoalsTable, Goal> {
         ),
       );
     }
+    if (data.containsKey('saved_occurrence_count')) {
+      context.handle(
+        _savedOccurrenceCountMeta,
+        savedOccurrenceCount.isAcceptableOrUnknown(
+          data['saved_occurrence_count']!,
+          _savedOccurrenceCountMeta,
+        ),
+      );
+    }
+    if (data.containsKey('saved_through_date')) {
+      context.handle(
+        _savedThroughDateMeta,
+        savedThroughDate.isAcceptableOrUnknown(
+          data['saved_through_date']!,
+          _savedThroughDateMeta,
+        ),
+      );
+    }
     if (data.containsKey('source_payment_id')) {
       context.handle(
         _sourcePaymentIdMeta,
@@ -3414,6 +3457,14 @@ class $GoalsTable extends Goals with TableInfo<$GoalsTable, Goal> {
         DriftSqlType.int,
         data['${effectivePrefix}saved_snapshot'],
       )!,
+      savedOccurrenceCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}saved_occurrence_count'],
+      )!,
+      savedThroughDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}saved_through_date'],
+      ),
       sourcePaymentId: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}source_payment_id'],
@@ -3440,6 +3491,8 @@ class Goal extends DataClass implements Insertable<Goal> {
   final int manualSaved;
   final String status;
   final int savedSnapshot;
+  final int savedOccurrenceCount;
+  final DateTime? savedThroughDate;
   final int? sourcePaymentId;
   const Goal({
     required this.id,
@@ -3454,6 +3507,8 @@ class Goal extends DataClass implements Insertable<Goal> {
     required this.manualSaved,
     required this.status,
     required this.savedSnapshot,
+    required this.savedOccurrenceCount,
+    this.savedThroughDate,
     this.sourcePaymentId,
   });
   @override
@@ -3475,6 +3530,10 @@ class Goal extends DataClass implements Insertable<Goal> {
     map['manual_saved'] = Variable<int>(manualSaved);
     map['status'] = Variable<String>(status);
     map['saved_snapshot'] = Variable<int>(savedSnapshot);
+    map['saved_occurrence_count'] = Variable<int>(savedOccurrenceCount);
+    if (!nullToAbsent || savedThroughDate != null) {
+      map['saved_through_date'] = Variable<DateTime>(savedThroughDate);
+    }
     if (!nullToAbsent || sourcePaymentId != null) {
       map['source_payment_id'] = Variable<int>(sourcePaymentId);
     }
@@ -3499,6 +3558,10 @@ class Goal extends DataClass implements Insertable<Goal> {
       manualSaved: Value(manualSaved),
       status: Value(status),
       savedSnapshot: Value(savedSnapshot),
+      savedOccurrenceCount: Value(savedOccurrenceCount),
+      savedThroughDate: savedThroughDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(savedThroughDate),
       sourcePaymentId: sourcePaymentId == null && nullToAbsent
           ? const Value.absent()
           : Value(sourcePaymentId),
@@ -3523,6 +3586,12 @@ class Goal extends DataClass implements Insertable<Goal> {
       manualSaved: serializer.fromJson<int>(json['manualSaved']),
       status: serializer.fromJson<String>(json['status']),
       savedSnapshot: serializer.fromJson<int>(json['savedSnapshot']),
+      savedOccurrenceCount: serializer.fromJson<int>(
+        json['savedOccurrenceCount'],
+      ),
+      savedThroughDate: serializer.fromJson<DateTime?>(
+        json['savedThroughDate'],
+      ),
       sourcePaymentId: serializer.fromJson<int?>(json['sourcePaymentId']),
     );
   }
@@ -3542,6 +3611,8 @@ class Goal extends DataClass implements Insertable<Goal> {
       'manualSaved': serializer.toJson<int>(manualSaved),
       'status': serializer.toJson<String>(status),
       'savedSnapshot': serializer.toJson<int>(savedSnapshot),
+      'savedOccurrenceCount': serializer.toJson<int>(savedOccurrenceCount),
+      'savedThroughDate': serializer.toJson<DateTime?>(savedThroughDate),
       'sourcePaymentId': serializer.toJson<int?>(sourcePaymentId),
     };
   }
@@ -3559,6 +3630,8 @@ class Goal extends DataClass implements Insertable<Goal> {
     int? manualSaved,
     String? status,
     int? savedSnapshot,
+    int? savedOccurrenceCount,
+    Value<DateTime?> savedThroughDate = const Value.absent(),
     Value<int?> sourcePaymentId = const Value.absent(),
   }) => Goal(
     id: id ?? this.id,
@@ -3573,6 +3646,10 @@ class Goal extends DataClass implements Insertable<Goal> {
     manualSaved: manualSaved ?? this.manualSaved,
     status: status ?? this.status,
     savedSnapshot: savedSnapshot ?? this.savedSnapshot,
+    savedOccurrenceCount: savedOccurrenceCount ?? this.savedOccurrenceCount,
+    savedThroughDate: savedThroughDate.present
+        ? savedThroughDate.value
+        : this.savedThroughDate,
     sourcePaymentId: sourcePaymentId.present
         ? sourcePaymentId.value
         : this.sourcePaymentId,
@@ -3601,6 +3678,12 @@ class Goal extends DataClass implements Insertable<Goal> {
       savedSnapshot: data.savedSnapshot.present
           ? data.savedSnapshot.value
           : this.savedSnapshot,
+      savedOccurrenceCount: data.savedOccurrenceCount.present
+          ? data.savedOccurrenceCount.value
+          : this.savedOccurrenceCount,
+      savedThroughDate: data.savedThroughDate.present
+          ? data.savedThroughDate.value
+          : this.savedThroughDate,
       sourcePaymentId: data.sourcePaymentId.present
           ? data.sourcePaymentId.value
           : this.sourcePaymentId,
@@ -3622,6 +3705,8 @@ class Goal extends DataClass implements Insertable<Goal> {
           ..write('manualSaved: $manualSaved, ')
           ..write('status: $status, ')
           ..write('savedSnapshot: $savedSnapshot, ')
+          ..write('savedOccurrenceCount: $savedOccurrenceCount, ')
+          ..write('savedThroughDate: $savedThroughDate, ')
           ..write('sourcePaymentId: $sourcePaymentId')
           ..write(')'))
         .toString();
@@ -3641,6 +3726,8 @@ class Goal extends DataClass implements Insertable<Goal> {
     manualSaved,
     status,
     savedSnapshot,
+    savedOccurrenceCount,
+    savedThroughDate,
     sourcePaymentId,
   );
   @override
@@ -3659,6 +3746,8 @@ class Goal extends DataClass implements Insertable<Goal> {
           other.manualSaved == this.manualSaved &&
           other.status == this.status &&
           other.savedSnapshot == this.savedSnapshot &&
+          other.savedOccurrenceCount == this.savedOccurrenceCount &&
+          other.savedThroughDate == this.savedThroughDate &&
           other.sourcePaymentId == this.sourcePaymentId);
 }
 
@@ -3675,6 +3764,8 @@ class GoalsCompanion extends UpdateCompanion<Goal> {
   final Value<int> manualSaved;
   final Value<String> status;
   final Value<int> savedSnapshot;
+  final Value<int> savedOccurrenceCount;
+  final Value<DateTime?> savedThroughDate;
   final Value<int?> sourcePaymentId;
   const GoalsCompanion({
     this.id = const Value.absent(),
@@ -3689,6 +3780,8 @@ class GoalsCompanion extends UpdateCompanion<Goal> {
     this.manualSaved = const Value.absent(),
     this.status = const Value.absent(),
     this.savedSnapshot = const Value.absent(),
+    this.savedOccurrenceCount = const Value.absent(),
+    this.savedThroughDate = const Value.absent(),
     this.sourcePaymentId = const Value.absent(),
   });
   GoalsCompanion.insert({
@@ -3704,6 +3797,8 @@ class GoalsCompanion extends UpdateCompanion<Goal> {
     this.manualSaved = const Value.absent(),
     this.status = const Value.absent(),
     this.savedSnapshot = const Value.absent(),
+    this.savedOccurrenceCount = const Value.absent(),
+    this.savedThroughDate = const Value.absent(),
     this.sourcePaymentId = const Value.absent(),
   }) : profileId = Value(profileId),
        name = Value(name),
@@ -3723,6 +3818,8 @@ class GoalsCompanion extends UpdateCompanion<Goal> {
     Expression<int>? manualSaved,
     Expression<String>? status,
     Expression<int>? savedSnapshot,
+    Expression<int>? savedOccurrenceCount,
+    Expression<DateTime>? savedThroughDate,
     Expression<int>? sourcePaymentId,
   }) {
     return RawValuesInsertable({
@@ -3738,6 +3835,9 @@ class GoalsCompanion extends UpdateCompanion<Goal> {
       if (manualSaved != null) 'manual_saved': manualSaved,
       if (status != null) 'status': status,
       if (savedSnapshot != null) 'saved_snapshot': savedSnapshot,
+      if (savedOccurrenceCount != null)
+        'saved_occurrence_count': savedOccurrenceCount,
+      if (savedThroughDate != null) 'saved_through_date': savedThroughDate,
       if (sourcePaymentId != null) 'source_payment_id': sourcePaymentId,
     });
   }
@@ -3755,6 +3855,8 @@ class GoalsCompanion extends UpdateCompanion<Goal> {
     Value<int>? manualSaved,
     Value<String>? status,
     Value<int>? savedSnapshot,
+    Value<int>? savedOccurrenceCount,
+    Value<DateTime?>? savedThroughDate,
     Value<int?>? sourcePaymentId,
   }) {
     return GoalsCompanion(
@@ -3770,6 +3872,8 @@ class GoalsCompanion extends UpdateCompanion<Goal> {
       manualSaved: manualSaved ?? this.manualSaved,
       status: status ?? this.status,
       savedSnapshot: savedSnapshot ?? this.savedSnapshot,
+      savedOccurrenceCount: savedOccurrenceCount ?? this.savedOccurrenceCount,
+      savedThroughDate: savedThroughDate ?? this.savedThroughDate,
       sourcePaymentId: sourcePaymentId ?? this.sourcePaymentId,
     );
   }
@@ -3813,6 +3917,12 @@ class GoalsCompanion extends UpdateCompanion<Goal> {
     if (savedSnapshot.present) {
       map['saved_snapshot'] = Variable<int>(savedSnapshot.value);
     }
+    if (savedOccurrenceCount.present) {
+      map['saved_occurrence_count'] = Variable<int>(savedOccurrenceCount.value);
+    }
+    if (savedThroughDate.present) {
+      map['saved_through_date'] = Variable<DateTime>(savedThroughDate.value);
+    }
     if (sourcePaymentId.present) {
       map['source_payment_id'] = Variable<int>(sourcePaymentId.value);
     }
@@ -3834,6 +3944,8 @@ class GoalsCompanion extends UpdateCompanion<Goal> {
           ..write('manualSaved: $manualSaved, ')
           ..write('status: $status, ')
           ..write('savedSnapshot: $savedSnapshot, ')
+          ..write('savedOccurrenceCount: $savedOccurrenceCount, ')
+          ..write('savedThroughDate: $savedThroughDate, ')
           ..write('sourcePaymentId: $sourcePaymentId')
           ..write(')'))
         .toString();
@@ -8276,6 +8388,8 @@ typedef $$GoalsTableCreateCompanionBuilder =
       Value<int> manualSaved,
       Value<String> status,
       Value<int> savedSnapshot,
+      Value<int> savedOccurrenceCount,
+      Value<DateTime?> savedThroughDate,
       Value<int?> sourcePaymentId,
     });
 typedef $$GoalsTableUpdateCompanionBuilder =
@@ -8292,6 +8406,8 @@ typedef $$GoalsTableUpdateCompanionBuilder =
       Value<int> manualSaved,
       Value<String> status,
       Value<int> savedSnapshot,
+      Value<int> savedOccurrenceCount,
+      Value<DateTime?> savedThroughDate,
       Value<int?> sourcePaymentId,
     });
 
@@ -8408,6 +8524,16 @@ class $$GoalsTableFilterComposer extends Composer<_$AppDatabase, $GoalsTable> {
 
   ColumnFilters<int> get savedSnapshot => $composableBuilder(
     column: $table.savedSnapshot,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get savedOccurrenceCount => $composableBuilder(
+    column: $table.savedOccurrenceCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get savedThroughDate => $composableBuilder(
+    column: $table.savedThroughDate,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -8540,6 +8666,16 @@ class $$GoalsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get savedOccurrenceCount => $composableBuilder(
+    column: $table.savedOccurrenceCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get savedThroughDate => $composableBuilder(
+    column: $table.savedThroughDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$ProfilesTableOrderingComposer get profileId {
     final $$ProfilesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -8659,6 +8795,16 @@ class $$GoalsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<int> get savedOccurrenceCount => $composableBuilder(
+    column: $table.savedOccurrenceCount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get savedThroughDate => $composableBuilder(
+    column: $table.savedThroughDate,
+    builder: (column) => column,
+  );
+
   $$ProfilesTableAnnotationComposer get profileId {
     final $$ProfilesTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -8774,6 +8920,8 @@ class $$GoalsTableTableManager
                 Value<int> manualSaved = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 Value<int> savedSnapshot = const Value.absent(),
+                Value<int> savedOccurrenceCount = const Value.absent(),
+                Value<DateTime?> savedThroughDate = const Value.absent(),
                 Value<int?> sourcePaymentId = const Value.absent(),
               }) => GoalsCompanion(
                 id: id,
@@ -8788,6 +8936,8 @@ class $$GoalsTableTableManager
                 manualSaved: manualSaved,
                 status: status,
                 savedSnapshot: savedSnapshot,
+                savedOccurrenceCount: savedOccurrenceCount,
+                savedThroughDate: savedThroughDate,
                 sourcePaymentId: sourcePaymentId,
               ),
           createCompanionCallback:
@@ -8804,6 +8954,8 @@ class $$GoalsTableTableManager
                 Value<int> manualSaved = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 Value<int> savedSnapshot = const Value.absent(),
+                Value<int> savedOccurrenceCount = const Value.absent(),
+                Value<DateTime?> savedThroughDate = const Value.absent(),
                 Value<int?> sourcePaymentId = const Value.absent(),
               }) => GoalsCompanion.insert(
                 id: id,
@@ -8818,6 +8970,8 @@ class $$GoalsTableTableManager
                 manualSaved: manualSaved,
                 status: status,
                 savedSnapshot: savedSnapshot,
+                savedOccurrenceCount: savedOccurrenceCount,
+                savedThroughDate: savedThroughDate,
                 sourcePaymentId: sourcePaymentId,
               ),
           withReferenceMapper: (p0) => p0

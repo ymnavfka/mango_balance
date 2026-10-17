@@ -270,6 +270,8 @@ class XlsxImportParser {
           manualSaved: saved,
           status: status,
           savedSnapshot: snapshot,
+          savedOccurrenceCount: _int(row, 13) ?? 0,
+          savedThroughDate: _date(row, 14),
           sourcePaymentId: _int(row, 12),
         ),
       );

@@ -120,6 +120,9 @@ class Goals extends Table {
   IntColumn get manualSaved => integer().withDefault(const Constant(0))();
   TextColumn get status => text().withDefault(const Constant('active'))();
   IntColumn get savedSnapshot => integer().withDefault(const Constant(0))();
+  IntColumn get savedOccurrenceCount =>
+      integer().withDefault(const Constant(0))();
+  DateTimeColumn get savedThroughDate => dateTime().nullable()();
   IntColumn get sourcePaymentId =>
       integer().nullable().unique().references(RecurringPayments, #id)();
 }
@@ -142,7 +145,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 13;
+  int get schemaVersion => 14;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -153,7 +156,12 @@ class AppDatabase extends _$AppDatabase {
       await _insertStandardAccountsForProfile(1);
     },
     onUpgrade: (m, from, to) async {
-      if (from < 13) await m.createTable(goals);
+      if (from < 13) {
+        await m.createTable(goals);
+      } else if (from < 14) {
+        await m.addColumn(goals, goals.savedOccurrenceCount);
+        await m.addColumn(goals, goals.savedThroughDate);
+      }
       if (from < 2) {
         await m.createTable(categories);
         await _insertLegacyDefaultCategories();

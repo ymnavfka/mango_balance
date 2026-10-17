@@ -17,3 +17,9 @@ commits. When asked for commit text:
 - A request for commit text does not authorize creating a commit.
 
 Example: `feat: simplify transaction filters and cards while preserving the original design`
+
+## APK builds
+
+When building an APK, use:
+
+`flutter build apk --release --target-platform android-arm64 --split-per-abi`

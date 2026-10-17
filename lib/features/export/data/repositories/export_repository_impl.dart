@@ -282,6 +282,8 @@ class ExportRepositoryImpl implements ExportRepository {
         'Статус',
         'Последний прогресс (копейки)',
         'ПлатёжID',
+        'Покрыто событий',
+        'Покрыто по дату',
       ].map(TextCellValue.new).toList(),
     );
     for (final g in goals) {
@@ -299,6 +301,10 @@ class ExportRepositoryImpl implements ExportRepository {
         TextCellValue(g.status),
         IntCellValue(g.savedSnapshot),
         g.sourcePaymentId == null ? null : IntCellValue(g.sourcePaymentId!),
+        IntCellValue(g.savedOccurrenceCount),
+        g.savedThroughDate == null
+            ? null
+            : DateTimeCellValue.fromDateTime(g.savedThroughDate!),
       ]);
     }
 

@@ -16,6 +16,13 @@ const _periodFactors = [1.0, 7.0, 365.2425 / 12, 365.2425];
 String _money(num cents) => formatMoney(cents / 100);
 String _date(DateTime d) =>
     '${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(2, '0')}.${d.year}';
+GoalCoverage _coverage(GoalSnapshot snapshot, GoalPlan goal) =>
+    snapshot.coverage[goal.id] ??
+    GoalCoverage(
+      firstEventDate: goal.dueDate,
+      firstEventAllocated: snapshot.allocations[goal.id] ?? 0,
+      nextUncoveredDate: goal.dueDate,
+    );
 
 class GoalsPage extends StatefulWidget {
   const GoalsPage({super.key});
@@ -67,12 +74,7 @@ class _GoalsPageState extends State<GoalsPage> {
           final total = snapshot.goals.fold<double>(
             0,
             (sum, g) =>
-                sum +
-                dailyGoalRate(
-                  g,
-                  snapshot.allocations[g.id] ?? 0,
-                  DateTime.now(),
-                ),
+                sum + dailyGoalRate(g, _coverage(snapshot, g), DateTime.now()),
           );
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
@@ -96,7 +98,7 @@ class _GoalsPageState extends State<GoalsPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Темп накопления · все активные цели'),
+                      const Text('Откладывать до ближайших непокрытых событий'),
                       const SizedBox(height: 6),
                       Text(
                         '${_money(total * _periodFactors[_period])} / ${_periodLabels[_period].toLowerCase()}',
@@ -104,7 +106,7 @@ class _GoalsPageState extends State<GoalsPage> {
                       ),
                       const SizedBox(height: 6),
                       const Text(
-                        'Эквивалент текущего темпа до ближайших сроков. Месяц и год — средняя продолжительность.',
+                        'Расчёт учитывает текущие накопления и ближайшее непокрытое событие. Месяц и год считаются по средней продолжительности; будущие доходы не прогнозируются.',
                       ),
                     ],
                   ),
@@ -149,24 +151,38 @@ class _GoalsPageState extends State<GoalsPage> {
     ),
   );
   Widget _card(BuildContext context, GoalPlan goal, GoalSnapshot snapshot) {
+    final coverage = _coverage(snapshot, goal);
     final saved = goal.isActive
-        ? snapshot.allocations[goal.id] ?? 0
+        ? coverage.firstEventAllocated
         : goal.savedSnapshot;
-    final remaining = (goal.target - saved).clamp(0, goal.target);
-    final count = snapshot.goals
-        .where((g) => g.isActive && g.accountId == goal.accountId)
-        .length;
     final rate =
-        dailyGoalRate(goal, saved, DateTime.now()) * _periodFactors[_period];
+        dailyGoalRate(goal, coverage, DateTime.now()) * _periodFactors[_period];
+    final totalAllocated = goal.isActive
+        ? coverage.allocated
+        : goal.savedSnapshot;
+    final occurrenceCount = goal.isActive
+        ? coverage.coveredOccurrences
+        : goal.savedOccurrenceCount;
+    final coveredThrough = goal.isActive
+        ? coverage.coveredThrough
+        : goal.savedThroughDate;
+    final accountGoals = goal.accountId == null
+        ? 0
+        : snapshot.goals
+              .where((g) => g.isActive && g.accountId == goal.accountId)
+              .length;
+    final partialText = goal.isActive && coverage.nextUncoveredDate != null
+        ? 'На ${goal.intervalUnit == null ? 'цель' : 'следующее событие'} ${_date(coverage.nextUncoveredDate!)} выделено ${_money(coverage.nextUncoveredAllocated)} из ${_money(goal.target)}'
+        : null;
     final status = !goal.isActive
         ? goal.status == 'paused'
               ? 'Приостановлена'
               : 'Завершена'
-        : remaining == 0
+        : goal.intervalUnit == null && saved >= goal.target
         ? 'Накоплено'
         : calendarDays(DateTime.now(), goal.dueDate) == 0
         ? 'Срок сегодня'
-        : 'Осталось накопить ${_money(remaining)}';
+        : 'Ближайшее событие: ${_money(goal.target)}';
     return Card(
       margin: const EdgeInsets.only(top: 12),
       child: Padding(
@@ -244,7 +260,7 @@ class _GoalsPageState extends State<GoalsPage> {
               ],
             ),
             Text(
-              'К ${_date(goal.dueDate)}${goal.intervalUnit == null ? ' · Одноразовая' : ' · Повторяется'}',
+              'Ближайшая дата: ${_date(goal.dueDate)}${goal.intervalUnit == null ? ' · Одноразовая' : ' · Повторяется'}',
             ),
             const SizedBox(height: 12),
             LinearProgressIndicator(
@@ -252,11 +268,26 @@ class _GoalsPageState extends State<GoalsPage> {
               color: AppColors.brand,
             ),
             const SizedBox(height: 8),
-            Text('${_money(saved)} из ${_money(goal.target)} · $status'),
+            Text(
+              '${_money(saved)} из ${_money(goal.target)} на ближайшее событие · $status',
+            ),
+            if (goal.isActive && goal.intervalUnit != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                occurrenceCount == 0
+                    ? 'Пока не покрыто полностью ни одного повтора'
+                    : 'Полностью покрыто повторений: $occurrenceCount${coveredThrough == null ? '' : ' · до ${_date(coveredThrough)}'}',
+              ),
+            ],
+            if (partialText != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(partialText),
+              ),
             if (goal.isActive) ...[
               const SizedBox(height: 8),
               Text(
-                'Откладывать ${_money(rate)} / ${_periodLabels[_period].toLowerCase()}',
+                'Откладывать ${_money(rate)} / ${_periodLabels[_period].toLowerCase()} до следующего непокрытого события',
                 style: const TextStyle(fontWeight: FontWeight.w700),
               ),
             ],
@@ -264,21 +295,21 @@ class _GoalsPageState extends State<GoalsPage> {
               Padding(
                 padding: const EdgeInsets.only(top: 8),
                 child: Text(
-                  '${snapshot.accountNames[goal.accountId] ?? 'Счёт'}: учтено ${_money(saved)} из ${_money(snapshot.balances[goal.accountId] ?? 0)} на счёте · целей: $count',
+                  '${snapshot.accountNames[goal.accountId] ?? 'Счёт'}: по календарю учтено ${_money(totalAllocated)} из ${_money(snapshot.balances[goal.accountId] ?? 0)} на счёте · активных целей: $accountGoals',
                 ),
               ),
-            if (goal.isActive && goal.intervalUnit != null)
-              const Padding(
-                padding: EdgeInsets.only(top: 8),
+            if (!goal.isActive && occurrenceCount > 0)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
                 child: Text(
-                  'Накопления только на ближайший период. Следующий начнётся после указанной даты.',
+                  'На момент завершения было покрыто $occurrenceCount событий${coveredThrough == null ? '' : ' · до ${_date(coveredThrough)}'}.',
                 ),
               ),
             if (goal.status == 'paused')
               const Padding(
                 padding: EdgeInsets.only(top: 8),
                 child: Text(
-                  'Последний прогресс — для справки. Отредактируйте цель: выберите счёт или ручной учёт и включите «Возобновить».',
+                  'Счёт отключён. Последний прогресс сохранён для справки. Отредактируйте цель, выберите источник накоплений и включите «Возобновить».',
                 ),
               ),
             if (goal.sourcePaymentId != null)
