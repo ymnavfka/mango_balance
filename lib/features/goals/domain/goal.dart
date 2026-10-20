@@ -62,6 +62,24 @@ class GoalCoverage {
   final int nextUncoveredAllocated;
 }
 
+class GoalSnapshot {
+  const GoalSnapshot({
+    this.goals = const [],
+    this.coverage = const {},
+    this.allocations = const {},
+    this.balances = const {},
+    this.accountNames = const {},
+  });
+
+  final List<GoalPlan> goals;
+  final Map<int, GoalCoverage> coverage;
+
+  /// Kept for older callers; new code should use [coverage].
+  final Map<int, int> allocations;
+  final Map<int, int> balances;
+  final Map<int, String> accountNames;
+}
+
 class _MutableCoverage {
   _MutableCoverage(GoalPlan goal)
     : firstEventDate = goal.dueDate,

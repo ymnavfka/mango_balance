@@ -1,16 +1,17 @@
 import 'package:drift/drift.dart';
-import '../../../goals/data/goal_repository.dart';
 
 import '../../../../core/database/app_database.dart';
 import '../../../../core/services/active_profile_holder.dart';
+import '../../../goals/domain/repositories/goal_repository.dart';
 import '../../domain/entities/account.dart';
 import '../../domain/repositories/account_repository.dart';
 
 class AccountRepositoryImpl implements AccountRepository {
-  AccountRepositoryImpl(this.db, this.activeProfile);
+  AccountRepositoryImpl(this.db, this.activeProfile, this.goalRepository);
 
   final AppDatabase db;
   final ActiveProfileHolder activeProfile;
+  final GoalRepository goalRepository;
 
   @override
   Future<void> addAccount(AccountEntity account) async {
@@ -54,7 +55,7 @@ class AccountRepositoryImpl implements AccountRepository {
     }
     await db.transaction(() async {
       if (account.isArchived && !existing.isArchived) {
-        await GoalRepository(db).detachAccount(account.id, existing.profileId);
+        await goalRepository.detachAccount(account.id, existing.profileId);
       }
       await db.updateAccount(
         Account(
@@ -86,7 +87,7 @@ class AccountRepositoryImpl implements AccountRepository {
     }
 
     await db.transaction(() async {
-      await GoalRepository(db).detachAccount(account.id, account.profileId);
+      await goalRepository.detachAccount(account.id, account.profileId);
       await db.replaceAccountForTransactions(account.id, fallback.id);
       await db.replaceAccountForRecurringPayments(account.id, fallback.id);
       await db.deleteAccount(id);

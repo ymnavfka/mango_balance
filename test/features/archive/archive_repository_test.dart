@@ -10,6 +10,7 @@ import 'package:mango_balance/features/accounts/data/repositories/account_reposi
 import 'package:mango_balance/features/categories/data/repositories/category_repository_impl.dart';
 import 'package:mango_balance/features/export/data/repositories/export_repository_impl.dart';
 import 'package:mango_balance/features/export/domain/entities/export_options.dart';
+import 'package:mango_balance/features/goals/data/repositories/goal_repository_impl.dart';
 import 'package:mango_balance/features/import/data/parsers/xlsx_import_parser.dart';
 import 'package:mango_balance/features/import/data/repositories/import_repository_impl.dart';
 
@@ -27,7 +28,7 @@ void main() {
   setUp(() async {
     db = AppDatabase.forTesting(NativeDatabase.memory());
     profile = ActiveProfileHolder(initialId: 1);
-    accounts = AccountRepositoryImpl(db, profile);
+    accounts = AccountRepositoryImpl(db, profile, GoalRepositoryImpl(db));
     categories = CategoryRepositoryImpl(db, profile);
     accountId = await db.insertAccount(
       AccountsCompanion.insert(

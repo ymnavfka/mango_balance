@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mango_balance/core/services/active_profile_holder.dart';
 import 'package:mango_balance/features/accounts/presentation/cubit/account_cubit.dart';
-import 'package:mango_balance/features/goals/data/goal_repository.dart';
 import 'package:mango_balance/features/goals/domain/goal.dart';
 import 'package:mango_balance/features/goals/presentation/goal_cubit.dart';
 import 'package:mango_balance/features/goals/presentation/goal_form_dialog.dart';

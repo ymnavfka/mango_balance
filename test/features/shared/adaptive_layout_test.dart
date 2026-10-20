@@ -1,4 +1,4 @@
-import 'package:mango_balance/features/goals/data/goal_repository.dart';
+import 'package:mango_balance/features/goals/domain/goal.dart';
 import 'package:mango_balance/features/goals/presentation/goal_cubit.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:mango_balance/features/categories/domain/entities/category.dart';

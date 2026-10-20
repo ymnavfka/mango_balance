@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../recurring/domain/entities/recurring_payment.dart';
-import '../data/goal_repository.dart';
+import '../domain/goal.dart';
 import 'goal_cubit.dart';
 import 'goal_form_dialog.dart';
 

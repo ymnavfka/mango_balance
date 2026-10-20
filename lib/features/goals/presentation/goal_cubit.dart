@@ -3,13 +3,24 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/services/active_profile_holder.dart';
 import '../../../core/services/app_error_notifier.dart';
-import '../data/goal_repository.dart';
 import '../domain/goal.dart';
+import '../domain/usecases/complete_goal.dart';
+import '../domain/usecases/delete_goal.dart';
+import '../domain/usecases/load_goal_snapshot.dart';
+import '../domain/usecases/save_goal.dart';
+import '../domain/usecases/watch_goal_changes.dart';
 
 class GoalCubit extends Cubit<GoalSnapshot> with WidgetsBindingObserver {
-  GoalCubit(this.repository, this.profile) : super(const GoalSnapshot()) {
+  GoalCubit({
+    required this.profile,
+    required this.watchGoalChangesUseCase,
+    required this.loadGoalSnapshotUseCase,
+    required this.saveGoalUseCase,
+    required this.completeGoalUseCase,
+    required this.deleteGoalUseCase,
+  }) : super(const GoalSnapshot()) {
     WidgetsBinding.instance.addObserver(this);
-    _updates = repository.db.tableUpdates().listen((_) => refresh());
+    _updates = watchGoalChangesUseCase().listen((_) => refresh());
     _profiles = profile.stream.listen((_) {
       emit(const GoalSnapshot());
       refresh();
@@ -17,9 +28,13 @@ class GoalCubit extends Cubit<GoalSnapshot> with WidgetsBindingObserver {
     _timer = Timer.periodic(const Duration(minutes: 1), (_) => refresh());
     refresh();
   }
-  final GoalRepository repository;
   final ActiveProfileHolder profile;
-  late final StreamSubscription<dynamic> _updates;
+  final WatchGoalChanges watchGoalChangesUseCase;
+  final LoadGoalSnapshot loadGoalSnapshotUseCase;
+  final SaveGoal saveGoalUseCase;
+  final CompleteGoal completeGoalUseCase;
+  final DeleteGoal deleteGoalUseCase;
+  late final StreamSubscription<void> _updates;
   late final StreamSubscription<int> _profiles;
   late final Timer _timer;
   bool _loading = false, _again = false;
@@ -34,7 +49,7 @@ class GoalCubit extends Cubit<GoalSnapshot> with WidgetsBindingObserver {
       do {
         _again = false;
         final id = profile.id;
-        final snapshot = await repository.load(id);
+        final snapshot = await loadGoalSnapshotUseCase(id);
         if (!isClosed && id == profile.id) emit(snapshot);
       } while (_again && !isClosed);
     } catch (error) {
@@ -45,17 +60,17 @@ class GoalCubit extends Cubit<GoalSnapshot> with WidgetsBindingObserver {
   }
 
   Future<void> save(GoalPlan goal) async {
-    await repository.save(goal);
+    await saveGoalUseCase(goal);
     await refresh();
   }
 
   Future<void> complete(int id) async {
-    await repository.complete(id, profile.id);
+    await completeGoalUseCase(id, profile.id);
     await refresh();
   }
 
   Future<void> delete(int id) async {
-    await repository.delete(id, profile.id);
+    await deleteGoalUseCase(id, profile.id);
     await refresh();
   }
 

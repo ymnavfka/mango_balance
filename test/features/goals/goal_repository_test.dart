@@ -5,7 +5,8 @@ import 'package:mango_balance/core/database/app_database.dart';
 import 'package:mango_balance/core/services/active_profile_holder.dart';
 import 'package:mango_balance/features/accounts/data/repositories/account_repository_impl.dart';
 import 'package:mango_balance/features/goals/domain/goal.dart';
-import 'package:mango_balance/features/goals/data/goal_repository.dart';
+import 'package:mango_balance/features/goals/data/repositories/goal_repository_impl.dart';
+import 'package:mango_balance/features/goals/domain/repositories/goal_repository.dart';
 import 'package:mango_balance/features/export/data/repositories/export_repository_impl.dart';
 import 'package:mango_balance/features/export/domain/entities/export_options.dart';
 import 'package:mango_balance/features/import/data/parsers/xlsx_import_parser.dart';
@@ -17,7 +18,7 @@ void main() {
   late int account, category;
   setUp(() async {
     db = AppDatabase.forTesting(NativeDatabase.memory());
-    repo = GoalRepository(db);
+    repo = GoalRepositoryImpl(db);
     account = await db.insertAccount(
       AccountsCompanion.insert(
         name: 'Savings',
@@ -159,7 +160,7 @@ void main() {
     () async {
       final id = await add();
       final holder = ActiveProfileHolder(initialId: 1);
-      final accounts = AccountRepositoryImpl(db, holder);
+      final accounts = AccountRepositoryImpl(db, holder, repo);
       final entity = (await accounts.watchAccounts(1).first).firstWhere(
         (a) => a.id == account,
       );
@@ -178,7 +179,7 @@ void main() {
   test('deleting account never rebinds goals to fallback', () async {
     await add();
     final holder = ActiveProfileHolder(initialId: 1);
-    await AccountRepositoryImpl(db, holder).deleteAccount(account);
+    await AccountRepositoryImpl(db, holder, repo).deleteAccount(account);
     final goal = (await repo.load(1)).goals.single;
     expect(goal.accountId, isNull);
     expect(goal.status, 'paused');

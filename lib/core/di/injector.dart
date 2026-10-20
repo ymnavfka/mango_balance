@@ -1,4 +1,10 @@
-import '../../features/goals/data/goal_repository.dart';
+import '../../features/goals/data/repositories/goal_repository_impl.dart';
+import '../../features/goals/domain/repositories/goal_repository.dart';
+import '../../features/goals/domain/usecases/complete_goal.dart';
+import '../../features/goals/domain/usecases/delete_goal.dart';
+import '../../features/goals/domain/usecases/load_goal_snapshot.dart';
+import '../../features/goals/domain/usecases/save_goal.dart';
+import '../../features/goals/domain/usecases/watch_goal_changes.dart';
 import '../../features/goals/presentation/goal_cubit.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -99,11 +105,14 @@ Future<void> setupDependencies() async {
   getIt.registerSingleton<NotificationService>(NotificationService());
 
   // Repositories
+  getIt.registerLazySingleton<GoalRepository>(
+    () => GoalRepositoryImpl(getIt()),
+  );
   getIt.registerLazySingleton<TransactionRepository>(
     () => TransactionRepositoryImpl(getIt(), getIt()),
   );
   getIt.registerLazySingleton<AccountRepository>(
-    () => AccountRepositoryImpl(getIt(), getIt()),
+    () => AccountRepositoryImpl(getIt(), getIt(), getIt()),
   );
   getIt.registerLazySingleton<CategoryRepository>(
     () => CategoryRepositoryImpl(getIt(), getIt()),
@@ -123,6 +132,13 @@ Future<void> setupDependencies() async {
   getIt.registerLazySingleton<RecurringRepository>(
     () => RecurringRepositoryImpl(getIt(), getIt()),
   );
+
+  // Goals
+  getIt.registerLazySingleton(() => WatchGoalChanges(getIt()));
+  getIt.registerLazySingleton(() => LoadGoalSnapshot(getIt()));
+  getIt.registerLazySingleton(() => SaveGoal(getIt()));
+  getIt.registerLazySingleton(() => CompleteGoal(getIt()));
+  getIt.registerLazySingleton(() => DeleteGoal(getIt()));
 
   // Transaction UseCases
   getIt.registerLazySingleton(() => AddTransaction(getIt()));
@@ -281,7 +297,16 @@ Future<void> setupDependencies() async {
     ),
   );
 
-  getIt.registerFactory(() => GoalCubit(GoalRepository(getIt()), getIt()));
+  getIt.registerFactory(
+    () => GoalCubit(
+      profile: getIt(),
+      watchGoalChangesUseCase: getIt(),
+      loadGoalSnapshotUseCase: getIt(),
+      saveGoalUseCase: getIt(),
+      completeGoalUseCase: getIt(),
+      deleteGoalUseCase: getIt(),
+    ),
+  );
 
   getIt.registerFactory(
     () => RecurringCubit(

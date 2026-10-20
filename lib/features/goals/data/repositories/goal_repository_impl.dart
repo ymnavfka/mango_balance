@@ -1,8 +1,9 @@
 import 'package:drift/drift.dart';
-import '../../../core/database/app_database.dart';
-import '../domain/goal.dart';
+import '../../../../core/database/app_database.dart';
+import '../../domain/goal.dart';
+import '../../domain/repositories/goal_repository.dart';
 
-GoalPlan goalFromRow(Goal row) => GoalPlan(
+GoalPlan _goalFromRow(Goal row) => GoalPlan(
   id: row.id,
   profileId: row.profileId,
   name: row.name,
@@ -20,32 +21,19 @@ GoalPlan goalFromRow(Goal row) => GoalPlan(
   sourcePaymentId: row.sourcePaymentId,
 );
 
-class GoalSnapshot {
-  const GoalSnapshot({
-    this.goals = const [],
-    this.coverage = const {},
-    this.allocations = const {},
-    this.balances = const {},
-    this.accountNames = const {},
-  });
-  final List<GoalPlan> goals;
-  final Map<int, GoalCoverage> coverage;
+class GoalRepositoryImpl implements GoalRepository {
+  GoalRepositoryImpl(this.db);
 
-  /// Kept for older callers; new code should use [coverage].
-  final Map<int, int> allocations;
-  final Map<int, int> balances;
-  final Map<int, String> accountNames;
-}
-
-class GoalRepository {
-  GoalRepository(this.db);
   final AppDatabase db;
+
+  @override
+  Stream<void> watchChanges() => db.tableUpdates().map((_) {});
 
   Future<List<GoalPlan>> _goals(int profileId) async =>
       (await (db.select(
             db.goals,
           )..where((g) => g.profileId.equals(profileId))).get())
-          .map(goalFromRow)
+          .map(_goalFromRow)
           .toList();
 
   Future<Map<int, int>> _balances(int profileId, {DateTime? through}) async {
@@ -82,6 +70,7 @@ class GoalRepository {
     return balances;
   }
 
+  @override
   Future<GoalSnapshot> load(
     int profileId, {
     DateTime? now,
@@ -202,6 +191,7 @@ class GoalRepository {
     );
   });
 
+  @override
   Future<void> save(GoalPlan goal, {DateTime? now}) => db.transaction(() async {
     if (goal.name.trim().isEmpty ||
         goal.target <= 0 ||
@@ -272,6 +262,7 @@ class GoalRepository {
     }
   });
 
+  @override
   Future<void> complete(int id, int profileId) => db.transaction(() async {
     final snapshot = await load(profileId);
     final coverage = snapshot.coverage[id] ?? const GoalCoverage();
@@ -287,6 +278,7 @@ class GoalRepository {
     );
   });
 
+  @override
   Future<void> delete(int id, int profileId) async {
     await (db.delete(
       db.goals,
@@ -294,6 +286,7 @@ class GoalRepository {
   }
 
   /// Called before account mutations, inside the same transaction.
+  @override
   Future<void> detachAccount(int accountId, int profileId) async {
     final snapshot = await load(profileId);
     for (final goal in snapshot.goals.where((g) => g.accountId == accountId)) {
