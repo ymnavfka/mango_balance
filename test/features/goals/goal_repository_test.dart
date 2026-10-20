@@ -74,7 +74,12 @@ void main() {
     () async {
       final small = await add(target: 10000), large = await add(target: 100000);
       var state = await repo.load(1, now: DateTime(2026));
-      expect(state.allocations, {small: 10000, large: 80000});
+      expect(
+        {
+          for (final e in state.coverage.entries) e.key: e.value.allocated,
+        },
+        {small: 10000, large: 80000},
+      );
       await db.insertTransaction(
         TransactionsCompanion.insert(
           type: 'expense',
@@ -86,16 +91,22 @@ void main() {
         ),
       );
       state = await repo.load(1, now: DateTime(2026));
-      expect(state.allocations, {small: 5000, large: 5000});
+      expect(
+        {
+          for (final e in state.coverage.entries) e.key: e.value.allocated,
+        },
+        {small: 5000, large: 5000},
+      );
       expect(await db.select(db.transactions).get(), hasLength(1));
       await repo.delete(small, 1);
-      expect((await repo.load(1, now: DateTime(2026))).allocations, {
-        large: 10000,
-      });
+      expect(
+        (await repo.load(1, now: DateTime(2026))).coverage[large]?.allocated,
+        10000,
+      );
     },
   );
   test(
-    '100 percent waits for deadline; manual resets only after deadline',
+    'manual balance carries forward after the deadline',
     () async {
       final id = await add(
         target: 10000,
@@ -106,13 +117,13 @@ void main() {
       );
       var state = await repo.load(1, now: DateTime(2026, 10, 15, 23, 59));
       expect(state.goals.single.dueDate, DateTime(2026, 10, 15));
-      expect(state.allocations[id], 10000);
+      expect(state.coverage[id]?.allocated, 10000);
       state = await repo.load(1, now: DateTime(2026, 10, 16));
       expect(state.goals.single.dueDate, DateTime(2027, 10, 15));
-      expect(state.allocations[id], 0);
+      expect(state.coverage[id]?.allocated, 10000);
       state = await repo.load(1, now: DateTime(2030, 10, 16));
       expect(state.goals.single.dueDate, DateTime(2031, 10, 15));
-      expect(state.allocations[id], 0);
+      expect(state.coverage[id]?.allocated, 10000);
     },
   );
   test('account linked repeat redistributes actual remaining funds', () async {
@@ -123,11 +134,11 @@ void main() {
     );
     final state = await repo.load(1, now: DateTime(2026, 10, 16));
     expect(state.goals.single.dueDate, DateTime(2027, 10, 15));
-    expect(state.allocations[id], 90000);
+    expect(state.coverage[id]?.allocated, 90000);
     expect(await db.select(db.transactions).get(), isEmpty);
   });
   test(
-    'expired one-off freezes deadline progress and releases its share',
+    'expired one-off reallocates the current balance to later goals',
     () async {
       final first = await add(due: DateTime(2026, 10, 15)),
           second = await add();
@@ -144,15 +155,13 @@ void main() {
       final state = await repo.load(1, now: DateTime(2026, 10, 17));
       final completed = state.goals.firstWhere((g) => g.id == first);
       expect(completed.status, 'completed');
-      expect(completed.savedSnapshot, 45000);
-      expect(state.allocations, {second: 10000});
+      expect(state.coverage[second]?.allocated, 10000);
+      final laterState = await repo.load(1, now: DateTime(2030));
       expect(
-        (await repo.load(
-          1,
-          now: DateTime(2030),
-        )).goals.firstWhere((g) => g.id == first).savedSnapshot,
-        45000,
+        laterState.goals.firstWhere((g) => g.id == first).status,
+        'completed',
       );
+      expect(laterState.coverage[second]?.allocated, 10000);
     },
   );
   test(
@@ -170,7 +179,7 @@ void main() {
       expect(row.status, 'paused');
       expect(row.savedSnapshot, 90000);
       expect(row.manualSaved, 0);
-      expect((await repo.load(1)).allocations.containsKey(id), isFalse);
+      expect((await repo.load(1)).coverage.containsKey(id), isFalse);
       await accounts.updateAccount(entity);
       expect((await repo.load(1)).goals.single.status, 'paused');
       await holder.close();
