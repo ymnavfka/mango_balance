@@ -13,7 +13,6 @@ GoalPlan _goalFromRow(Goal row) => GoalPlan(
   intervalUnit: row.intervalUnit,
   intervalCount: row.intervalCount,
   accountId: row.accountId,
-  manualSaved: row.manualSaved,
   status: row.status,
   savedSnapshot: row.savedSnapshot,
   savedOccurrenceCount: row.savedOccurrenceCount,
@@ -109,7 +108,6 @@ class GoalRepositoryImpl implements GoalRepository {
           intervalUnit: g.intervalUnit,
           intervalCount: g.intervalCount,
           accountId: g.accountId,
-          manualSaved: g.manualSaved,
         );
       }).toList();
       final snapshot = allocateGoalEvents(
@@ -134,8 +132,8 @@ class GoalRepositoryImpl implements GoalRepository {
       goals = await _goals(profileId);
     }
 
-    // Events that elapsed while the app was closed disappear. Keep the
-    // manually entered balance: the user decides whether the money was spent.
+    // Events that elapsed while the app was closed disappear. Account balances
+    // remain grounded in the ledger and fund the next scheduled event.
     for (final goal in goals.where(
       (g) => g.isActive && g.intervalUnit != null && g.dueDate.isBefore(today),
     )) {
@@ -167,7 +165,6 @@ class GoalRepositoryImpl implements GoalRepository {
         GoalsCompanion(
           accountId: const Value(null),
           status: Value(goal.isActive ? 'paused' : goal.status),
-          manualSaved: const Value(0),
           savedSnapshot: Value(
             goal.isActive ? saved.allocated : goal.savedSnapshot,
           ),
@@ -196,7 +193,7 @@ class GoalRepositoryImpl implements GoalRepository {
     if (goal.name.trim().isEmpty ||
         goal.target <= 0 ||
         goal.target > 900000000000000 ||
-        goal.manualSaved < 0 ||
+        ((goal.id == 0 || goal.isActive) && goal.accountId == null) ||
         goal.intervalCount < 1 ||
         goal.intervalCount > 10000 ||
         !['active', 'paused', 'completed'].contains(goal.status) ||
@@ -245,7 +242,6 @@ class GoalRepositoryImpl implements GoalRepository {
       intervalUnit: Value(goal.intervalUnit),
       intervalCount: Value(goal.intervalCount),
       accountId: Value(goal.accountId),
-      manualSaved: Value(goal.accountId == null ? goal.manualSaved : 0),
       status: Value(goal.status),
       savedSnapshot: Value(goal.savedSnapshot),
       savedOccurrenceCount: Value(goal.savedOccurrenceCount),
@@ -294,7 +290,6 @@ class GoalRepositoryImpl implements GoalRepository {
       await (db.update(db.goals)..where((g) => g.id.equals(goal.id))).write(
         GoalsCompanion(
           accountId: const Value(null),
-          manualSaved: const Value(0),
           status: Value(goal.isActive ? 'paused' : goal.status),
           savedSnapshot: Value(
             goal.isActive ? coverage.allocated : goal.savedSnapshot,

@@ -117,7 +117,6 @@ class Goals extends Table {
   TextColumn get intervalUnit => text().nullable()();
   IntColumn get intervalCount => integer().withDefault(const Constant(1))();
   IntColumn get accountId => integer().nullable().references(Accounts, #id)();
-  IntColumn get manualSaved => integer().withDefault(const Constant(0))();
   TextColumn get status => text().withDefault(const Constant('active'))();
   IntColumn get savedSnapshot => integer().withDefault(const Constant(0))();
   IntColumn get savedOccurrenceCount =>
@@ -145,7 +144,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 14;
+  int get schemaVersion => 15;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -161,6 +160,12 @@ class AppDatabase extends _$AppDatabase {
       } else if (from < 14) {
         await m.addColumn(goals, goals.savedOccurrenceCount);
         await m.addColumn(goals, goals.savedThroughDate);
+      }
+      if (from >= 13 && from < 15) {
+        await customStatement(
+          "DELETE FROM goals WHERE status = 'active' AND account_id IS NULL",
+        );
+        await m.alterTable(TableMigration(goals));
       }
       if (from < 2) {
         await m.createTable(categories);

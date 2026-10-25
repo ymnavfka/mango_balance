@@ -3181,18 +3181,6 @@ class $GoalsTable extends Goals with TableInfo<$GoalsTable, Goal> {
       'REFERENCES accounts (id)',
     ),
   );
-  static const VerificationMeta _manualSavedMeta = const VerificationMeta(
-    'manualSaved',
-  );
-  @override
-  late final GeneratedColumn<int> manualSaved = GeneratedColumn<int>(
-    'manual_saved',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultValue: const Constant(0),
-  );
   static const VerificationMeta _statusMeta = const VerificationMeta('status');
   @override
   late final GeneratedColumn<String> status = GeneratedColumn<String>(
@@ -3263,7 +3251,6 @@ class $GoalsTable extends Goals with TableInfo<$GoalsTable, Goal> {
     intervalUnit,
     intervalCount,
     accountId,
-    manualSaved,
     status,
     savedSnapshot,
     savedOccurrenceCount,
@@ -3347,15 +3334,6 @@ class $GoalsTable extends Goals with TableInfo<$GoalsTable, Goal> {
       context.handle(
         _accountIdMeta,
         accountId.isAcceptableOrUnknown(data['account_id']!, _accountIdMeta),
-      );
-    }
-    if (data.containsKey('manual_saved')) {
-      context.handle(
-        _manualSavedMeta,
-        manualSaved.isAcceptableOrUnknown(
-          data['manual_saved']!,
-          _manualSavedMeta,
-        ),
       );
     }
     if (data.containsKey('status')) {
@@ -3445,10 +3423,6 @@ class $GoalsTable extends Goals with TableInfo<$GoalsTable, Goal> {
         DriftSqlType.int,
         data['${effectivePrefix}account_id'],
       ),
-      manualSaved: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}manual_saved'],
-      )!,
       status: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}status'],
@@ -3488,7 +3462,6 @@ class Goal extends DataClass implements Insertable<Goal> {
   final String? intervalUnit;
   final int intervalCount;
   final int? accountId;
-  final int manualSaved;
   final String status;
   final int savedSnapshot;
   final int savedOccurrenceCount;
@@ -3504,7 +3477,6 @@ class Goal extends DataClass implements Insertable<Goal> {
     this.intervalUnit,
     required this.intervalCount,
     this.accountId,
-    required this.manualSaved,
     required this.status,
     required this.savedSnapshot,
     required this.savedOccurrenceCount,
@@ -3527,7 +3499,6 @@ class Goal extends DataClass implements Insertable<Goal> {
     if (!nullToAbsent || accountId != null) {
       map['account_id'] = Variable<int>(accountId);
     }
-    map['manual_saved'] = Variable<int>(manualSaved);
     map['status'] = Variable<String>(status);
     map['saved_snapshot'] = Variable<int>(savedSnapshot);
     map['saved_occurrence_count'] = Variable<int>(savedOccurrenceCount);
@@ -3555,7 +3526,6 @@ class Goal extends DataClass implements Insertable<Goal> {
       accountId: accountId == null && nullToAbsent
           ? const Value.absent()
           : Value(accountId),
-      manualSaved: Value(manualSaved),
       status: Value(status),
       savedSnapshot: Value(savedSnapshot),
       savedOccurrenceCount: Value(savedOccurrenceCount),
@@ -3583,7 +3553,6 @@ class Goal extends DataClass implements Insertable<Goal> {
       intervalUnit: serializer.fromJson<String?>(json['intervalUnit']),
       intervalCount: serializer.fromJson<int>(json['intervalCount']),
       accountId: serializer.fromJson<int?>(json['accountId']),
-      manualSaved: serializer.fromJson<int>(json['manualSaved']),
       status: serializer.fromJson<String>(json['status']),
       savedSnapshot: serializer.fromJson<int>(json['savedSnapshot']),
       savedOccurrenceCount: serializer.fromJson<int>(
@@ -3608,7 +3577,6 @@ class Goal extends DataClass implements Insertable<Goal> {
       'intervalUnit': serializer.toJson<String?>(intervalUnit),
       'intervalCount': serializer.toJson<int>(intervalCount),
       'accountId': serializer.toJson<int?>(accountId),
-      'manualSaved': serializer.toJson<int>(manualSaved),
       'status': serializer.toJson<String>(status),
       'savedSnapshot': serializer.toJson<int>(savedSnapshot),
       'savedOccurrenceCount': serializer.toJson<int>(savedOccurrenceCount),
@@ -3627,7 +3595,6 @@ class Goal extends DataClass implements Insertable<Goal> {
     Value<String?> intervalUnit = const Value.absent(),
     int? intervalCount,
     Value<int?> accountId = const Value.absent(),
-    int? manualSaved,
     String? status,
     int? savedSnapshot,
     int? savedOccurrenceCount,
@@ -3643,7 +3610,6 @@ class Goal extends DataClass implements Insertable<Goal> {
     intervalUnit: intervalUnit.present ? intervalUnit.value : this.intervalUnit,
     intervalCount: intervalCount ?? this.intervalCount,
     accountId: accountId.present ? accountId.value : this.accountId,
-    manualSaved: manualSaved ?? this.manualSaved,
     status: status ?? this.status,
     savedSnapshot: savedSnapshot ?? this.savedSnapshot,
     savedOccurrenceCount: savedOccurrenceCount ?? this.savedOccurrenceCount,
@@ -3671,9 +3637,6 @@ class Goal extends DataClass implements Insertable<Goal> {
           ? data.intervalCount.value
           : this.intervalCount,
       accountId: data.accountId.present ? data.accountId.value : this.accountId,
-      manualSaved: data.manualSaved.present
-          ? data.manualSaved.value
-          : this.manualSaved,
       status: data.status.present ? data.status.value : this.status,
       savedSnapshot: data.savedSnapshot.present
           ? data.savedSnapshot.value
@@ -3702,7 +3665,6 @@ class Goal extends DataClass implements Insertable<Goal> {
           ..write('intervalUnit: $intervalUnit, ')
           ..write('intervalCount: $intervalCount, ')
           ..write('accountId: $accountId, ')
-          ..write('manualSaved: $manualSaved, ')
           ..write('status: $status, ')
           ..write('savedSnapshot: $savedSnapshot, ')
           ..write('savedOccurrenceCount: $savedOccurrenceCount, ')
@@ -3723,7 +3685,6 @@ class Goal extends DataClass implements Insertable<Goal> {
     intervalUnit,
     intervalCount,
     accountId,
-    manualSaved,
     status,
     savedSnapshot,
     savedOccurrenceCount,
@@ -3743,7 +3704,6 @@ class Goal extends DataClass implements Insertable<Goal> {
           other.intervalUnit == this.intervalUnit &&
           other.intervalCount == this.intervalCount &&
           other.accountId == this.accountId &&
-          other.manualSaved == this.manualSaved &&
           other.status == this.status &&
           other.savedSnapshot == this.savedSnapshot &&
           other.savedOccurrenceCount == this.savedOccurrenceCount &&
@@ -3761,7 +3721,6 @@ class GoalsCompanion extends UpdateCompanion<Goal> {
   final Value<String?> intervalUnit;
   final Value<int> intervalCount;
   final Value<int?> accountId;
-  final Value<int> manualSaved;
   final Value<String> status;
   final Value<int> savedSnapshot;
   final Value<int> savedOccurrenceCount;
@@ -3777,7 +3736,6 @@ class GoalsCompanion extends UpdateCompanion<Goal> {
     this.intervalUnit = const Value.absent(),
     this.intervalCount = const Value.absent(),
     this.accountId = const Value.absent(),
-    this.manualSaved = const Value.absent(),
     this.status = const Value.absent(),
     this.savedSnapshot = const Value.absent(),
     this.savedOccurrenceCount = const Value.absent(),
@@ -3794,7 +3752,6 @@ class GoalsCompanion extends UpdateCompanion<Goal> {
     this.intervalUnit = const Value.absent(),
     this.intervalCount = const Value.absent(),
     this.accountId = const Value.absent(),
-    this.manualSaved = const Value.absent(),
     this.status = const Value.absent(),
     this.savedSnapshot = const Value.absent(),
     this.savedOccurrenceCount = const Value.absent(),
@@ -3815,7 +3772,6 @@ class GoalsCompanion extends UpdateCompanion<Goal> {
     Expression<String>? intervalUnit,
     Expression<int>? intervalCount,
     Expression<int>? accountId,
-    Expression<int>? manualSaved,
     Expression<String>? status,
     Expression<int>? savedSnapshot,
     Expression<int>? savedOccurrenceCount,
@@ -3832,7 +3788,6 @@ class GoalsCompanion extends UpdateCompanion<Goal> {
       if (intervalUnit != null) 'interval_unit': intervalUnit,
       if (intervalCount != null) 'interval_count': intervalCount,
       if (accountId != null) 'account_id': accountId,
-      if (manualSaved != null) 'manual_saved': manualSaved,
       if (status != null) 'status': status,
       if (savedSnapshot != null) 'saved_snapshot': savedSnapshot,
       if (savedOccurrenceCount != null)
@@ -3852,7 +3807,6 @@ class GoalsCompanion extends UpdateCompanion<Goal> {
     Value<String?>? intervalUnit,
     Value<int>? intervalCount,
     Value<int?>? accountId,
-    Value<int>? manualSaved,
     Value<String>? status,
     Value<int>? savedSnapshot,
     Value<int>? savedOccurrenceCount,
@@ -3869,7 +3823,6 @@ class GoalsCompanion extends UpdateCompanion<Goal> {
       intervalUnit: intervalUnit ?? this.intervalUnit,
       intervalCount: intervalCount ?? this.intervalCount,
       accountId: accountId ?? this.accountId,
-      manualSaved: manualSaved ?? this.manualSaved,
       status: status ?? this.status,
       savedSnapshot: savedSnapshot ?? this.savedSnapshot,
       savedOccurrenceCount: savedOccurrenceCount ?? this.savedOccurrenceCount,
@@ -3908,9 +3861,6 @@ class GoalsCompanion extends UpdateCompanion<Goal> {
     if (accountId.present) {
       map['account_id'] = Variable<int>(accountId.value);
     }
-    if (manualSaved.present) {
-      map['manual_saved'] = Variable<int>(manualSaved.value);
-    }
     if (status.present) {
       map['status'] = Variable<String>(status.value);
     }
@@ -3941,7 +3891,6 @@ class GoalsCompanion extends UpdateCompanion<Goal> {
           ..write('intervalUnit: $intervalUnit, ')
           ..write('intervalCount: $intervalCount, ')
           ..write('accountId: $accountId, ')
-          ..write('manualSaved: $manualSaved, ')
           ..write('status: $status, ')
           ..write('savedSnapshot: $savedSnapshot, ')
           ..write('savedOccurrenceCount: $savedOccurrenceCount, ')
@@ -8385,7 +8334,6 @@ typedef $$GoalsTableCreateCompanionBuilder =
       Value<String?> intervalUnit,
       Value<int> intervalCount,
       Value<int?> accountId,
-      Value<int> manualSaved,
       Value<String> status,
       Value<int> savedSnapshot,
       Value<int> savedOccurrenceCount,
@@ -8403,7 +8351,6 @@ typedef $$GoalsTableUpdateCompanionBuilder =
       Value<String?> intervalUnit,
       Value<int> intervalCount,
       Value<int?> accountId,
-      Value<int> manualSaved,
       Value<String> status,
       Value<int> savedSnapshot,
       Value<int> savedOccurrenceCount,
@@ -8509,11 +8456,6 @@ class $$GoalsTableFilterComposer extends Composer<_$AppDatabase, $GoalsTable> {
 
   ColumnFilters<int> get intervalCount => $composableBuilder(
     column: $table.intervalCount,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get manualSaved => $composableBuilder(
-    column: $table.manualSaved,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -8651,11 +8593,6 @@ class $$GoalsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<int> get manualSaved => $composableBuilder(
-    column: $table.manualSaved,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<String> get status => $composableBuilder(
     column: $table.status,
     builder: (column) => ColumnOrderings(column),
@@ -8779,11 +8716,6 @@ class $$GoalsTableAnnotationComposer
 
   GeneratedColumn<int> get intervalCount => $composableBuilder(
     column: $table.intervalCount,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<int> get manualSaved => $composableBuilder(
-    column: $table.manualSaved,
     builder: (column) => column,
   );
 
@@ -8917,7 +8849,6 @@ class $$GoalsTableTableManager
                 Value<String?> intervalUnit = const Value.absent(),
                 Value<int> intervalCount = const Value.absent(),
                 Value<int?> accountId = const Value.absent(),
-                Value<int> manualSaved = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 Value<int> savedSnapshot = const Value.absent(),
                 Value<int> savedOccurrenceCount = const Value.absent(),
@@ -8933,7 +8864,6 @@ class $$GoalsTableTableManager
                 intervalUnit: intervalUnit,
                 intervalCount: intervalCount,
                 accountId: accountId,
-                manualSaved: manualSaved,
                 status: status,
                 savedSnapshot: savedSnapshot,
                 savedOccurrenceCount: savedOccurrenceCount,
@@ -8951,7 +8881,6 @@ class $$GoalsTableTableManager
                 Value<String?> intervalUnit = const Value.absent(),
                 Value<int> intervalCount = const Value.absent(),
                 Value<int?> accountId = const Value.absent(),
-                Value<int> manualSaved = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 Value<int> savedSnapshot = const Value.absent(),
                 Value<int> savedOccurrenceCount = const Value.absent(),
@@ -8967,7 +8896,6 @@ class $$GoalsTableTableManager
                 intervalUnit: intervalUnit,
                 intervalCount: intervalCount,
                 accountId: accountId,
-                manualSaved: manualSaved,
                 status: status,
                 savedSnapshot: savedSnapshot,
                 savedOccurrenceCount: savedOccurrenceCount,

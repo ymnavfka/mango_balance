@@ -64,7 +64,9 @@ void main() {
               savedSnapshot: 20000,
             ),
           ],
-          allocations: const {1: 40000},
+          coverage: const {
+            1: GoalCoverage(allocated: 40000, firstEventAllocated: 40000),
+          },
           balances: const {2: 40000},
           accountNames: const {2: 'Накопительный счёт'},
         ),
@@ -113,7 +115,8 @@ void main() {
     final menu = tester.widget<DropdownButton<int>>(
       find.byType(DropdownButton<int>),
     );
-    expect(menu.items!.map((item) => item.value), [0, 1]);
+    expect(menu.items!.map((item) => item.value), [1]);
+    expect(find.text('Вручную'), findsNothing);
     await tester.ensureVisible(find.text('Сохранить'));
     await tester.pumpAndSettle();
     expect(find.text('Сохранить').hitTestable(), findsOneWidget);

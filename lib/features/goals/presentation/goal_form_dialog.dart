@@ -17,7 +17,7 @@ class GoalFormDialog extends StatefulWidget {
 }
 
 class _GoalFormDialogState extends State<GoalFormDialog> {
-  late final TextEditingController _name, _target, _saved, _count;
+  late final TextEditingController _name, _target, _count;
   late DateTime _date;
   String? _unit;
   int? _account;
@@ -33,20 +33,17 @@ class _GoalFormDialogState extends State<GoalFormDialog> {
           ? (goal.target / 100).toString()
           : source?.amount.toString() ?? '',
     );
-    _saved = TextEditingController(
-      text: ((goal?.manualSaved ?? 0) / 100).toString(),
-    );
     _count = TextEditingController(
       text: '${goal?.intervalCount ?? source?.intervalCount ?? 1}',
     );
     _date = goal?.dueDate ?? source?.nextRunDate ?? goalDay(DateTime.now());
     _unit = goal?.intervalUnit ?? source?.intervalUnit.storageKey;
-    _account = goal?.accountId;
+    _account = goal?.accountId ?? source?.accountId;
   }
 
   @override
   void dispose() {
-    for (final c in [_name, _target, _saved, _count]) {
+    for (final c in [_name, _target, _count]) {
       c.dispose();
     }
     super.dispose();
@@ -61,17 +58,13 @@ class _GoalFormDialogState extends State<GoalFormDialog> {
   }
 
   Future<void> _save() async {
-    final target = _money(_target.text),
-        saved = _money(_saved.text),
-        count = int.tryParse(_count.text);
+    final target = _money(_target.text), count = int.tryParse(_count.text);
     if (_name.text.trim().isEmpty ||
         target == null ||
         target <= 0 ||
-        (_account == null && (saved == null || saved < 0)) ||
+        _account == null ||
         (_unit != null && (count == null || count < 1 || count > 10000))) {
-      showAppNotice(
-        'Укажите название, положительную сумму и корректные накопления и период',
-      );
+      showAppNotice('Укажите название, сумму, счёт и корректный период');
       return;
     }
     setState(() => _busy = true);
@@ -95,7 +88,6 @@ class _GoalFormDialogState extends State<GoalFormDialog> {
           intervalUnit: _unit,
           intervalCount: _unit == null ? 1 : count!,
           accountId: _account,
-          manualSaved: _account == null ? saved! : 0,
           status: initial == null || _resume ? 'active' : initial.status,
           savedSnapshot: initial?.savedSnapshot ?? 0,
           savedOccurrenceCount: initial?.savedOccurrenceCount ?? 0,
@@ -119,9 +111,8 @@ class _GoalFormDialogState extends State<GoalFormDialog> {
         .accounts
         .where((a) => !a.isArchived)
         .toList();
-    // Keep invalid selection visible as an error; never silently switch funds.
-    final validAccount =
-        _account == null || accounts.any((a) => a.id == _account);
+    // Keep an unavailable account visible as an error; never switch funds.
+    final validAccount = accounts.any((a) => a.id == _account);
     return AppDialog(
       title: widget.initial == null ? 'Новая цель' : 'Редактирование цели',
       primaryLabel: 'Сохранить',
@@ -141,13 +132,6 @@ class _GoalFormDialogState extends State<GoalFormDialog> {
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: const InputDecoration(labelText: 'Нужно накопить, ₽'),
           ),
-          if (_account == null && _unit != null)
-            const Padding(
-              padding: EdgeInsets.only(top: 6),
-              child: Text(
-                'Указанной суммой можно покрыть несколько повторений. После траты уменьшите ее вручную.',
-              ),
-            ),
           const SizedBox(height: 16),
           OutlinedButton.icon(
             icon: const Icon(Icons.calendar_today_rounded),
@@ -193,47 +177,36 @@ class _GoalFormDialogState extends State<GoalFormDialog> {
           ],
           const SizedBox(height: 16),
           DropdownButtonFormField<int>(
-            initialValue: validAccount ? _account ?? 0 : -1,
-            isExpanded: true,
-            decoration: const InputDecoration(
-              labelText: 'Откуда учитывать накопления',
+            initialValue: validAccount ? _account : null,
+            hint: Text(
+              accounts.isEmpty ? 'Сначала создайте счёт' : 'Выберите счёт',
             ),
-            items: [
-              const DropdownMenuItem(value: 0, child: Text('Вручную')),
-              if (!validAccount)
-                const DropdownMenuItem(
-                  value: -1,
-                  child: Text('Счёт недоступен'),
-                ),
-              ...accounts.map(
-                (a) => DropdownMenuItem(
-                  value: a.id,
-                  child: Text(a.name, overflow: TextOverflow.ellipsis),
-                ),
-              ),
-            ],
-            onChanged: (v) => setState(() {
-              _account = v == 0 ? null : v;
-            }),
+            isExpanded: true,
+            decoration: const InputDecoration(labelText: 'Счёт для накоплений'),
+            items: accounts
+                .map(
+                  (a) => DropdownMenuItem(
+                    value: a.id,
+                    child: Text(a.name, overflow: TextOverflow.ellipsis),
+                  ),
+                )
+                .toList(),
+            onChanged: (v) => setState(() => _account = v),
           ),
           const SizedBox(height: 12),
-          if (_account == null)
-            TextField(
-              controller: _saved,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              decoration: const InputDecoration(labelText: 'Уже накоплено, ₽'),
-            )
+          if (_account != null && !validAccount)
+            const Text('Счёт отключён. Выберите другой счёт для цели.')
+          else if (accounts.isEmpty)
+            const Text('Для создания цели сначала добавьте счёт.')
           else
             const Text(
-              'Деньги счета идут на будущие события по порядку дат. В одну дату делятся поровну.',
+              'Деньги счёта идут на будущие события по порядку дат. В одну дату делятся поровну.',
             ),
           if (widget.initial?.status == 'paused')
             const Padding(
               padding: EdgeInsets.only(top: 12),
               child: Text(
-                'Счёт отключён. Выберите другой счёт или укажите накопления вручную. Последний прогресс — только для справки.',
+                'Цель на паузе. Выберите счёт и включите «Возобновить», чтобы продолжить.',
               ),
             ),
           if (widget.initial != null && !widget.initial!.isActive)

@@ -7,7 +7,6 @@ GoalPlan plan(
   int? account = 1,
   String? unit,
   DateTime? due,
-  int manual = 0,
   String status = 'active',
   int count = 1,
 }) => GoalPlan(
@@ -18,7 +17,6 @@ GoalPlan plan(
   dueDate: due ?? DateTime(2026, 10, 15),
   anchorDate: due ?? DateTime(2026, 10, 15),
   accountId: account,
-  manualSaved: manual,
   status: status,
   intervalUnit: unit,
   intervalCount: count,
@@ -42,23 +40,20 @@ void main() {
       expect(allocateGoals(goals, {1: -100}), {1: 0, 2: 0, 3: 0});
     },
   );
-  test(
-    'manual savings and inactive goals cannot double count account funds',
-    () {
-      expect(
-        allocateGoals(
-          [
-            plan(1, 100),
-            plan(2, 100, status: 'paused'),
-            plan(3, 100, status: 'completed'),
-            plan(4, 100, account: null, manual: 200),
-          ],
-          {1: 80},
-        ),
-        {1: 80, 4: 100},
-      );
-    },
-  );
+  test('unlinked and inactive goals do not receive account funds', () {
+    expect(
+      allocateGoals(
+        [
+          plan(1, 100),
+          plan(2, 100, status: 'paused'),
+          plan(3, 100, status: 'completed'),
+          plan(4, 100, account: null),
+        ],
+        {1: 80},
+      ),
+      {1: 80},
+    );
+  });
   test('monthly repeats preserve anchor and skip missed cycles', () {
     final goal = plan(1, 100, unit: 'month', due: DateTime(2026, 1, 31));
     expect(nextGoalDeadline(goal, DateTime(2026, 2, 1)), DateTime(2026, 2, 28));

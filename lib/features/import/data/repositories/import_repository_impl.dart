@@ -304,6 +304,7 @@ class ImportRepositoryImpl implements ImportRepository {
         for (final goal in data.goals.where(
           (g) => g.profileId == profile.sourceId,
         )) {
+          if (goal.isActive && goal.accountId == null) continue;
           final accountId = accountIdMap[goal.accountId];
           final account = accountId == null
               ? null
@@ -322,7 +323,6 @@ class ImportRepositoryImpl implements ImportRepository {
                   intervalUnit: Value(goal.intervalUnit),
                   intervalCount: Value(goal.intervalCount),
                   accountId: Value(unavailable ? null : accountId),
-                  manualSaved: Value(unavailable ? 0 : goal.manualSaved),
                   status: Value(
                     unavailable && goal.isActive ? 'paused' : goal.status,
                   ),

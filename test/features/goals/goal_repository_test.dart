@@ -34,8 +34,6 @@ void main() {
     String? repeat,
     int? source,
     int? accountId,
-    bool manual = false,
-    int saved = 0,
   }) async {
     final date = due ?? DateTime(2099, 10, 15);
     await repo.save(
@@ -47,8 +45,7 @@ void main() {
         dueDate: date,
         anchorDate: date,
         intervalUnit: repeat,
-        accountId: manual ? null : accountId ?? account,
-        manualSaved: saved,
+        accountId: accountId ?? account,
         sourcePaymentId: source,
       ),
       now: DateTime(2026, 1, 1),
@@ -69,15 +66,30 @@ void main() {
     ),
   );
 
+  test('new goals require a linked account', () async {
+    await expectLater(
+      repo.save(
+        GoalPlan(
+          id: 0,
+          profileId: 1,
+          name: 'Gift',
+          target: 100000,
+          dueDate: DateTime(2099, 10, 15),
+          anchorDate: DateTime(2099, 10, 15),
+        ),
+      ),
+      throwsException,
+    );
+    expect(await db.select(db.goals).get(), isEmpty);
+  });
+
   test(
     'allocation reacts to funds and target changes without creating operations',
     () async {
       final small = await add(target: 10000), large = await add(target: 100000);
       var state = await repo.load(1, now: DateTime(2026));
       expect(
-        {
-          for (final e in state.coverage.entries) e.key: e.value.allocated,
-        },
+        {for (final e in state.coverage.entries) e.key: e.value.allocated},
         {small: 10000, large: 80000},
       );
       await db.insertTransaction(
@@ -92,9 +104,7 @@ void main() {
       );
       state = await repo.load(1, now: DateTime(2026));
       expect(
-        {
-          for (final e in state.coverage.entries) e.key: e.value.allocated,
-        },
+        {for (final e in state.coverage.entries) e.key: e.value.allocated},
         {small: 5000, large: 5000},
       );
       expect(await db.select(db.transactions).get(), hasLength(1));
@@ -103,27 +113,6 @@ void main() {
         (await repo.load(1, now: DateTime(2026))).coverage[large]?.allocated,
         10000,
       );
-    },
-  );
-  test(
-    'manual balance carries forward after the deadline',
-    () async {
-      final id = await add(
-        target: 10000,
-        due: DateTime(2026, 10, 15),
-        repeat: 'year',
-        manual: true,
-        saved: 10000,
-      );
-      var state = await repo.load(1, now: DateTime(2026, 10, 15, 23, 59));
-      expect(state.goals.single.dueDate, DateTime(2026, 10, 15));
-      expect(state.coverage[id]?.allocated, 10000);
-      state = await repo.load(1, now: DateTime(2026, 10, 16));
-      expect(state.goals.single.dueDate, DateTime(2027, 10, 15));
-      expect(state.coverage[id]?.allocated, 10000);
-      state = await repo.load(1, now: DateTime(2030, 10, 16));
-      expect(state.goals.single.dueDate, DateTime(2031, 10, 15));
-      expect(state.coverage[id]?.allocated, 10000);
     },
   );
   test('account linked repeat redistributes actual remaining funds', () async {
@@ -178,7 +167,6 @@ void main() {
       expect(row.accountId, isNull);
       expect(row.status, 'paused');
       expect(row.savedSnapshot, 90000);
-      expect(row.manualSaved, 0);
       expect((await repo.load(1)).coverage.containsKey(id), isFalse);
       await accounts.updateAccount(entity);
       expect((await repo.load(1)).goals.single.status, 'paused');
@@ -212,27 +200,25 @@ void main() {
   );
   test('backup restores goals and remaps account and payment links', () async {
     await add(source: await payment());
-    await add(manual: true, saved: 12345);
+    await add(target: 50000);
     final bytes = (await ExportRepositoryImpl(db).buildXlsx(
       const ExportOptions(profileIds: [1], dateFrom: null, dateTo: null),
     )).bytes;
     final backup = XlsxImportParser().parse(bytes).backup!;
     expect(backup.goals, hasLength(2));
+    expect(backup.goals.every((g) => g.accountId != null), isTrue);
     await ImportRepositoryImpl(db).restore(backup);
     final profiles = await db.select(db.profiles).get();
     final other = profiles.last.id;
     final state = await repo.load(other);
-    final linked = state.goals.firstWhere((g) => g.accountId != null);
+    final linked = state.goals.firstWhere((g) => g.sourcePaymentId != null);
     expect(linked.accountId, isNot(account));
     expect((await db.accountById(linked.accountId!))!.profileId, other);
     expect(
       (await db.recurringPaymentById(linked.sourcePaymentId!))!.profileId,
       other,
     );
-    expect(
-      state.goals.firstWhere((g) => g.accountId == null).manualSaved,
-      12345,
-    );
+    expect(state.goals.every((g) => g.accountId != null), isTrue);
     await db.deleteProfile(other);
     expect((await repo.load(1)).goals, hasLength(2));
   });

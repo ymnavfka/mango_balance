@@ -231,15 +231,16 @@ class XlsxImportParser {
     });
 
     final goals = <GoalPlan>[];
-    _forEachRow(excel.tables['Цели'], (row) {
+    final goalsSheet = excel.tables['Цели'];
+    _forEachRow(goalsSheet, (row) {
       final id = _int(row, 0), profile = _int(row, 1), target = _int(row, 3);
       final name = _str(row, 2),
           unit = _str(row, 6),
-          status = _str(row, 10) ?? 'active';
+          status = _str(row, 9) ?? 'active';
       final due = _date(row, 4), anchor = _date(row, 5);
       final count = _int(row, 7) ?? 1,
-          saved = _int(row, 9) ?? 0,
-          snapshot = _int(row, 11) ?? 0;
+          snapshot = _int(row, 10) ?? 0,
+          accountId = _int(row, 8);
       if (id == null ||
           profile == null ||
           name == null ||
@@ -250,8 +251,8 @@ class XlsxImportParser {
           anchor == null ||
           count < 1 ||
           count > 10000 ||
-          saved < 0 ||
           snapshot < 0 ||
+          (accountId == null && status == 'active') ||
           !['active', 'paused', 'completed'].contains(status) ||
           (unit != null && !['day', 'week', 'month', 'year'].contains(unit))) {
         return;
@@ -266,13 +267,12 @@ class XlsxImportParser {
           anchorDate: anchor,
           intervalUnit: unit,
           intervalCount: count,
-          accountId: _int(row, 8),
-          manualSaved: saved,
+          accountId: accountId,
           status: status,
           savedSnapshot: snapshot,
-          savedOccurrenceCount: _int(row, 13) ?? 0,
-          savedThroughDate: _date(row, 14),
-          sourcePaymentId: _int(row, 12),
+          savedOccurrenceCount: _int(row, 12) ?? 0,
+          savedThroughDate: _date(row, 13),
+          sourcePaymentId: _int(row, 11),
         ),
       );
     });

@@ -12,7 +12,6 @@ class GoalPlan {
     this.intervalUnit,
     this.intervalCount = 1,
     this.accountId,
-    this.manualSaved = 0,
     this.status = 'active',
     this.savedSnapshot = 0,
     this.savedOccurrenceCount = 0,
@@ -23,7 +22,6 @@ class GoalPlan {
       profileId,
       target,
       intervalCount,
-      manualSaved,
       savedSnapshot,
       savedOccurrenceCount;
   final String name, status;
@@ -66,16 +64,12 @@ class GoalSnapshot {
   const GoalSnapshot({
     this.goals = const [],
     this.coverage = const {},
-    this.allocations = const {},
     this.balances = const {},
     this.accountNames = const {},
   });
 
   final List<GoalPlan> goals;
   final Map<int, GoalCoverage> coverage;
-
-  /// Kept for older callers; new code should use [coverage].
-  final Map<int, int> allocations;
   final Map<int, int> balances;
   final Map<int, String> accountNames;
 }
@@ -123,27 +117,21 @@ class _MutableCoverage {
 
 /// Assigns existing money to future events in date order. Events on one date
 /// share available money equally, capped at each event's target. Repeats are
-/// expanded until the balance is spent; manual savings use their own pool.
+/// expanded until the balance is spent.
 Map<int, GoalCoverage> allocateGoalEvents(
   List<GoalPlan> goals,
   Map<int, int> balances, {
   DateTime? through,
 }) {
-  final active = goals.where((g) => g.isActive).toList();
+  final active = goals.where((g) => g.isActive && g.accountId != null).toList();
   final mutable = {for (final goal in active) goal.id: _MutableCoverage(goal)};
   final accountGroups = <int, List<GoalPlan>>{};
   for (final goal in active) {
-    if (goal.accountId != null) {
-      accountGroups.putIfAbsent(goal.accountId!, () => []).add(goal);
-    } else {
-      final pool = math.max(0, goal.manualSaved);
-      _allocateEventGroup([goal], {goal.id: pool}, mutable, through: through);
-    }
+    accountGroups.putIfAbsent(goal.accountId!, () => []).add(goal);
   }
   for (final entry in accountGroups.entries) {
     _allocateEventGroup(
       entry.value,
-      {for (final goal in entry.value) goal.id: 0},
       mutable,
       through: through,
       money: math.max(0, balances[entry.key] ?? 0),
@@ -154,13 +142,11 @@ Map<int, GoalCoverage> allocateGoalEvents(
 
 void _allocateEventGroup(
   List<GoalPlan> goals,
-  Map<int, int> unused,
   Map<int, _MutableCoverage> coverages, {
   required DateTime? through,
   int? money,
 }) {
-  // A manual balance belongs only to that goal; an account balance is shared.
-  var available = money ?? unused.values.fold<int>(0, (a, b) => a + b);
+  var available = money ?? 0;
   final queue = <int, DateTime>{
     for (final goal in goals)
       if (through == null || !goal.dueDate.isAfter(through))
@@ -352,16 +338,12 @@ int _occurrenceIndex(GoalPlan goal, DateTime date) {
       (goal.intervalCount * (goal.intervalUnit == 'year' ? 12 : 1));
 }
 
-/// Legacy one-event allocator retained for older test fixtures and integrations.
+/// One-event allocator used by legacy calculations and integrations.
 Map<int, int> allocateGoals(List<GoalPlan> goals, Map<int, int> balances) {
   final result = <int, int>{};
   final groups = <int, List<GoalPlan>>{};
-  for (final goal in goals.where((g) => g.isActive)) {
-    if (goal.accountId == null) {
-      result[goal.id] = math.min(goal.target, goal.manualSaved);
-    } else {
-      groups.putIfAbsent(goal.accountId!, () => []).add(goal);
-    }
+  for (final goal in goals.where((g) => g.isActive && g.accountId != null)) {
+    groups.putIfAbsent(goal.accountId!, () => []).add(goal);
   }
   for (final entry in groups.entries) {
     final pending = [...entry.value]

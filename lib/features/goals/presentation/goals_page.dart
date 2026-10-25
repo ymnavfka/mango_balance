@@ -17,11 +17,7 @@ String _date(DateTime d) =>
     '${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(2, '0')}.${d.year}';
 GoalCoverage _coverage(GoalSnapshot snapshot, GoalPlan goal) =>
     snapshot.coverage[goal.id] ??
-    GoalCoverage(
-      firstEventDate: goal.dueDate,
-      firstEventAllocated: snapshot.allocations[goal.id] ?? 0,
-      nextUncoveredDate: goal.dueDate,
-    );
+    GoalCoverage(firstEventDate: goal.dueDate, nextUncoveredDate: goal.dueDate);
 
 class GoalsPage extends StatefulWidget {
   const GoalsPage({super.key});
@@ -308,7 +304,7 @@ class _GoalsPageState extends State<GoalsPage> {
               const Padding(
                 padding: EdgeInsets.only(top: 8),
                 child: Text(
-                  'Счёт отключён. Последний прогресс сохранён для справки. Отредактируйте цель, выберите источник накоплений и включите «Возобновить».',
+                  'Счёт отключён. Последний прогресс сохранён для справки. Отредактируйте цель, выберите доступный счёт и включите «Возобновить».',
                 ),
               ),
             if (goal.sourcePaymentId != null)
